@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aluno-online-db
+    environment:
+      POSTGRES_DB: aluno_online
+      POSTGRES_USER: aluno
+      POSTGRES_PASSWORD: aluno123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend/aluno-online
+      dockerfile: Dockerfile.dev
+    container_name: aluno-online-backend-dev
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/aluno-online:/app
+      - ~/.m2:/root/.m2
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/aluno_online
+      DB_USER: aluno
+      DB_PASSWORD: aluno123
+
+volumes:
+  postgres_data:
