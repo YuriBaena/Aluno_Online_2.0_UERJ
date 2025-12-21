@@ -1,0 +1,27 @@
+# Usa a imagem oficial do Node (LTS)
+FROM node:20-alpine
+
+# Define o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Instala o Angular CLI globalmente
+RUN npm install -g @angular/cli
+
+# Copia os arquivos de configuração de pacotes primeiro
+# Isso acelera os próximos builds se você não mudar as dependências
+COPY package*.json ./
+
+# Instala todas as dependências do projeto
+RUN npm install
+
+# Copia o restante dos arquivos do projeto (será sobrescrito pelo volume no Compose)
+COPY . .
+
+# Expõe a porta padrão do Angular
+EXPOSE 4200
+
+# Comando para rodar em modo desenvolvimento:
+# --host 0.0.0.0: Permite conexões externas (essencial para Docker)
+# --poll 2000: Checa mudanças nos arquivos a cada 2s (essencial para Hot Reload em volumes)
+# --allowed-hosts all: Substitui o antigo disable-host-check em versões novas
+CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "2000", "--allowed-hosts=all"]

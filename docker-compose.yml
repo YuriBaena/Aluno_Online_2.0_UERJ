@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aluno -d aluno_online"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -17,16 +22,31 @@ services:
       dockerfile: Dockerfile.dev
     container_name: aluno-online-backend-dev
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
-      - ./backend/aluno-online:/app
-      - ~/.m2:/root/.m2
+      - ./backend/aluno-online:/app         # Sincroniza o código fonte
+      - ~/.m2:/root/.m2                     # Cache do Maven
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/aluno_online
-      DB_USER: aluno
-      DB_PASSWORD: aluno123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aluno_online
+      SPRING_DATASOURCE_USERNAME: aluno
+      SPRING_DATASOURCE_PASSWORD: aluno123
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true" # Ativa o Hot Reload do Spring
+
+  frontend:
+    build:
+      context: ./frontend/aluno-online
+      dockerfile: Dockerfile.dev
+    container_name: aluno-online-frontend-dev
+    volumes:
+      - ./frontend/aluno-online:/app                     # Sincroniza o código do Angular
+      - /app/node_modules                   # Evita que o node_modules local sobrescreva o do contêiner
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
