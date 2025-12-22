@@ -2,10 +2,12 @@ import { Routes } from '@angular/router';
 import { Login } from './pages/login/login'
 import { Register } from './pages/register/register'
 import { Home } from './pages/home/home'
+import { NotFound } from './pages/not-found/not-found'
 import { authGuard } from './guards/auth-guard'
 
 export const routes: Routes = [
   { path: 'registrar', component: Register },
+  { path: '', component: Login },
   { path: 'login', component: Login },
   {
     path: '', // Rota pai
@@ -13,5 +15,7 @@ export const routes: Routes = [
     children: [
       {path: 'home', component: Home},
     ]
-  }
+  },
+  // ROTA CURINGA (Wildcard)
+  { path: '**', component: NotFound }
 ];

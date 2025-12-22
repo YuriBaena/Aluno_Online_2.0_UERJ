@@ -1,0 +1,61 @@
+.not-found-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3f4f6;
+  text-align: center;
+  font-family: 'Segoe UI', sans-serif;
+
+  .content {
+    background: white;
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    max-width: 500px;
+
+    h1 {
+      font-size: 6rem;
+      margin: 0;
+      color: #1e3a8a; // Azul UERJ
+      line-height: 1;
+    }
+
+    h2 {
+      color: #374151;
+      margin: 1rem 0;
+    }
+
+    p {
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+
+    .animation {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .btn-back {
+      padding: 0.8rem 2rem;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+
+      &:hover {
+        background-color: #1d4ed8;
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
