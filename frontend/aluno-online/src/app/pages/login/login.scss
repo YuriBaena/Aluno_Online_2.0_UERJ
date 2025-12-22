@@ -1,0 +1,132 @@
+// Variáveis de Cores
+$primary: #2563eb;
+$primary-hover: #1d4ed8;
+$bg-body: #f1f5f9;
+$text-main: #1e293b;
+$text-muted: #64748b;
+$white: #ffffff;
+$border: #e2e8f0;
+
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: $bg-body;
+  padding: 1rem;
+}
+
+.login-card {
+  background: $white;
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    h1 {
+      color: $text-main;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: $text-muted;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.login-form {
+  .input-group {
+    margin-bottom: 1.25rem;
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: $text-main;
+      margin-bottom: 0.5rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid $border;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      box-sizing: border-box;
+
+      &:focus {
+        outline: none;
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      }
+    }
+  }
+
+  .password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    input {
+      padding-right: 4.5rem; // Espaço para o botão
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: $primary;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.25rem;
+      
+      &:hover {
+        color: $primary-hover;
+      }
+    }
+  }
+
+  .btn-primary {
+    width: 100%;
+    background-color: $primary;
+    color: $white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 1rem;
+
+    &:hover {
+      background-color: $primary-hover;
+    }
+  }
+
+  .form-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+
+    a {
+      color: $primary;
+      font-size: 0.875rem;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

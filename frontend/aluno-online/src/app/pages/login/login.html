@@ -1,0 +1,52 @@
+<div class="login-screen">
+  <div class="login-card">
+    <header class="login-header">
+      <h1>Acesso ao Sistema</h1>
+      <p>Insira suas credenciais para continuar</p>
+    </header>
+
+    <form class="login-form" (submit)="$event.preventDefault(); fazerLogin(matriculaInput.value, senhaInput.value)">
+      
+      <div class="input-group">
+        <label for="matricula">Matrícula</label>
+        <input 
+          #matriculaInput
+          id="matricula" 
+          type="text" 
+          placeholder="Digite sua matrícula" 
+          autocomplete="username">
+      </div>
+
+      <div class="input-group">
+        <label for="senha">Senha</label>
+        <div class="password-container">
+          <input 
+            #senhaInput
+            id="senha" 
+            [type]="exibirSenha ? 'text' : 'password'" 
+            placeholder="Digite sua senha"
+            autocomplete="current-password">
+          
+          <button 
+            type="button" 
+            class="toggle-password" 
+            (click)="toggleSenha()"
+            [attr.aria-label]="exibirSenha ? 'Esconder senha' : 'Mostrar senha'">
+            {{ exibirSenha ? 'OCULTAR' : 'MOSTRAR' }}
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary">
+        Entrar
+      </button>
+
+      <div class="form-footer" style="text-align: center; margin-top: 15px;">
+        <p style="font-size: 0.9rem; color: #666;">
+          Ainda não tem acesso? 
+          <a routerLink="/registrar" style="color: #2563eb; font-weight: bold; text-decoration: none;">Cadastre-se aqui</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

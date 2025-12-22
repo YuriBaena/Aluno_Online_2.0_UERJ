@@ -1,0 +1,33 @@
+<div class="login-screen">
+  <div class="login-card">
+    <header class="login-header">
+      <h1>Novo Cadastro</h1>
+      <p>Crie sua conta no Aluno Online</p>
+    </header>
+
+    <form class="login-form" #regForm="ngForm" (submit)="salvar(regForm.value)">
+      <div class="input-group">
+        <label>Nome Completo</label>
+        <input name="nome" ngModel type="text" placeholder="Ex: Yuri Silva" required>
+      </div>
+
+      <div class="input-group">
+        <label>Matrícula</label>
+        <input name="matricula" ngModel type="number" placeholder="Digite um número" required>
+      </div>
+
+      <div class="input-group">
+        <label>E-mail Institucional</label>
+        <input name="emailInstitucional" ngModel type="email" placeholder="nome@uerj.br" required>
+      </div>
+
+      <div class="input-group">
+        <label>Senha</label>
+        <input name="senhaHash" ngModel type="password" placeholder="Crie uma senha" required>
+      </div>
+
+      <button type="submit" class="btn-primary">Cadastrar</button>
+      <a routerLink="/login" style="display: block; text-align: center; margin-top: 10px;">Já tenho conta</a>
+    </form>
+  </div>
+</div>
