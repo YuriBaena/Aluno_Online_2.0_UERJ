@@ -1,12 +1,15 @@
 package br.com.yuri.aluno_online.domain.model;
 
 import br.com.yuri.aluno_online.domain.enums.StatusMatricula;
+import br.com.yuri.aluno_online.domain.enums.Role;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
 @Entity
 @Table(name = "aluno")
+@SequenceGenerator(name = "matricula_seq", sequenceName = "aluno_matricula_seq", allocationSize = 1)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,9 +18,13 @@ import java.util.UUID;
 public class Aluno {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
     private UUID id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     @Column(nullable = false)
     private String nome;
@@ -25,7 +32,7 @@ public class Aluno {
     @Column(unique = true, nullable = false)
     private Long matricula;
 
-    @Column()
+    @Column
     private String curso;
 
     @Enumerated(EnumType.STRING)
@@ -36,15 +43,12 @@ public class Aluno {
     private String emailInstitucional;
 
     @Column(name = "periodo_inicio")
-    private String periodoInicio; // Ex: "2023/1"
+    private String periodoInicio; 
 
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    // Helper para não salvar senha em texto puro por engano
     public void setSenhaHash(String senha) {
-        // Se você já quiser usar o encoder aqui, pode, 
-        // mas o ideal é fazer no Service como mostrei antes.
         this.senhaHash = senha;
     }
 }

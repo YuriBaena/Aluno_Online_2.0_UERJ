@@ -15,7 +15,7 @@ export class Register {
   private router = inject(Router);
 
   salvar(dados: any) {
-    if (!dados.nome || !dados.matricula || !dados.senhaHash) {
+    if (!dados.nome || !dados.senhaHash) {
       alert('Preencha todos os campos obrigatórios!');
       return;
     }
