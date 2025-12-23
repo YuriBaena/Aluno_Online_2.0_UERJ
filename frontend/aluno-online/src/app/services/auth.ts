@@ -20,6 +20,6 @@ export class AuthService {
 
   registrar(aluno: any) {
     // Agora apontamos para /auth/registrar (ajuste para bater com o Java)
-    return this.http.post(`${this.API}/register`, aluno);
+    return this.http.post(`${this.API}/registrar`, aluno);
   }
 }

@@ -23,7 +23,10 @@ public class Aluno {
     private String nome;
 
     @Column(unique = true, nullable = false)
-    private Long matricula; // Corresponde ao bigint da imagem
+    private Long matricula;
+
+    @Column()
+    private String curso;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status_matricula")
@@ -33,7 +36,7 @@ public class Aluno {
     private String emailInstitucional;
 
     @Column(name = "periodo_inicio")
-    private String periodoInicio; // Ex: "2023.1"
+    private String periodoInicio; // Ex: "2023/1"
 
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;

@@ -8,41 +8,33 @@ import br.com.yuri.aluno_online.domain.model.Aluno;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-// No seu AuthService.java
 @Service
 public class AuthService {
 
     private final AlunoRepository repository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    // Injete o passwordEncoder no construtor
     public AuthService(AlunoRepository repository) {
         this.repository = repository;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    public String validarLogin(LoginRequest request) {
+    // Mudamos o nome para 'autenticar' e o retorno para 'Aluno'
+    public Aluno autenticar(LoginRequest request) {
         var aluno = repository.findByMatricula(Long.parseLong(request.matricula()))
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
 
-        String senhaDigitada = request.senha().trim();
-        String hashDoBanco = aluno.getSenhaHash().trim();
-
-        System.out.println("Senha digitada: " + senhaDigitada);
-        System.out.println("Hash no banco: " + hashDoBanco);
-
-        if (passwordEncoder.matches(senhaDigitada, hashDoBanco)) {
-            return "token-gerado-" + aluno.getId();
+        if (passwordEncoder.matches(request.senha().trim(), aluno.getSenhaHash().trim())) {
+            return aluno; // Retorna o objeto completo se a senha estiver certa
         }
 
         throw new RuntimeException("Senha incorreta");
     }
 
     public void registrar(Aluno aluno) {
-        // Criptografa a senha antes de salvar no banco
         String senhaCriptografada = passwordEncoder.encode(aluno.getSenhaHash());
         aluno.setSenhaHash(senhaCriptografada);
-        aluno.setStatusMatricula(StatusMatricula.ATIVO); // Define status inicial
+        aluno.setStatusMatricula(StatusMatricula.ATIVO);
         repository.save(aluno);
     }
 }
