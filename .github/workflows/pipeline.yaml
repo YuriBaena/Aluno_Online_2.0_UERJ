@@ -21,9 +21,18 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - name: Rodar testes do backend
         working-directory: backend/aluno-online
-        run: mvn test
+        run: mvn test -Dspring.profiles.active=test
+
 
   test_frontend:
     name: Test Frontend (Angular)
@@ -37,6 +46,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Instalar dependências
         working-directory: frontend/aluno-online
         run: npm install
@@ -44,6 +61,7 @@ jobs:
       - name: Rodar testes do frontend
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
+
 
   build:
     name: Build Backend + Frontend
@@ -60,9 +78,18 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('backend/**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
       - name: Build backend
         working-directory: backend/aluno-online
         run: mvn clean package -DskipTests
+
 
       # Frontend
       - name: Setup Node
@@ -70,11 +97,20 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Build frontend
         working-directory: frontend/aluno-online
         run: |
           npm install
           npm run build
+
 
   deploy:
     name: Deploy
