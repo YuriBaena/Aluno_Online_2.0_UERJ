@@ -112,7 +112,7 @@ jobs:
         working-directory: frontend/aluno-online
         run: |
           npm install
-          npm run build
+          npm run build --configuration production
 
   # =========================
   # Deploy
@@ -136,7 +136,7 @@ jobs:
           script: |
             mkdir -p ~/app
             # Copia o jar do runner para a EC2
-            scp -i ~/.ssh/$(echo "${{ secrets.EC2_SSH_KEY_FILE_NAME }}") backend/aluno-online/target/aluno-online.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app/backend.jar
+            scp backend/aluno-online/target/aluno-online.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app/backend.jar
             # Reinicia o serviço
             sudo systemctl restart backend.service
 
@@ -147,5 +147,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
-          aws s3 sync frontend/aluno-online/build/ s3://${{ secrets.S3_BUCKET }} --delete
+          aws s3 sync frontend/aluno-online/dist/aluno-online/ s3://${{ secrets.S3_BUCKET }} --delete
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
