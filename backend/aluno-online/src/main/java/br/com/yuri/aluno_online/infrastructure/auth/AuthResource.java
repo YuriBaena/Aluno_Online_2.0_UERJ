@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {"http://localhost:4200", "https://d2zpn5koefpuib.cloudfront.net"})
 public class AuthResource {
 
     private final AuthService authService;
