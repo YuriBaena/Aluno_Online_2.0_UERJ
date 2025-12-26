@@ -7,7 +7,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   # =========================
   # Test Backend
   # =========================
@@ -16,21 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - name: Cache Maven
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('backend/**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: Run Backend Tests
         working-directory: backend/aluno-online
         run: mvn test -Dspring.profiles.active=test
@@ -43,24 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install dependencies
         working-directory: frontend/aluno-online
         run: npm install
-
       - name: Run Frontend Tests
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
@@ -75,44 +53,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Backend Build
+      # Build Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - name: Cache Maven
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('backend/**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: Build backend
         working-directory: backend/aluno-online
         run: mvn clean package -DskipTests
 
-      # Frontend Build
+      # Build Angular
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Build frontend
         working-directory: frontend/aluno-online
         run: |
           npm install
           npm run build -- --configuration production
+
+      # SALVAR ARQUIVOS: Importante para o job de Deploy conseguir ver os arquivos
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-assets
+          path: |
+            backend/aluno-online/target/*.jar
+            frontend/aluno-online/dist/
 
   # =========================
   # Deploy
@@ -125,27 +94,54 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- Deploy Backend ----------
-      - name: Deploy Backend na EC2
+      # Baixa os arquivos gerados no job de Build
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-assets
+
+      # ---------- Deploy Backend (EC2) ----------
+      
+      # 1. Envia o JAR do GitHub para a EC2
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/aluno-online/target/*.jar"
+          target: "~/app"
+          strip_components: 3 # Remove as pastas 'backend/aluno-online/target' no destino
+
+      # 2. Conecta via SSH para renomear e reiniciar o serviço
+      - name: Restart Backend Service
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
           script: |
             mkdir -p ~/app
-            # Copia o jar do runner para a EC2
-            scp backend/aluno-online/target/aluno-online.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app/backend.jar
-            # Reinicia o serviço
+            # Renomeia o jar para o nome padrão usado pelo systemctl
+            mv ~/app/*.jar ~/app/backend.jar
             sudo systemctl restart backend.service
 
-      # ---------- Deploy Frontend ----------
-      - name: Deploy Frontend para S3 + CloudFront
+      # ---------- Deploy Frontend (S3 + CloudFront) ----------
+      
+      - name: Deploy Frontend to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
+          # O download-artifact mantém a estrutura. 
+          # Verifique se o caminho é dist/aluno-online ou dist/aluno-online/browser
           aws s3 sync frontend/aluno-online/dist/aluno-online/ s3://${{ secrets.S3_BUCKET }} --delete
+          
+      - name: Invalidate CloudFront Cache
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-2
+        run: |
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
