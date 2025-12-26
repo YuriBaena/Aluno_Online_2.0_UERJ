@@ -1,0 +1,89 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  test_backend:
+    name: Test Backend (Spring)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Rodar testes do backend
+        working-directory: backend/aluno-online
+        run: mvn test
+
+  test_frontend:
+    name: Test Frontend (Angular)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        working-directory: frontend/aluno-online
+        run: npm install
+
+      - name: Rodar testes do frontend
+        working-directory: frontend/aluno-online
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+  build:
+    name: Build Backend + Frontend
+    needs: [ test_backend, test_frontend ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Backend
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build backend
+        working-directory: backend/aluno-online
+        run: mvn clean package -DskipTests
+
+      # Frontend
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        working-directory: frontend/aluno-online
+        run: |
+          npm install
+          npm run build
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy da aplicação
+        run: echo "Deploy realizado 🚀"
