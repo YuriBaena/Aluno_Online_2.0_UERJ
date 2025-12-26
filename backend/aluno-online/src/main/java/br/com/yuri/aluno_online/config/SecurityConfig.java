@@ -25,9 +25,13 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
-                corsConfiguration.setAllowedOrigins(java.util.List.of("http://localhost:4200"));
+                corsConfiguration.setAllowedOrigins(java.util.List.of(
+                    "http://localhost:4200",
+                    "http://aluno-online-frontend.s3-website.us-east-2.amazonaws.com", // Link do seu S3
+                    "https://d2zpn5koefpuib.cloudfront.net" // Seu CloudFront
+                ));
                 corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
+                corsConfiguration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "Origin", "Accept"));
                 corsConfiguration.setAllowCredentials(true);
                 return corsConfiguration;
             }))
