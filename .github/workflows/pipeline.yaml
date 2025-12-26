@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline Fullstack
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
 
 jobs:
 
+  # =========================
+  # Test Backend
+  # =========================
   test_backend:
     name: Test Backend (Spring)
     runs-on: ubuntu-latest
@@ -29,11 +32,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Rodar testes do backend
+      - name: Run Backend Tests
         working-directory: backend/aluno-online
         run: mvn test -Dspring.profiles.active=test
 
-
+  # =========================
+  # Test Frontend
+  # =========================
   test_frontend:
     name: Test Frontend (Angular)
     runs-on: ubuntu-latest
@@ -54,15 +59,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Instalar dependências
+      - name: Install dependencies
         working-directory: frontend/aluno-online
         run: npm install
 
-      - name: Rodar testes do frontend
+      - name: Run Frontend Tests
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
-
+  # =========================
+  # Build Backend + Frontend
+  # =========================
   build:
     name: Build Backend + Frontend
     needs: [ test_backend, test_frontend ]
@@ -71,7 +78,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Backend
+      # Backend Build
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -90,8 +97,7 @@ jobs:
         working-directory: backend/aluno-online
         run: mvn clean package -DskipTests
 
-
-      # Frontend
+      # Frontend Build
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -111,9 +117,11 @@ jobs:
           npm install
           npm run build
 
-
+  # =========================
+  # Deploy
+  # =========================
   deploy:
-    name: Deploy
+    name: Deploy Fullstack
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -121,5 +129,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy da aplicação
-        run: echo "Deploy realizado 🚀"
+      # ---------- Deploy Backend ----------
+      - name: Deploy Backend na EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            mkdir -p ~/app
+            mv backend/aluno-online/target/aluno-online.jar ~/app/backend.jar
+            sudo systemctl restart backend.service
+
+      # ---------- Deploy Frontend ----------
+      - name: Deploy Frontend para S3 + CloudFront
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-2
+        run: |
+          aws s3 sync frontend/aluno-online/build/ s3://${{ secrets.S3_BUCKET }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
