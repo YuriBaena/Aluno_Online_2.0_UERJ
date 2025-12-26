@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # =========================
+  # Testes
+  # =========================
   test_backend:
     name: Test Backend (Spring)
     runs-on: ubuntu-latest
@@ -37,6 +40,9 @@ jobs:
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
+  # =========================
+  # Build
+  # =========================
   build:
     name: Build Backend + Frontend
     needs: [ test_backend, test_frontend ]
@@ -69,6 +75,9 @@ jobs:
             backend/aluno-online/target/*.jar
             frontend/aluno-online/dist/aluno-online/
 
+  # =========================
+  # Deploy
+  # =========================
   deploy:
     name: Deploy Fullstack
     needs: build
@@ -100,15 +109,24 @@ jobs:
           script: |
             echo "--- Iniciando Deploy do Backend ---"
             mkdir -p ~/app
-            if [ -f ~/app_temp/target/*.jar ]; then
-              echo "✅ Novo JAR encontrado. Movendo para pasta oficial..."
-              mv -f ~/app_temp/target/*.jar ~/app/backend.jar
+            
+            # Procura o ficheiro JAR de forma dinâmica para evitar erros de estrutura
+            JAR_FILE=$(find ~/app_temp -name "*.jar" | head -n 1)
+
+            if [ -n "$JAR_FILE" ]; then
+              echo "✅ Novo JAR encontrado em: $JAR_FILE"
+              echo "🚚 Movendo para ~/app/backend.jar..."
+              mv -f "$JAR_FILE" ~/app/backend.jar
+              
+              echo "🧹 Limpando pastas temporárias..."
               rm -rf ~/app_temp
-              echo "✅ Reiniciando serviço backend.service..."
+              
+              echo "🔄 Reiniciando serviço backend.service..."
               sudo systemctl restart backend.service
               echo "🚀 Backend atualizado com sucesso!"
             else
-              echo "❌ ERRO: Arquivo JAR não encontrado em ~/app_temp/target/"
+              echo "❌ ERRO: Ficheiro JAR não encontrado em ~/app_temp"
+              ls -R ~/app_temp
               exit 1
             fi
 
@@ -120,7 +138,7 @@ jobs:
           AWS_REGION: us-east-2
         run: |
           echo "--- Iniciando Deploy do Frontend ---"
-          # Sincroniza apenas o CONTEÚDO da pasta browser para a raiz do S3
+          # Sincroniza o conteúdo da pasta browser diretamente na raiz do S3
           aws s3 sync frontend/aluno-online/dist/aluno-online/browser/ s3://${{ secrets.S3_BUCKET }} --delete
           echo "✅ Sincronização com S3 finalizada."
 
