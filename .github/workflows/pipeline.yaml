@@ -112,7 +112,7 @@ jobs:
         working-directory: frontend/aluno-online
         run: |
           npm install
-          npm run build --configuration production
+          npm run build -- --configuration production
 
   # =========================
   # Deploy
