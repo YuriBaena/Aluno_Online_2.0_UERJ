@@ -7,9 +7,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # =========================
-  # Test Backend
-  # =========================
   test_backend:
     name: Test Backend (Spring)
     runs-on: ubuntu-latest
@@ -24,9 +21,6 @@ jobs:
         working-directory: backend/aluno-online
         run: mvn test -Dspring.profiles.active=test
 
-  # =========================
-  # Test Frontend
-  # =========================
   test_frontend:
     name: Test Frontend (Angular)
     runs-on: ubuntu-latest
@@ -43,9 +37,6 @@ jobs:
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
-  # =========================
-  # Build Backend + Frontend
-  # =========================
   build:
     name: Build Backend + Frontend
     needs: [ test_backend, test_frontend ]
@@ -53,95 +44,91 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Build Java
-      - name: Setup Java
+      - name: Setup Java & Build Backend
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Build backend
+      - run: mvn clean package -DskipTests
         working-directory: backend/aluno-online
-        run: mvn clean package -DskipTests
 
-      # Build Angular
-      - name: Setup Node
+      - name: Setup Node & Build Frontend
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Build frontend
-        working-directory: frontend/aluno-online
-        run: |
+      - run: |
           npm install
           npm run build -- --configuration production
+        working-directory: frontend/aluno-online
 
-      # SALVAR ARQUIVOS: Importante para o job de Deploy conseguir ver os arquivos
-      - name: Upload Build Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: deployment-assets
           path: |
             backend/aluno-online/target/*.jar
-            frontend/aluno-online/dist/
+            frontend/aluno-online/dist/aluno-online/
 
-  # =========================
-  # Deploy
-  # =========================
   deploy:
     name: Deploy Fullstack
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
-      # Baixa os arquivos gerados no job de Build
-      - name: Download Build Artifacts
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           name: deployment-assets
 
-      # ---------- Deploy Backend (EC2) ----------
-      
-      # 1. Envia o JAR do GitHub para a EC2
-      - name: Copy JAR to EC2
+      # ---------- DEPLOY BACKEND (EC2) ----------
+      - name: Enviar JAR para EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/aluno-online/target/*.jar"
-          target: "~/app"
-          strip_components: 3 # Remove as pastas 'backend/aluno-online/target' no destino
+          target: "~/app_temp"
+          strip_components: 3
 
-      # 2. Conecta via SSH para renomear e reiniciar o serviço
-      - name: Restart Backend Service
+      - name: Configurar JAR e Reiniciar Serviço
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "--- Iniciando Deploy do Backend ---"
             mkdir -p ~/app
-            # Renomeia o jar para o nome padrão usado pelo systemctl
-            mv ~/app/*.jar ~/app/backend.jar
-            sudo systemctl restart backend.service
+            if [ -f ~/app_temp/target/*.jar ]; then
+              echo "✅ Novo JAR encontrado. Movendo para pasta oficial..."
+              mv -f ~/app_temp/target/*.jar ~/app/backend.jar
+              rm -rf ~/app_temp
+              echo "✅ Reiniciando serviço backend.service..."
+              sudo systemctl restart backend.service
+              echo "🚀 Backend atualizado com sucesso!"
+            else
+              echo "❌ ERRO: Arquivo JAR não encontrado em ~/app_temp/target/"
+              exit 1
+            fi
 
-      # ---------- Deploy Frontend (S3 + CloudFront) ----------
-      
-      - name: Deploy Frontend to S3
+      # ---------- DEPLOY FRONTEND (S3) ----------
+      - name: Deploy Frontend para S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
-          # O download-artifact mantém a estrutura. 
-          # Verifique se o caminho é dist/aluno-online ou dist/aluno-online/browser
-          aws s3 sync frontend/aluno-online/dist/aluno-online/ s3://${{ secrets.S3_BUCKET }} --delete
-          
-      - name: Invalidate CloudFront Cache
+          echo "--- Iniciando Deploy do Frontend ---"
+          # Sincroniza apenas o CONTEÚDO da pasta browser para a raiz do S3
+          aws s3 sync frontend/aluno-online/dist/aluno-online/browser/ s3://${{ secrets.S3_BUCKET }} --delete
+          echo "✅ Sincronização com S3 finalizada."
+
+      - name: Invalidação CloudFront
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
+          echo "🚀 Cache do CloudFront limpo com sucesso!"
