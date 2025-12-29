@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http'; // Necessário para o AuthService
 import { Aluno } from './aluno';
 
 describe('Aluno', () => {
@@ -8,7 +8,10 @@ describe('Aluno', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Aluno]
+      imports: [Aluno],
+      providers: [
+        provideHttpClient() // Fornece o HttpClient para o AuthService injetado no Aluno
+      ]
     })
     .compileComponents();
 

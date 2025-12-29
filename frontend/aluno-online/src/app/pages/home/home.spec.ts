@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http'; // Importação necessária
+import { provideRouter } from '@angular/router';       // Importação necessária
 import { Home } from './home';
 
 describe('Home', () => {
@@ -8,7 +9,11 @@ describe('Home', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Home]
+      imports: [Home],
+      providers: [
+        provideHttpClient(), // Resolve a dependência do AuthService
+        provideRouter([])    // Resolve a dependência do Router que você usa no novoAluno()
+      ]
     })
     .compileComponents();
 
