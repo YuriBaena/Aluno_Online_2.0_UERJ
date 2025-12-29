@@ -27,6 +27,7 @@ public class TokenService {
                 .claim("curso", aluno.getCurso())
                 .claim("email", aluno.getEmailInstitucional())
                 .claim("periodo_inicio", aluno.getPeriodoInicio())
+                .claim("role", aluno.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
