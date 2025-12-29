@@ -48,11 +48,6 @@ public class Aluno {
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    // Este campo só serve para o Hibernate criar a sequence no banco
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "matricula_seq")
-    @Column(name = "temp_sequence_trigger", insertable = false, updatable = false)
-    private Long counter;
-
     public void setSenhaHash(String senha) {
         this.senhaHash = senha;
     }
