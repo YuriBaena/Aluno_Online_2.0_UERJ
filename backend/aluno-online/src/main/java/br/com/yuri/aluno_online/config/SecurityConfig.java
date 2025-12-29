@@ -39,8 +39,8 @@ public class SecurityConfig {
             // 1. Define que a API não guardará sessões (Stateless)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/registrar").permitAll()
+                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/registrar").permitAll()
                 .anyRequest().authenticated()
             )
             // 2. Coloca o nosso filtro JWT antes do filtro padrão de autenticação do Spring

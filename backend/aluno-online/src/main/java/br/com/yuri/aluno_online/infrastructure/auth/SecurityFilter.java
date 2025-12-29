@@ -26,25 +26,18 @@ public class SecurityFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        String path = request.getRequestURI();
-        
-        // LINHA DE DEBUG: Vai aparecer no logs.txt da EC2
-        System.out.println("DEBUG - O caminho que chegou foi: " + path);
-        
-        // BYPASS: Se a URL tiver "auth", ignora o resto do filtro e passa adiante
-        if (path.contains("/auth/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String token = recuperarToken(request);
+        
         if (token != null) {
             String matricula = tokenService.validarToken(token);
+            
             if (matricula != null) {
+                // Se o token é válido, avisamos o Spring que o usuário está autenticado
                 var authentication = new UsernamePasswordAuthenticationToken(matricula, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
+        
         filterChain.doFilter(request, response);
     }
 
