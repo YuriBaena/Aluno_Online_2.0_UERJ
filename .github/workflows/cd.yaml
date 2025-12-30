@@ -1,24 +1,25 @@
 name: CD - Deploy Manual
 
 on:
-  workflow_dispatch: # Habilita exclusivamente o botão manual na aba Actions
+  workflow_dispatch: # Apenas o botão manual
 
 jobs:
   deploy:
     name: Executar Deploy para AWS
     runs-on: ubuntu-latest
+    # Segurança: Garante que o botão só funcione se a branch selecionada for a main
     if: github.ref == 'refs/heads/main'
     
     steps:
-      # 1. SEGURANÇA: Bloqueia se o CI não estiver verde
-      - name: Verificar se o CI passou
-        uses: heavens-hell/last-workflow-status-action@v1
+      # 1. VERIFICAÇÃO DE SEGURANÇA: Só continua se o CI da main estiver verde
+      - name: Verificar status do último CI
+        uses: andymckay/last-workflow-status@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow_file_name: ci.yml # Nome exato do outro arquivo de build
+          workflow: ci.yml # Nome do seu arquivo de build/teste
           branch: main
-
-      # 2. DOWNLOAD DOS ARTEFATOS (Gerados pelo CI)
+          # Se o status não for 'success', o job falha aqui mesmo
+          
+      # 2. DOWNLOAD DOS ARTEFATOS (Gerados no workflow de CI)
       - name: Download Backend Artifact
         uses: actions/download-artifact@v4
         with:
@@ -31,7 +32,7 @@ jobs:
           name: frontend-artifact
           path: frontend-dist
 
-      # 3. DEPLOY BACKEND (EC2)
+      # 3. DEPLOY BACKEND (EC2 via SCP e SSH)
       - name: Enviar JAR para EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -42,23 +43,22 @@ jobs:
           target: "~/app_temp"
           strip_components: 1
 
-      - name: Configurar e Reiniciar Backend
+      - name: Configurar e Reiniciar Backend via SSH
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "--- Iniciando Atualização do Backend ---"
+            echo "--- Atualizando Backend ---"
             mkdir -p ~/app
-            # Busca o JAR dentro da pasta temporária
             JAR_FILE=$(find ~/app_temp -name "*.jar" | head -n 1)
             
             if [ -n "$JAR_FILE" ]; then
               mv -f "$JAR_FILE" ~/app/backend.jar
               rm -rf ~/app_temp
               sudo systemctl restart backend.service
-              echo "✅ Backend reiniciado com sucesso!"
+              echo "✅ Backend atualizado e reiniciado!"
             else
               echo "❌ Erro: JAR não encontrado!"
               exit 1
@@ -71,9 +71,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
-          echo "--- Enviando Front para o S3 ---"
-          # O download-artifact extrai o conteúdo dentro de frontend-dist
-          # Sincronizamos a subpasta browser que o Angular cria
+          echo "--- Enviando Frontend para S3 ---"
+          # O sync apaga o que não está no build e sobe o novo
           aws s3 sync frontend-dist/browser/ s3://${{ secrets.S3_BUCKET }} --delete
 
       - name: Limpar Cache CloudFront
@@ -83,4 +82,4 @@ jobs:
           AWS_REGION: us-east-2
         run: |
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
-          echo "🚀 Deploy concluído com sucesso!"
+          echo "🚀 Deploy finalizado com sucesso!"
