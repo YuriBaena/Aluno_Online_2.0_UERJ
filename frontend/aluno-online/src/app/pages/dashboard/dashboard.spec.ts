@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http'; // Importe isso
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {
@@ -8,7 +8,10 @@ describe('Dashboard', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Dashboard]
+      imports: [Dashboard],
+      providers: [
+        provideHttpClient() // Adicione o provider aqui
+      ]
     })
     .compileComponents();
 

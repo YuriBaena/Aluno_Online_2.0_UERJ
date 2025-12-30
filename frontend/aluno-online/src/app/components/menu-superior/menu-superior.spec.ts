@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideHttpClient } from '@angular/common/http'; // Importe isso
 import { MenuSuperior } from './menu-superior';
 
 describe('MenuSuperior', () => {
@@ -8,7 +8,10 @@ describe('MenuSuperior', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MenuSuperior]
+      imports: [MenuSuperior],
+      providers: [
+        provideHttpClient() // Adicione o provider aqui
+      ]
     })
     .compileComponents();
 
