@@ -1,0 +1,77 @@
+<div class="dashboard-wrapper">
+  <header class="dashboard-header">
+    <div class="welcome-text">
+      <h2>Olá, {{usuario?.nome}}! 👋</h2>
+      <p>Bem-vindo ao novo portal do aluno. Veja o que há de novo hoje.</p>
+    </div>
+    
+    <div class="sync-action">
+      <button class="btn-sync" (click)="abrirModalSync()">
+        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Aluno Online
+      </button>
+
+      <div class="modal-overlay" *ngIf="exibirModalSync">
+        <div class="modal-card">
+          <header>
+            <h3>Sincronizar Dados</h3>
+            <button class="close-btn" (click)="fecharModalSync()">×</button>
+          </header>
+
+          <div class="modal-body">
+            <p>Insira suas credenciais do <strong>Portal Antigo</strong> para importar suas matérias.</p>
+            
+            <div class="input-group">
+              <label>Matrícula</label>
+              <input type="text" [(ngModel)]="syncData.matricula" placeholder="000000000">
+            </div>
+
+            <div class="input-group">
+              <label>Senha do Portal</label>
+              <input type="password" [(ngModel)]="syncData.senha" placeholder="******">
+            </div>
+          </div>
+
+          <footer>
+            <button class="btn-cancel" (click)="fecharModalSync()">Cancelar</button>
+            <button class="btn-confirm" [disabled]="loadingSync" (click)="confirmarSincronizacao()">
+              <i class="fa-solid fa-spinner fa-spin" *ngIf="loadingSync"></i>
+              {{ loadingSync ? 'Sincronizando...' : 'Confirmar Importação' }}
+            </button>
+          </footer>
+        </div>
+      </div>
+      <small *ngIf="ultimaSincronizacao">Última vez: {{ ultimaSincronizacao }}</small>
+    </div>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="icon-box blue"><i class="fa-solid fa-ranking-star"></i></div>
+      <div class="info">
+        <span>CR Geral</span>
+        <h3>8.4</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="icon-box green"><i class="fa-solid fa-book"></i></div>
+      <div class="info">
+        <span>Disciplinas Ativas</span>
+        <h3>6</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="icon-box orange"><i class="fa-solid fa-clock"></i></div>
+      <div class="info">
+        <span>Horas AC</span>
+        <h3>120/200</h3>
+      </div>
+    </div>
+  </div>
+
+  <section class="main-content">
+    <div class="content-card">
+      <h3>Grade Horária de Hoje</h3>
+      <p class="empty-state">Nenhuma aula registrada para hoje. Aproveite para estudar!</p>
+    </div>
+  </section>
+</div>
