@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Variáveis de Cores e Estilo
 $primary-blue: #004587;
 $bg-light: #f8fafc;
@@ -45,7 +47,7 @@ $warning-text: #742a2a;
         box-shadow: 0 4px 6px -1px rgba(0, 69, 135, 0.2);
 
         &:hover:not(:disabled) {
-          background: lighten($primary-blue, 10%);
+          background: color.adjust($primary-blue, $lightness: 10%);
           transform: translateY(-2px);
           box-shadow: 0 10px 15px -3px rgba(0, 69, 135, 0.3);
         }
