@@ -1,0 +1,108 @@
+$uerj-blue: #004587;
+$text-main: #334155;
+$text-muted: #64748b;
+$danger-red: #ef4444;
+
+// Container principal para controlar o posicionamento do dropdown
+.user-profile-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f8fafc;
+  }
+
+  .user-text {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+
+    .user-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: $text-main;
+      white-space: nowrap;
+    }
+
+    .user-role {
+      font-size: 0.75rem;
+      color: $text-muted;
+    }
+  }
+
+  .user-avatar {
+    width: 42px;
+    height: 42px;
+    background-color: $uerj-blue;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+}
+
+// Estilização do Menu Dropdown
+.dropdown-menu {
+  position: absolute;
+  top: 100%; // Cola logo abaixo do profile
+  right: 0;
+  margin-top: 8px;
+  min-width: 160px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  overflow: hidden; // Garante que o hover não saia do arredondamento
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+
+  .dropdown-item {
+    width: 100%;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    color: $danger-red; // Cor de destaque para o "Sair"
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #fef2f2; // Vermelho clarinho no hover
+    }
+
+    .icon {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+// Animação suave para o menu aparecer
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

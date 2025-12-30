@@ -1,0 +1,17 @@
+<div class="user-profile-container">
+  <div class="user-profile" (click)="toggleDropdown()">
+    <div class="user-text">
+      <span class="user-name">{{ usuario?.nome }}</span>
+      <span class="user-role">{{usuario?.role?.substring(5)}} - {{ usuario?.sub }}</span>
+    </div>
+    <div class="user-avatar">
+      {{ getInitials(usuario?.nome) }}
+    </div>
+  </div>
+
+  <div class="dropdown-menu" *ngIf="isDropdownOpen">
+    <button class="dropdown-item" (click)="logout()">
+      <span class="icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Sair do Sistema
+    </button>
+  </div>
+</div>

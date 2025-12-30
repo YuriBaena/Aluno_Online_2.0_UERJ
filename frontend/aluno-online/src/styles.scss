@@ -1,1 +1,17 @@
 /* You can add global styles to this file, and also import other style files */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; // Isso garante que bordas/paddings não aumentem o tamanho dos elementos
+}
+
+html, body {
+  height: 100%; // Importante para o layout ocupar a tela toda
+  width: 100%;
+  overflow-x: hidden; // Evita barras de rolagem horizontais acidentais
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased; // Deixa as fontes mais nítidas (UX)
+}
