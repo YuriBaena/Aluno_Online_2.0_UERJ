@@ -1,9 +1,11 @@
-<app-aluno></app-aluno>
+<app-menu-superior></app-menu-superior>
 
-<div *ngIf="isAdmin()" class="admin-actions">
-  <hr>
-  <label for="novo_aluno">Registrar aluno:</label>
-  <button id="novo_aluno" type="button" (click)="novoAluno()">
-    Novo
-  </button>
+<div class="main-layout">
+  
+  <app-menu-lateral></app-menu-lateral>
+
+  <main class="content-area">
+    <router-outlet></router-outlet>
+    </main>
+  
 </div>

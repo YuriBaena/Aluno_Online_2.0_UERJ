@@ -32,7 +32,9 @@
             class="toggle-password" 
             (click)="toggleSenha()"
             [attr.aria-label]="exibirSenha ? 'Esconder senha' : 'Mostrar senha'">
-            {{ exibirSenha ? 'OCULTAR' : 'MOSTRAR' }}
+            
+            <i *ngIf="!exibirSenha" class="fa-solid fa-eye"></i>
+            <i *ngIf="exibirSenha" class="fa-solid fa-eye-slash"></i>
           </button>
         </div>
       </div>

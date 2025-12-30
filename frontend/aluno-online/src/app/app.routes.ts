@@ -3,6 +3,7 @@ import { Login } from './pages/login/login';
 import { Register } from './pages/register/register';
 import { Home } from './pages/home/home';
 import { NotFound } from './pages/not-found/not-found';
+import { Dashboard } from './pages/dashboard/dashboard';
 
 // Importação dos Guardiões de Rota
 import { authGuard } from './guards/auth-guard';
@@ -30,14 +31,35 @@ export const routes: Routes = [
   /**
    * GRUPO DE ROTAS PROTEGIDAS (ALUNOS/USUÁRIOS)
    * O 'canActivateChild' aplica o authGuard em todas as rotas filhas.
-   * Basta estar logado para acessar o que estiver dentro deste children.
+   * Usamos o componente 'Home' como base para o Menu Lateral e Superior.
    */
   {
     path: '', 
     canActivateChild: [authGuard], 
     children: [
-      { path: 'home', component: Home },
-      // Adicione outras rotas de usuários logados aqui
+      { 
+        path: 'home', 
+        component: Home,
+        children: [
+          /**
+           * ROTA PADRÃO DO HOME (Dashboard)
+           * Quando o usuário acessar '/home', o Angular verá este redirecionamento
+           * e carregará o componente Dashboard dentro do router-outlet do Home.
+           */
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          
+          /**
+           * COMPONENTE DASHBOARD
+           * URL: /home/dashboard
+           */
+          { path: 'dashboard', component: Dashboard },
+
+          /**
+           * FUTURAS ROTAS FILHAS
+           * Ex: { path: 'materias', component: Materias } -> URL: /home/materias
+           */
+        ]
+      },
     ]
   },
 
