@@ -1,13 +1,17 @@
-// Variáveis de Cores
+// Variáveis de Cores e Estilo
 $primary-blue: #004587;
 $bg-light: #f8fafc;
 $white: #ffffff;
 $text-dark: #1e293b;
 $text-muted: #64748b;
 $danger: #ef4444;
+$warning-bg: #fff5f5;
+$warning-border: #feb2b2;
+$warning-text: #742a2a;
 
 .dashboard-wrapper {
   animation: fadeIn 0.4s ease-out;
+  padding: 20px;
 
   .dashboard-header {
     display: flex;
@@ -45,13 +49,7 @@ $danger: #ef4444;
           transform: translateY(-2px);
           box-shadow: 0 10px 15px -3px rgba(0, 69, 135, 0.3);
         }
-
-        &:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
       }
-
       small { color: $text-muted; font-size: 0.75rem; }
     }
   }
@@ -72,17 +70,14 @@ $danger: #ef4444;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 
       .icon-box {
-        width: 50px;
-        height: 50px;
+        width: 50px; height: 50px;
         border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         font-size: 1.5rem;
         
-        &.blue { background: #e0f2fe; }
-        &.green { background: #dcfce7; }
-        &.orange { background: #ffedd5; }
+        &.blue { background: #e0f2fe; color: #0369a1; }
+        &.green { background: #dcfce7; color: #15803d; }
+        &.orange { background: #ffedd5; color: #c2410c; }
       }
 
       .info {
@@ -97,97 +92,106 @@ $danger: #ef4444;
       background: $white;
       padding: 2rem;
       border-radius: 16px;
-      min-height: 300px;
+      min-height: 250px;
       border: 2px dashed #e2e8f0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
 
+      h3 { color: $text-dark; margin-bottom: 1rem; }
       .empty-state { color: #94a3b8; font-style: italic; }
     }
   }
 }
 
-/* --- ESTILOS DO MODAL --- */
+/* --- ESTILOS DO MODAL E AVISO --- */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: flex; justify-content: center; align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-card {
   background: white;
-  width: 90%;
-  max-width: 420px;
+  width: 95%;
+  max-width: 440px;
   border-radius: 20px;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.2rem;
 
     h3 { margin: 0; font-size: 1.25rem; color: $text-dark; }
-    
-    .btn-close {
-      background: none; border: none; font-size: 1.5rem;
-      color: $text-muted; cursor: pointer;
+    .close-btn { 
+      background: none; border: none; font-size: 1.8rem; 
+      color: $text-muted; cursor: pointer; 
       &:hover { color: $danger; }
     }
   }
 
   .modal-body {
-    .instruction { color: $text-muted; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .instruction { color: $text-muted; font-size: 0.9rem; margin-bottom: 1.2rem; }
 
     .input-group {
-      margin-bottom: 1.25rem;
-      label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: $text-dark; }
+      margin-bottom: 1rem;
+      label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: $text-dark; }
       input {
         width: 100%; padding: 0.75rem; border-radius: 8px;
-        border: 1px solid #e2e8f0; font-size: 1rem;
-        box-sizing: border-box;
+        border: 1px solid #e2e8f0; font-size: 1rem; box-sizing: border-box;
         &:focus { outline: none; border-color: $primary-blue; box-shadow: 0 0 0 3px rgba($primary-blue, 0.1); }
+      }
+    }
+
+    // Estilo do Alerta Vermelho
+    .warning-box {
+      background-color: $warning-bg;
+      border: 1px solid $warning-border;
+      border-left: 4px solid $danger;
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      gap: 12px;
+      margin-top: 1.5rem;
+
+      i { color: $danger; font-size: 1.1rem; margin-top: 2px; }
+
+      .warning-text {
+        color: $warning-text;
+        font-size: 0.8rem;
+        line-height: 1.4;
+
+        strong { display: block; margin-bottom: 2px; font-weight: 700; }
+        p { margin: 0; }
       }
     }
   }
 
   footer {
-    display: flex; gap: 12px; margin-top: 2rem;
+    display: flex; gap: 12px; margin-top: 1.5rem;
 
     button {
       flex: 1; padding: 0.75rem; border-radius: 8px;
       font-weight: 600; cursor: pointer; border: none; transition: 0.2s;
     }
 
-    .btn-cancel {
-      background: #f1f5f9; color: $text-muted;
-      &:hover { background: #e2e8f0; }
-    }
-
+    .btn-cancel { background: #f1f5f9; color: $text-muted; &:hover { background: #e2e8f0; } }
     .btn-confirm {
       background: $primary-blue; color: white;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      &:disabled { opacity: 0.7; cursor: not-allowed; }
-      &:hover:not(:disabled) { background: lighten($primary-blue, 5%); }
+      &:disabled { opacity: 0.6; cursor: not-allowed; }
     }
   }
 }
 
 /* --- ANIMAÇÕES --- */
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }

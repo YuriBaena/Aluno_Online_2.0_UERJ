@@ -18,7 +18,9 @@
           </header>
 
           <div class="modal-body">
-            <p>Insira suas credenciais do <strong>Portal Antigo</strong> para importar suas matérias.</p>
+            <p class="instruction">
+              Insira suas credenciais do <strong>Portal Antigo</strong> para importar suas matérias.
+            </p>
             
             <div class="input-group">
               <label>Matrícula</label>
@@ -28,6 +30,18 @@
             <div class="input-group">
               <label>Senha do Portal</label>
               <input type="password" [(ngModel)]="syncData.senha" placeholder="******">
+            </div>
+
+            <div class="warning-box">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <div class="warning-text">
+                <strong>Aviso de Segurança:</strong>
+                <p>
+                  Ao prosseguir, você autoriza o sistema a realizar um acesso automatizado ao seu portal. 
+                  Não armazenamos sua senha. A responsabilidade pelo compartilhamento das credenciais é 
+                  do usuário, conforme as normas da UERJ.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -40,6 +54,7 @@
           </footer>
         </div>
       </div>
+      
       <small *ngIf="ultimaSincronizacao">Última vez: {{ ultimaSincronizacao }}</small>
     </div>
   </header>
