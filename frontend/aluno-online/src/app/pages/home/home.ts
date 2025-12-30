@@ -1,13 +1,12 @@
-import { Component, OnInit } from '@angular/core'; // Importe OnInit
-import { AuthService } from '../../services/auth';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { MenuSuperior } from '../../components/menu-superior/menu-superior';
+import { MenuLateral } from '../../components/menu-lateral/menu-lateral';
 
 @Component({
   selector: 'app-home',
   standalone: true, // Certifique-se de que é standalone se estiver usando imports diretos
-  imports: [CommonModule, MenuSuperior],
+  imports: [CommonModule, MenuSuperior, MenuLateral],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

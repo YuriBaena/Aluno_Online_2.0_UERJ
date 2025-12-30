@@ -1,0 +1,132 @@
+// Variáveis de Tema
+$sidebar-bg: #1e293b; 
+$sidebar-width: 260px;
+$active-color: #3b82f6;
+$text-dim: #94a3b8;
+$text-bright: #ffffff;
+
+.sidebar {
+  width: $sidebar-width;
+  height: calc(100vh - 75px); 
+  background-color: $sidebar-bg;
+  color: $text-dim;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0;
+  border-right: 1px solid #334155;
+
+  .nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px; // Espaço para a barra não colar no texto
+
+    /* --- BARRA DE ROLAGEM DISCRETA (TEMA ESCURO) --- */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.1); // Branco bem clarinho
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background-clip: content-box;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.25); // Brilha mais no hover
+      }
+    }
+
+    /* Suporte para Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    /* ---------------------------------------------- */
+
+    .menu-section {
+      margin-bottom: 2rem;
+      
+      small {
+        padding: 0 1.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #64748b;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          padding: 0.8rem 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.2s ease;
+
+          span { 
+            font-size: 1.1rem;
+            filter: grayscale(100%); // Deixa os emojis discretos
+            opacity: 0.7;
+          }
+
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: $text-bright;
+            
+            span { 
+              filter: grayscale(0%); 
+              opacity: 1; 
+            }
+          }
+
+          &.active {
+            background-color: rgba($active-color, 0.1);
+            color: $text-bright;
+            border-left: 4px solid $active-color;
+            padding-left: calc(1.5rem - 4px);
+            font-weight: 500;
+
+            span { 
+              filter: grayscale(0%); 
+              opacity: 1; 
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .sidebar-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+    .help-btn {
+      width: 100%;
+      padding: 12px;
+      background: #334155;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #475569;
+      }
+    }
+  }
+}
