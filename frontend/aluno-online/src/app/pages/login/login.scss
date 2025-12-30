@@ -33,11 +33,13 @@ $border: #e2e8f0;
       font-size: 1.5rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
+      margin-top: 0; // Garante que não haja espaço extra no topo
     }
 
     p {
       color: $text-muted;
       font-size: 0.875rem;
+      margin: 0;
     }
   }
 }
@@ -71,28 +73,38 @@ $border: #e2e8f0;
     }
   }
 
+  // --- AJUSTE DO CONTAINER DE SENHA ---
   .password-container {
     position: relative;
     display: flex;
     align-items: center;
 
     input {
-      padding-right: 4.5rem; // Espaço para o botão
+      padding-right: 3rem; // Espaço para o ícone
     }
 
     .toggle-password {
       position: absolute;
       right: 0.75rem;
+      top: 50%;                 // Posiciona no meio da altura
+      transform: translateY(-50%); // Alinhamento vertical perfeito
       background: none;
       border: none;
-      color: $primary;
-      font-size: 0.7rem;
-      font-weight: 700;
+      color: $text-muted;       // Cor neutra para o ícone
+      font-size: 1.1rem;        // Tamanho ideal para ícones de olho
       cursor: pointer;
       padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
       
       &:hover {
-        color: $primary-hover;
+        color: $primary;        // Muda para azul no hover
+      }
+
+      &:focus {
+        outline: none;
       }
     }
   }
@@ -119,9 +131,14 @@ $border: #e2e8f0;
     text-align: center;
     margin-top: 1.5rem;
 
+    p {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
     a {
       color: $primary;
-      font-size: 0.875rem;
+      font-weight: 600;
       text-decoration: none;
 
       &:hover {
