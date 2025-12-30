@@ -2,9 +2,10 @@ name: CI/CD Pipeline Fullstack
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]         # Roda testes em todas as branches
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]         # Roda testes em todos os PRs
+  workflow_dispatch:           # Habilita o botão de Deploy Manual no GitHub
 
 jobs:
   # =========================
@@ -76,13 +77,14 @@ jobs:
             frontend/aluno-online/dist/aluno-online/
 
   # =========================
-  # Deploy
+  # Deploy (MANUAL)
   # =========================
   deploy:
     name: Deploy Fullstack
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # SÓ EXECUTA se você for na aba Actions e clicar no botão "Run Workflow" na branch main
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
