@@ -14,7 +14,7 @@
         <div class="modal-card">
           <header>
             <h3>Sincronizar Dados</h3>
-            <button class="close-btn" (click)="fecharModalSync()">×</button>
+            <button class="close-btn" (click)="fecharModalSync()" [disabled]="loadingSync">×</button>
           </header>
 
           <div class="modal-body">
@@ -24,29 +24,42 @@
             
             <div class="input-group">
               <label>Matrícula</label>
-              <input type="text" [(ngModel)]="syncData.matricula" placeholder="000000000">
+              <input type="text" [(ngModel)]="syncData.matricula" [disabled]="loadingSync" placeholder="000000000">
             </div>
 
             <div class="input-group">
               <label>Senha do Portal</label>
-              <input type="password" [(ngModel)]="syncData.senha" placeholder="******">
+              <input type="password" [(ngModel)]="syncData.senha" [disabled]="loadingSync" placeholder="******">
             </div>
 
-            <div class="warning-box">
+            <div class="warning-box" *ngIf="!loadingSync">
               <i class="fa-solid fa-triangle-exclamation"></i>
               <div class="warning-text">
                 <strong>Aviso de Segurança:</strong>
                 <p>
                   Ao prosseguir, você autoriza o sistema a realizar um acesso automatizado ao seu portal. 
-                  Não armazenamos sua senha. A responsabilidade pelo compartilhamento das credenciais é 
-                  do usuário, conforme as normas da UERJ.
+                  Não armazenamos sua senha.
                 </p>
+              </div>
+            </div>
+
+            <div class="loading-state" *ngIf="loadingSync">
+              <div class="loader-content">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <div class="loader-text">
+                  <strong>Sincronização em andamento...</strong>
+                  <p>Isso pode levar de 1 a 7 minutos. Por favor, não feche esta janela ou recarregue a página.</p>
+                </div>
+              </div>
+              
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill"></div>
               </div>
             </div>
           </div>
 
           <footer>
-            <button class="btn-cancel" (click)="fecharModalSync()">Cancelar</button>
+            <button class="btn-cancel" [disabled]="loadingSync" (click)="fecharModalSync()">Cancelar</button>
             <button class="btn-confirm" [disabled]="loadingSync" (click)="confirmarSincronizacao()">
               <i class="fa-solid fa-spinner fa-spin" *ngIf="loadingSync"></i>
               {{ loadingSync ? 'Sincronizando...' : 'Confirmar Importação' }}

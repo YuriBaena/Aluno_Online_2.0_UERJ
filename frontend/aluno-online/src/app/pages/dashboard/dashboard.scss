@@ -1,6 +1,6 @@
 @use "sass:color";
 
-// Variáveis de Cores e Estilo
+// Variáveis
 $primary-blue: #004587;
 $bg-light: #f8fafc;
 $white: #ffffff;
@@ -10,6 +10,8 @@ $danger: #ef4444;
 $warning-bg: #fff5f5;
 $warning-border: #feb2b2;
 $warning-text: #742a2a;
+$loader-blue-bg: #f0f7ff;
+$loader-blue-border: #d0e3ff;
 
 .dashboard-wrapper {
   animation: fadeIn 0.4s ease-out;
@@ -105,7 +107,7 @@ $warning-text: #742a2a;
   }
 }
 
-/* --- ESTILOS DO MODAL E AVISO --- */
+/* --- ESTILOS DO MODAL E ESTADOS --- */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -133,7 +135,8 @@ $warning-text: #742a2a;
     .close-btn { 
       background: none; border: none; font-size: 1.8rem; 
       color: $text-muted; cursor: pointer; 
-      &:hover { color: $danger; }
+      &:disabled { opacity: 0.3; cursor: not-allowed; }
+      &:hover:not(:disabled) { color: $danger; }
     }
   }
 
@@ -146,43 +149,63 @@ $warning-text: #742a2a;
       input {
         width: 100%; padding: 0.75rem; border-radius: 8px;
         border: 1px solid #e2e8f0; font-size: 1rem; box-sizing: border-box;
+        &:disabled { background: #f8fafc; color: #94a3b8; }
         &:focus { outline: none; border-color: $primary-blue; box-shadow: 0 0 0 3px rgba($primary-blue, 0.1); }
       }
     }
 
-    // Estilo do Alerta Vermelho
     .warning-box {
       background-color: $warning-bg;
       border: 1px solid $warning-border;
       border-left: 4px solid $danger;
       padding: 12px;
       border-radius: 8px;
-      display: flex;
-      gap: 12px;
-      margin-top: 1.5rem;
-
+      display: flex; gap: 12px; margin-top: 1.5rem;
       i { color: $danger; font-size: 1.1rem; margin-top: 2px; }
-
       .warning-text {
-        color: $warning-text;
-        font-size: 0.8rem;
-        line-height: 1.4;
-
+        color: $warning-text; font-size: 0.8rem; line-height: 1.4;
         strong { display: block; margin-bottom: 2px; font-weight: 700; }
         p { margin: 0; }
+      }
+    }
+
+    // Estilo da Sincronização em Andamento
+    .loading-state {
+      margin-top: 1.5rem;
+      padding: 15px;
+      background-color: $loader-blue-bg;
+      border: 1px solid $loader-blue-border;
+      border-radius: 8px;
+      display: flex; flex-direction: column; gap: 12px;
+      animation: fadeIn 0.3s ease-in;
+
+      .loader-content {
+        display: flex; align-items: center; gap: 15px;
+        i { font-size: 1.4rem; color: $primary-blue; }
+        .loader-text {
+          strong { display: block; color: color.adjust($primary-blue, $lightness: -10%); font-size: 0.9rem; }
+          p { margin: 0; font-size: 0.8rem; color: $text-muted; }
+        }
+      }
+
+      .progress-bar-container {
+        height: 4px; background: #e2e8f0; border-radius: 2px;
+        overflow: hidden; position: relative;
+        .progress-bar-fill {
+          width: 40%; height: 100%; background: $primary-blue;
+          position: absolute; animation: progressMove 1.5s infinite linear;
+        }
       }
     }
   }
 
   footer {
     display: flex; gap: 12px; margin-top: 1.5rem;
-
     button {
       flex: 1; padding: 0.75rem; border-radius: 8px;
       font-weight: 600; cursor: pointer; border: none; transition: 0.2s;
     }
-
-    .btn-cancel { background: #f1f5f9; color: $text-muted; &:hover { background: #e2e8f0; } }
+    .btn-cancel { background: #f1f5f9; color: $text-muted; &:disabled { opacity: 0.5; } &:hover:not(:disabled) { background: #e2e8f0; } }
     .btn-confirm {
       background: $primary-blue; color: white;
       display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -196,4 +219,8 @@ $warning-text: #742a2a;
 @keyframes modalSlideUp {
   from { opacity: 0; transform: translateY(30px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes progressMove {
+  0% { left: -40%; }
+  100% { left: 100%; }
 }

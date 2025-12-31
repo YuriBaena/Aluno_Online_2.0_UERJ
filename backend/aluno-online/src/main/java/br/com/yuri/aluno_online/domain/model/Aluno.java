@@ -9,7 +9,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "aluno")
-@SequenceGenerator(name = "matricula_seq", sequenceName = "aluno_matricula_seq", allocationSize = 1)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,11 +18,11 @@ public class Aluno {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(updatable = false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(length = 50, nullable = false) 
     private Role role;
 
     @Column(nullable = false)
@@ -32,23 +31,25 @@ public class Aluno {
     @Column(unique = true, nullable = false)
     private Long matricula;
 
-    @Column
-    private String curso;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_curso", foreignKey = @ForeignKey(name = "fk_aluno_curso"))
+    private Curso curso;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status_matricula")
+    @Column(name = "status_matricula", nullable = false)
     private StatusMatricula statusMatricula;
 
     @Column(name = "email_institucional", unique = true, nullable = false)
     private String emailInstitucional;
 
     @Column(name = "periodo_inicio")
-    private String periodoInicio; 
+    private String periodoInicio;
 
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    public void setSenhaHash(String senha) {
-        this.senhaHash = senha;
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
     }
+
 }
