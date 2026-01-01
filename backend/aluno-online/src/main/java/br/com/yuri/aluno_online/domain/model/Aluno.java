@@ -5,6 +5,12 @@ import br.com.yuri.aluno_online.domain.enums.Role;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -14,7 +20,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Aluno {
+public class Aluno implements UserDetails { // 1. Implementar UserDetails
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,4 +58,46 @@ public class Aluno {
         this.senhaHash = senhaHash;
     }
 
+    // ======================================================
+    // MÉTODOS OBRIGATÓRIOS DO USERDETAILS
+    // ======================================================
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Retorna a role do aluno (ex: ROLE_ALUNO, ROLE_ADMIN)
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return this.senhaHash;
+    }
+
+    @Override
+    public String getUsername() {
+        // O username para o Spring será o e-mail institucional
+        return this.emailInstitucional;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Conta nunca expira
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        // Se no futuro você quiser bloquear alunos inativos, use:
+        // return this.statusMatricula != StatusMatricula.Inativo;
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Senha nunca expira
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // Conta habilitada
+    }
 }

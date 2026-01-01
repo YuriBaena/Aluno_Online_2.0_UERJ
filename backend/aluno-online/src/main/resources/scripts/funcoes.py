@@ -61,23 +61,29 @@ def gerar_sql_aluno(matricula, nome, curso):
 
 def abrir():
     print("LOG: Abrindo navegador...", flush=True)
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get("https://www.alunoonline.uerj.br/")
-    driver.implicitly_wait(10)
-    return driver
+    try:
+        options = Options()
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver.get("https://www.alunoonline.uerj.br/")
+        driver.implicitly_wait(5)
+        return driver
+    except:
+        raise Exception("Falha na conexão para scrapping")
 
 def entrar(driver, login, senha):
     print(f"LOG: Tentando logar com {login}...", flush=True)
-    perto = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody')
-    perto.find_element(By.XPATH, ".//tr[2]/td[2]/input").send_keys(login)
-    driver.find_element(By.XPATH, ".//tr[3]/td[2]/input").send_keys(senha)
-    driver.find_element(By.XPATH, './/tr[4]/td/button').click()
-    WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, '/html/body/table/tbody/tr[1]/td/div/div[2]/div[1]/font')))
-    print("LOG: Login efetuado com sucesso.", flush=True)
+    try:
+        perto = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody')
+        perto.find_element(By.XPATH, ".//tr[2]/td[2]/input").send_keys(login)
+        driver.find_element(By.XPATH, ".//tr[3]/td[2]/input").send_keys(senha)
+        driver.find_element(By.XPATH, './/tr[4]/td/button').click()
+        WebDriverWait(driver, 7).until(EC.visibility_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[3]/a')))
+        print("LOG: Login efetuado com sucesso.", flush=True)
+    except:
+        raise Exception("Informações para login inválidas.")
 
 def coletaDadosPessoais(driver):
     print("LOG: Coletando dados pessoais...", flush=True)

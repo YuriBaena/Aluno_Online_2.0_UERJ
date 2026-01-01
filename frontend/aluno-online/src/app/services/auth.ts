@@ -4,9 +4,14 @@ import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 
-// Definimos a estrutura do seu usuário para todo o app
+/**
+ * Interface que representa os dados contidos no Payload do JWT.
+ * sub: ID único (UUID) do aluno no banco de dados.
+ * matricula: Número da matrícula (pode mudar via scraper, por isso não é o 'sub').
+ */
 export interface UsuarioToken {
-  sub: string;
+  sub: string;           // UUID do Aluno
+  matricula: number;     // Matrícula atual
   nome: string;
   email: string;
   periodo_inicio: string;
@@ -18,6 +23,10 @@ export class AuthService {
   private http = inject(HttpClient);
   private readonly API = `${environment.apiUrl}/auth`;
 
+  /**
+   * Realiza o login enviando as credenciais iniciais.
+   * O backend deve retornar um token cujo 'subject' é o UUID do aluno.
+   */
   login(matricula: string, senha: string) {
     return this.http.post<{ token: string }>(`${this.API}/login`, { matricula, senha }).pipe(
       tap(res => {
@@ -26,13 +35,16 @@ export class AuthService {
     );
   }
 
+  /**
+   * Realiza o cadastro de um novo aluno.
+   */
   registrar(aluno: any) {
     return this.http.post(`${this.API}/registrar`, aluno);
   }
 
   /**
    * Pega o usuário decodificado do localStorage.
-   * Centraliza a lógica de extração das 5 propriedades.
+   * Agora mapeia corretamente o UUID (sub) e a Matrícula (claim extra).
    */
   getUsuario(): UsuarioToken | null {
     const token = localStorage.getItem('token');
@@ -40,8 +52,10 @@ export class AuthService {
 
     try {
       const decoded: any = jwtDecode(token);
+      
       return {
-        sub: decoded.sub,
+        sub: decoded.sub,                   // O UUID vindo do Java
+        matricula: decoded.matricula,       // A claim extra que adicionamos
         nome: decoded.nome,
         email: decoded.email,
         periodo_inicio: decoded.periodo_inicio,
@@ -49,17 +63,25 @@ export class AuthService {
       };
     } catch (error) {
       console.error('Token inválido ou mal formatado', error);
+      this.logout(); // Limpa o lixo se o token estiver corrompido
       return null;
     }
   }
 
   /**
-   * Método rápido para verificar se é Admin.
-   * Facilita o uso em Guards e templates HTML.
+   * Verifica se o usuário tem permissão de administrador.
    */
   isAdmin(): boolean {
     const usuario = this.getUsuario();
-    return usuario?.role === 'ROLE_ADMIN';
+    // Verifica se a role contém ADMIN (ajuste conforme seu Enum no Java)
+    return usuario?.role === 'ROLE_ADMIN' || usuario?.role === 'ADMIN';
+  }
+
+  /**
+   * Verifica se existe um token guardado.
+   */
+  isAutenticado(): boolean {
+    return !!localStorage.getItem('token');
   }
 
   /**

@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UsuarioToken } from '../../services/auth';
 import { SincronizaService } from '../../services/sincroniza';
+import { interval, Subscription, switchMap, takeWhile } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,26 +12,41 @@ import { SincronizaService } from '../../services/sincroniza';
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
-export class Dashboard implements OnInit{
-  // Dados do Usuário
-  usuario: UsuarioToken | null = null; 
-  ultimaSincronizacao = '30/12/2025 às 10:20';
+export class Dashboard implements OnInit, OnDestroy {
+  usuario: UsuarioToken | null = null;
+  ultimaSincronizacao: string | null = null;
 
-  // Controle do Modal e Loading
   exibirModalSync = false;
   loadingSync = false;
+  
+  mensagemErro: string | null = null;
+  mensagemSucesso: string | null = null;
+  statusTexto: string = 'Iniciando...'; // Para mostrar o que o back-end está fazendo
 
-  // Objeto para os campos do formulário
-  syncData = {
-    matricula: '',
-    senha: ''
-  };
+  syncData = { matricula: '', senha: '' };
+
+  termosAceitos = false;
+  mostrarDetalhes = false;
+  
+  private statusSubscription?: Subscription;
 
   constructor(private service: AuthService, private sincronizaService: SincronizaService) {}
 
   ngOnInit(): void {
-    // Pega o nome do usuário do serviço AuthService
     this.usuario = this.service.getUsuario();
+    this.carregarUltimaSinc();
+  }
+
+  carregarUltimaSinc() {
+    this.sincronizaService.getUltimaSincronizacao().subscribe({
+      next: (data) => {
+        this.ultimaSincronizacao = data ? new Date(data).toLocaleString('pt-BR') : 'Nunca';
+      },
+      error: () => this.ultimaSincronizacao = 'Nunca'
+    });
+  }
+  ngOnDestroy(): void {
+    this.pararVerificacao();
   }
 
   abrirModalSync() {
@@ -38,51 +54,96 @@ export class Dashboard implements OnInit{
   }
 
   fecharModalSync() {
-    if (!this.loadingSync) {
+    if (this.loadingSync) {
       this.exibirModalSync = false;
-      this.syncData = { matricula: '', senha: '' }; // Limpa os campos
+    } else {
+      this.exibirModalSync = false;
+      this.syncData = { matricula: '', senha: '' };
+      this.mensagemErro = null;
+      this.mensagemSucesso = null;
+      
+      // ADICIONE ESTAS LINHAS PARA RESETAR O ESTADO:
+      this.termosAceitos = false;
+      this.mostrarDetalhes = false;
     }
   }
 
   confirmarSincronizacao() {
-    // 1. Validações iniciais (mantidas)
+    this.mensagemErro = null;
+    this.mensagemSucesso = null;
+
+    if (!this.termosAceitos) {
+      this.mensagemErro = 'Você precisa aceitar os termos para prosseguir.';
+      return;
+    }
+
     if (!this.syncData.matricula || !this.syncData.senha) {
-      alert('Por favor, preencha a matrícula e a senha do portal antigo.');
+      this.mensagemErro = 'Preencha todos os campos.';
       return;
     }
 
-    const matriculaValida = /^\d{12}$/.test(this.syncData.matricula);
-    if (!matriculaValida) {
-      alert('A matrícula deve conter exatamente 12 números.');
-      return;
-    }
-
-    // 2. Inicia o estado de carregamento
     this.loadingSync = true;
+    this.statusTexto = 'Enviando credenciais...';
 
-    // 3. Prepara o DTO (Mapeando matricula -> login para o Java)
-    const dadosParaEnvio = {
+    // 1. Chama o serviço para iniciar
+    this.sincronizaService.sincronizaDados({
       login: this.syncData.matricula,
       senha: this.syncData.senha
-    };
-
-    // 4. Chama o serviço
-    this.sincronizaService.sincronizaDados(dadosParaEnvio).subscribe({
-      next: (res) => {
-        // Sucesso: Resposta do ResponseEntity.ok()
-        this.loadingSync = false;
-        alert(res.message || 'Sincronização realizada com sucesso!');
-        this.fecharModalSync();
-        
-        // Opcional: Atualizar a data da última sincronização na tela
-        const agora = new Date();
-        this.ultimaSincronizacao = agora.toLocaleString('pt-BR');
+    }).subscribe({
+      next: () => {
+        // 2. Se o início deu certo, começa a monitorar o andamento
+        this.iniciarAcompanhamento();
       },
-      error: (msgErro) => {
-        // Erro: Mapeado pelo catchError do service (401, 503, etc)
+      error: (err) => {
         this.loadingSync = false;
-        alert(msgErro); // Mostra a mensagem amigável: "Senha incorreta", "Portal UERJ fora", etc.
+        this.mensagemErro = err;
       }
     });
+  }
+
+  iniciarAcompanhamento() {
+    this.statusTexto = 'Sincronizando dados do portal...';
+    
+    // Cancela qualquer subscrição anterior por segurança
+    this.pararVerificacao();
+
+    // 3. Polling: Verifica a cada 10 segundos
+    this.statusSubscription = interval(10000).pipe(
+      switchMap(() => this.sincronizaService.verificarStatus()),
+      // Para o loop quando loadingSync for false (definido no next ou error)
+      takeWhile(() => this.loadingSync)
+    ).subscribe({
+      next: (res: any) => {
+        // Exemplo de resposta: { status: 'COMPLETO' | 'PROCESSANDO' | 'ERRO', message: '...' }
+        this.statusTexto = res.status_sinc || 'Sincronizando...';
+
+        if (res.status_sinc === 'COMPLETO') {
+          this.finalizarSucesso(res.detalhes);
+        } else if (res.status_sinc === 'ERRO') {
+          this.finalizarErro(res.detalhes);
+        }
+      },
+      error: (err) => this.finalizarErro('Falha ao verificar status.'+err.message)
+    });
+  }
+
+  private finalizarSucesso(msg: string) {
+    this.loadingSync = false;
+    this.mensagemSucesso = msg || 'Sincronização concluída!';
+    this.ultimaSincronizacao = new Date().toLocaleString('pt-BR');
+    this.pararVerificacao();
+    setTimeout(() => { if (!this.exibirModalSync) return; this.fecharModalSync(); }, 4000);
+  }
+
+  private finalizarErro(msg: string) {
+    this.loadingSync = false;
+    this.mensagemErro = msg;
+    this.pararVerificacao();
+  }
+
+  private pararVerificacao() {
+    if (this.statusSubscription) {
+      this.statusSubscription.unsubscribe();
+    }
   }
 }

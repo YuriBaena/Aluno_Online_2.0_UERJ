@@ -1,9 +1,8 @@
 package br.com.yuri.aluno_online.application.sync;
 
+import br.com.yuri.aluno_online.domain.enums.StatusSincronizacao;
 import br.com.yuri.aluno_online.infrastructure.repository.ScraperRepository;
-import br.com.yuri.aluno_online.infrastructure.exception.LoginInvalidoException;
-import br.com.yuri.aluno_online.infrastructure.exception.PortalIndisponivelException;
-import br.com.yuri.aluno_online.infrastructure.exception.IntegrationException;
+import br.com.yuri.aluno_online.infrastructure.exception.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -13,8 +12,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.Map;
+import java.util.Arrays;
 
 @Service
 public class ScraperService {
@@ -22,29 +23,29 @@ public class ScraperService {
     private final ScraperRepository scraperRepository;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public ScraperService(ScraperRepository scraperRepository) {
-        this.scraperRepository = scraperRepository;
-    }
-
     @Value("${scraping.python.path:python3}")
     private String pythonExecutable;
 
     @Value("${scraping.script.path:src/main/resources/scripts/main.py}")
     private String scriptPath;
 
+    public ScraperService(ScraperRepository scraperRepository) {
+        this.scraperRepository = scraperRepository;
+    }
+
     /**
-     * O método agora é @Async. Ele não deve ter @Transactional aqui 
-     * para não segurar uma conexão com o banco durante o tempo de execução do Python.
+     * Inicia a sincronização de forma assíncrona.
+     * O idAluno é necessário para vincular os logs ao registro correto na tabela.
      */
     @Async
-    public void executarSincronizacao(String login, String senha) {
-        try {
-            List<String> command = new ArrayList<>();
-            command.add(pythonExecutable);
-            command.add(scriptPath);
-            command.add(login);
-            command.add(senha);
+    public void executarSincronizacao(UUID idAluno, String login, String senha) {
+        // 1. Cria o registro inicial no banco de dados para rastreamento
+        scraperRepository.criarSincronizacao(idAluno);
+        logConsole("SISTEMA", "Iniciando thread de sincronização para o aluno ID: " + idAluno);
 
+        try {
+            // Preparação do comando para o processo Python
+            List<String> command = Arrays.asList(pythonExecutable, scriptPath, login, senha);
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
 
@@ -54,74 +55,97 @@ public class ScraperService {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    
-                    // 1. Captura de Progresso
+
+                    // A) CAPTURA E TRATAMENTO DE LOGS
                     if (line.startsWith("LOG: ")) {
-                        String logMessage = line.substring(5);
-                        logConsole("SCRAPER-LOG", logMessage);
-                        tratarErrosPython(logMessage);
+                        String message = line.substring(5);
+                        logConsole("PYTHON", message);
+
+                        // Mapeamento de logs para suas Exceptions personalizadas
+                        if (message.toLowerCase().contains("login") || message.toLowerCase().contains("inválidas")) {
+                            throw new LoginInvalidoException();
+                        }
+                        
+                        if (message.toLowerCase().contains("conexão") || message.toLowerCase().contains("scrapping")) {
+                            throw new PortalIndisponivelException();
+                        }
+
+                        if (message.toLowerCase().contains("coleta") || message.toLowerCase().contains("dados")) {
+                            throw new IntegrationException("Erro técnico no motor de busca: " + message);
+                        }
+
+                        // Se não for erro, atualiza o progresso no banco
+                        scraperRepository.atualizarStatus(idAluno, StatusSincronizacao.PROCESSANDO, message);
                         continue;
                     }
 
-                    // 2. Controle de Fluxo SQL
-                    if (line.equals("SQL_START")) {
-                        isSqlBlock = true;
-                        continue;
-                    }
-                    if (line.equals("SQL_END")) {
-                        isSqlBlock = false;
-                        continue;
-                    }
+                    // B) PROCESSAMENTO DE SQL (Apenas se não houver erro)
+                    if (line.equals("SQL_START")) { isSqlBlock = true; continue; }
+                    if (line.equals("SQL_END")) { isSqlBlock = false; continue; }
 
-                    // 3. Execução SQL (Delegada para método transacional)
                     if (isSqlBlock && !line.trim().isEmpty()) {
                         processarLinhaSql(line);
                     }
                 }
             }
 
+            // Aguarda a finalização do processo
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                logError("SISTEMA", "Falha técnica. Exit Code: " + exitCode);
-            } else {
+            
+            if (exitCode == 0) {
+                scraperRepository.atualizarStatus(idAluno, StatusSincronizacao.COMPLETO, "Dados sincronizados com sucesso.");
                 logConsole("SISTEMA", "Sincronização finalizada com sucesso.");
+            } else {
+                throw new IntegrationException("O processo encerrou com código de saída: " + exitCode);
             }
 
+        } catch (LoginInvalidoException e) {
+            tratarErroSincronizacao(idAluno, e.getMessage());
+        } catch (PortalIndisponivelException e) {
+            tratarErroSincronizacao(idAluno, e.getMessage());
+        } catch (IntegrationException e) {
+            tratarErroSincronizacao(idAluno, "Erro de Integração: " + e.getMessage());
         } catch (Exception e) {
-            logError("CRITICAL-ERROR", e.getMessage());
-            // Nota: Em métodos @Async, exceptions não sobem para o Controller.
-            // O ideal aqui seria atualizar um status no banco de dados.
+            tratarErroSincronizacao(idAluno, "Erro Crítico Inesperado: " + e.getMessage());
         }
     }
 
     /**
-     * Abre uma transação curta apenas para executar o comando SQL.
-     * Isso resolve o erro de "Connection closed" por timeout.
+     * Centraliza a atualização de erro no repositório e log de erro
+     */
+    private void tratarErroSincronizacao(UUID idAluno, String mensagem) {
+        logError("SYNC_ERROR", mensagem);
+        scraperRepository.atualizarStatus(idAluno, StatusSincronizacao.ERRO, mensagem);
+        
+        // Opcional: Aqui você poderia disparar um alerta ou notificação push
+    }
+
+    /**
+     * Executa o SQL em uma transação isolada para evitar timeouts de conexão
      */
     @Transactional(rollbackFor = Exception.class)
     public void processarLinhaSql(String sql) {
         try {
             scraperRepository.executarComandoSql(sql);
         } catch (Exception e) {
-            logError("ERRO DB", "Falha no SQL gerado: " + sql);
-            throw new IntegrationException("Erro ao persistir dados: " + e.getMessage());
+            logError("DB-SYNC", "Erro ao executar SQL: " + sql);
+            // Não relançamos a exceção aqui para não matar o processo Python, 
+            // mas logamos o erro no banco.
         }
     }
 
-    private void tratarErrosPython(String message) {
-        String lowerMessage = message.toLowerCase();
-        boolean indicativoErro = lowerMessage.contains("erro") || lowerMessage.contains("falha") || lowerMessage.contains("inválid");
-
-        if (indicativoErro) {
-            if (lowerMessage.contains("login") || lowerMessage.contains("senha") || lowerMessage.contains("autenticação")) {
-                throw new LoginInvalidoException();
-            }
-            if (lowerMessage.contains("timeout") || lowerMessage.contains("indisponível") || lowerMessage.contains("fora do ar")) {
-                throw new PortalIndisponivelException();
-            }
-            throw new IntegrationException("Erro no scraper: " + message);
-        }
+    /**
+     * Chamado pelo Controller para responder ao Angular (Polling)
+     */
+    public Map<String, Object> obterStatusSincronizacao(UUID id_aluno) {
+        return scraperRepository.obterStatusCompleto(id_aluno);
     }
+
+    public String buscarUltimaDataPorId(UUID idAluno) {
+        return scraperRepository.buscarUltimaDataPorId(idAluno);
+    }
+
+    // --- MÉTODOS DE LOG PARA O CONSOLE DO SPRING ---
 
     private void logConsole(String tag, String message) {
         String timestamp = LocalDateTime.now().format(DATE_FORMAT);

@@ -21,7 +21,10 @@ def funcaoPrincipal(login, senha):
         print("LOG: Sincronização concluída com sucesso.", flush=True)
 
     except Exception as e:
-        print(f"LOG: Erro inesperado: {str(e)}", flush=True)
+        if("conexão" in str(e) or "login" in str(e)):
+            print(f"LOG: Erro inesperado: {str(e)}", flush=True)
+        else:
+            print("LOG: Erro inesperado: Falha na coleta de dados", flush=True)
     finally:
         if driver:
             driver.quit()

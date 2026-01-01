@@ -41,6 +41,15 @@ CREATE TYPE dia_semana_enum AS ENUM (
     'Domingo'
 );
 
+-- Status de sincronização (usado em tabela de sync)
+DROP TYPE IF EXISTS status_sinc_enum CASCADE;
+CREATE TYPE status_sinc_enum AS ENUM (
+    'PENDENTE',
+    'PROCESSANDO',
+    'COMPLETO',
+    'ERRO'
+);
+
 
 -- ======================================================
 -- 2. TABELA CURSO
@@ -222,7 +231,23 @@ CREATE TABLE IF NOT EXISTS historico (
 
 
 -- ======================================================
--- 10. ÍNDICES
+-- 10. TABELA SINCRONIZAÇÃO
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS sincronizacao (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_aluno UUID NOT NULL,
+    data_inicio TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMPTZ,
+    status_sinc status_sinc_enum NOT NULL DEFAULT 'PENDENTE', -- Tipo alterado aqui
+    detalhes TEXT,
+    
+    CONSTRAINT fk_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE
+);
+
+
+-- ======================================================
+-- 11. ÍNDICES
 -- ======================================================
 
 -- Busca por similaridade de nomes (Python + fuzzy search)
@@ -234,3 +259,21 @@ CREATE INDEX IF NOT EXISTS idx_historico_aluno
 
 CREATE INDEX IF NOT EXISTS idx_disciplina_nome
     ON disciplina (nome);
+
+
+-- ======================================================
+-- 12. VIEWS (VISÕES)
+-- ======================================================
+
+-- View para obter o status da sincronização MAIS RECENTE de cada aluno
+-- O comando DISTINCT ON (id_aluno) garante que apenas a última linha 
+-- (baseada na data_inicio DESC) seja retornada para cada UUID.
+CREATE OR REPLACE VIEW v_status_sincronizacao_atual AS
+SELECT DISTINCT ON (id_aluno)
+    id_aluno,
+    status_sinc,
+    detalhes,
+    data_inicio,
+    data_fim
+FROM sincronizacao
+ORDER BY id_aluno, data_inicio DESC;
