@@ -146,6 +146,9 @@ jobs:
 
             # Procura o requirements.txt
             find ~/app_temp -name "requirements.txt" -exec cp {} ~/app/scripts/requirements.txt \;
+            # Procura o *.py
+            find ~/app_temp -name "*.py" -exec cp {} ~/app/scripts/ \;
+            
 
             echo "--- 🐍 Configurando Python ---"
 
