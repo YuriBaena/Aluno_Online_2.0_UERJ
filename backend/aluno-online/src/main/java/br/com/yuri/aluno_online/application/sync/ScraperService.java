@@ -62,7 +62,7 @@ public class ScraperService {
                         logConsole("PYTHON", message);
 
                         // Mapeamento de logs para suas Exceptions personalizadas
-                        if (message.toLowerCase().contains("login") || message.toLowerCase().contains("inválidas")) {
+                        if (message.toLowerCase().contains("login inválidas")) {
                             throw new LoginInvalidoException();
                         }
                         
