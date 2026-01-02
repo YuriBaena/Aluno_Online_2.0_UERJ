@@ -143,8 +143,7 @@ jobs:
 
             mv -f ~/app_temp/target/*.jar ~/app/backend.jar
 
-            cp -r ~/app_temp/main/resources/scripts/* ~/app/scripts/
-            chmod +x ~/app/scripts/*.py
+            cp -r ~/app_temp/scripts/requirements.txt ~/app/scripts/requirements.txt
 
             echo "--- 🐍 Configurando Python ---"
 
