@@ -56,6 +56,8 @@ public class ScraperService {
                 String line;
                 while ((line = reader.readLine()) != null) {
 
+                    logConsole("Tudo", line);
+
                     // A) CAPTURA E TRATAMENTO DE LOGS
                     if (line.startsWith("LOG: ")) {
                         String message = line.substring(5);
