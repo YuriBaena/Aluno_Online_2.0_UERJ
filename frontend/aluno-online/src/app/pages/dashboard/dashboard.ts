@@ -123,7 +123,7 @@ export class Dashboard implements OnInit, OnDestroy {
           this.finalizarErro(res.detalhes);
         }
       },
-      error: (err) => this.finalizarErro('Falha ao verificar status.'+err.message)
+      error: (err) => this.finalizarErro('Falha ao verificar status.')
     });
   }
 
