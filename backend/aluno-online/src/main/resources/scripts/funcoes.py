@@ -66,6 +66,13 @@ def abrir():
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
+        # --- NOVAS OTIMIZAÇÕES ---
+        options.page_load_strategy = 'eager'
+        options.add_argument("--blink-settings=imagesEnabled=false") # Desabilita imagens
+        options.add_argument("--disable-extensions")
+        options.add_argument("--no-first-run")
+        options.add_argument("--page-load-strategy=eager") # Não espera carregar scripts/ads chatos
+
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         driver.get("https://www.alunoonline.uerj.br/")
         driver.implicitly_wait(5)
