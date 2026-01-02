@@ -23,6 +23,9 @@ jobs:
           java-version: '21'
       - name: Run Backend Tests
         working-directory: backend/aluno-online
+        env:
+          SCRAPING_PYTHON_PATH: ${{ secrets.SCRAPING_PYTHON_PATH }}
+          SCRAPING_SCRIPT_PATH: ${{ secrets.SCRAPING_SCRIPT_PATH }}
         run: mvn test -Dspring.profiles.active=test
 
   test_frontend:
