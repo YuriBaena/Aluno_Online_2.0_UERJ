@@ -23,10 +23,10 @@ public class ScraperService {
     private final ScraperRepository scraperRepository;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Value("${scraping.python.path:python3}")
+    @Value("${scraping.python.path}")
     private String pythonExecutable;
 
-    @Value("${scraping.script.path:src/main/resources/scripts/main.py}")
+    @Value("${scraping.script.path}")
     private String scriptPath;
 
     public ScraperService(ScraperRepository scraperRepository) {
