@@ -5,25 +5,30 @@ import br.com.yuri.aluno_online.domain.enums.Role;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "aluno")
-@SequenceGenerator(name = "matricula_seq", sequenceName = "aluno_matricula_seq", allocationSize = 1)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Aluno {
+public class Aluno implements UserDetails { // 1. Implementar UserDetails
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(updatable = false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(length = 50, nullable = false) 
     private Role role;
 
     @Column(nullable = false)
@@ -32,23 +37,67 @@ public class Aluno {
     @Column(unique = true, nullable = false)
     private Long matricula;
 
-    @Column
-    private String curso;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_curso", foreignKey = @ForeignKey(name = "fk_aluno_curso"))
+    private Curso curso;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status_matricula")
+    @Column(name = "status_matricula", nullable = false)
     private StatusMatricula statusMatricula;
 
     @Column(name = "email_institucional", unique = true, nullable = false)
     private String emailInstitucional;
 
     @Column(name = "periodo_inicio")
-    private String periodoInicio; 
+    private String periodoInicio;
 
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    public void setSenhaHash(String senha) {
-        this.senhaHash = senha;
+    public void setSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
+    }
+
+    // ======================================================
+    // MÉTODOS OBRIGATÓRIOS DO USERDETAILS
+    // ======================================================
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Retorna a role do aluno (ex: ROLE_ALUNO, ROLE_ADMIN)
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return this.senhaHash;
+    }
+
+    @Override
+    public String getUsername() {
+        // O username para o Spring será o e-mail institucional
+        return this.emailInstitucional;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Conta nunca expira
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        // Se no futuro você quiser bloquear alunos inativos, use:
+        // return this.statusMatricula != StatusMatricula.Inativo;
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Senha nunca expira
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // Conta habilitada
     }
 }

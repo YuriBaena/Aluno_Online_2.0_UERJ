@@ -1,19 +1,23 @@
 @use "sass:color";
 
-// Variáveis de Cores e Estilo
+// --- VARIÁVEIS ---
 $primary-blue: #004587;
 $bg-light: #f8fafc;
 $white: #ffffff;
 $text-dark: #1e293b;
 $text-muted: #64748b;
 $danger: #ef4444;
-$warning-bg: #fff5f5;
-$warning-border: #feb2b2;
-$warning-text: #742a2a;
+$success: #15803d;
+$loader-blue-bg: #f0f7ff;
+$loader-blue-border: #d0e3ff;
+$legal-bg: #f1f5f9;
 
+// --- DASHBOARD WRAPPER ---
 .dashboard-wrapper {
   animation: fadeIn 0.4s ease-out;
   padding: 20px;
+  background-color: $bg-light;
+  min-height: 100vh;
 
   .dashboard-header {
     display: flex;
@@ -51,11 +55,26 @@ $warning-text: #742a2a;
           transform: translateY(-2px);
           box-shadow: 0 10px 15px -3px rgba(0, 69, 135, 0.3);
         }
+
+        &.syncing {
+          background: #0369a1;
+          opacity: 0.9;
+          cursor: wait;
+        }
       }
+
       small { color: $text-muted; font-size: 0.75rem; }
+
+      .pulse-text {
+        color: $primary-blue;
+        font-weight: 600;
+        font-size: 0.75rem;
+        animation: pulse 2s infinite;
+      }
     }
   }
 
+  // --- GRID DE ESTATÍSTICAS ---
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -70,13 +89,16 @@ $warning-text: #742a2a;
       align-items: center;
       gap: 1rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s;
+
+      &:hover { transform: translateY(-5px); }
 
       .icon-box {
         width: 50px; height: 50px;
         border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.5rem;
-        
+
         &.blue { background: #e0f2fe; color: #0369a1; }
         &.green { background: #dcfce7; color: #15803d; }
         &.orange { background: #ffedd5; color: #c2410c; }
@@ -89,28 +111,35 @@ $warning-text: #742a2a;
     }
   }
 
+  // --- CONTEÚDO PRINCIPAL ---
   .main-content {
     .content-card {
       background: $white;
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 16px;
-      min-height: 250px;
-      border: 2px dashed #e2e8f0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 
-      h3 { color: $text-dark; margin-bottom: 1rem; }
-      .empty-state { color: #94a3b8; font-style: italic; }
+      h3 { color: $text-dark; margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; }
+      
+      .empty-state {
+        color: $text-muted;
+        background: $bg-light;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        border: 2px dashed #e2e8f0;
+        margin: 0;
+      }
     }
   }
 }
 
-/* --- ESTILOS DO MODAL E AVISO --- */
+// --- MODAL ---
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   display: flex; justify-content: center; align-items: center;
   z-index: 1000;
@@ -119,16 +148,15 @@ $warning-text: #742a2a;
 .modal-card {
   background: white;
   width: 95%;
-  max-width: 440px;
+  max-width: 460px;
   border-radius: 20px;
-  padding: 1.5rem 2rem;
+  overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   header {
+    padding: 1.5rem 2rem 0.5rem;
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 1.2rem;
-
     h3 { margin: 0; font-size: 1.25rem; color: $text-dark; }
     .close-btn { 
       background: none; border: none; font-size: 1.8rem; 
@@ -138,62 +166,125 @@ $warning-text: #742a2a;
   }
 
   .modal-body {
-    .instruction { color: $text-muted; font-size: 0.9rem; margin-bottom: 1.2rem; }
+    padding: 1rem 2rem;
+
+    .error-toast, .success-toast {
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .error-toast { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .success-toast { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .instruction { color: $text-muted; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5; }
 
     .input-group {
-      margin-bottom: 1rem;
-      label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: $text-dark; }
+      margin-bottom: 1.2rem;
+      label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: $text-dark; }
       input {
-        width: 100%; padding: 0.75rem; border-radius: 8px;
-        border: 1px solid #e2e8f0; font-size: 1rem; box-sizing: border-box;
+        width: 100%; padding: 0.8rem; border-radius: 10px;
+        border: 1px solid #e2e8f0; font-size: 1rem; transition: 0.2s;
         &:focus { outline: none; border-color: $primary-blue; box-shadow: 0 0 0 3px rgba($primary-blue, 0.1); }
       }
     }
 
-    // Estilo do Alerta Vermelho
-    .warning-box {
-      background-color: $warning-bg;
-      border: 1px solid $warning-border;
-      border-left: 4px solid $danger;
+    // --- ESTILO DO AVISO LEGAL ---
+    .legal-container {
+      background: $legal-bg;
       padding: 12px;
-      border-radius: 8px;
-      display: flex;
-      gap: 12px;
-      margin-top: 1.5rem;
+      border-radius: 12px;
+      margin-top: 1rem;
 
-      i { color: $danger; font-size: 1.1rem; margin-top: 2px; }
+      .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: $text-dark;
+        font-weight: 500;
+        
+        input { margin-top: 3px; cursor: pointer; }
+      }
 
-      .warning-text {
-        color: $warning-text;
-        font-size: 0.8rem;
+      .legal-link {
+        font-size: 0.75rem;
+        color: $primary-blue;
+        text-decoration: underline;
+        margin: 8px 0 0 25px;
+        cursor: pointer;
+        &:hover { color: color.adjust($primary-blue, $lightness: 20%); }
+      }
+
+      .legal-details {
+        font-size: 0.75rem;
+        color: $text-muted;
+        margin-top: 8px;
+        padding: 8px;
+        background: white;
+        border-radius: 6px;
         line-height: 1.4;
+        animation: fadeIn 0.3s ease;
+      }
+    }
 
-        strong { display: block; margin-bottom: 2px; font-weight: 700; }
-        p { margin: 0; }
+    .loading-state {
+      padding: 20px;
+      background-color: $loader-blue-bg;
+      border: 1px solid $loader-blue-border;
+      border-radius: 12px;
+      display: flex; flex-direction: column; gap: 15px;
+
+      .loader-content {
+        display: flex; align-items: flex-start; gap: 15px;
+        i { font-size: 1.5rem; color: $primary-blue; margin-top: 3px; }
+        .loader-text {
+          strong { display: block; color: $primary-blue; font-size: 1rem; margin-bottom: 4px; }
+          p { margin: 0; font-size: 0.85rem; color: $text-muted; line-height: 1.4; }
+        }
+      }
+
+      .progress-bar-container {
+        height: 6px; background: #e2e8f0; border-radius: 10px;
+        overflow: hidden; position: relative;
+        .progress-bar-fill {
+          width: 40%; height: 100%; background: $primary-blue;
+          position: absolute; border-radius: 10px;
+          animation: progressMove 1.5s infinite linear;
+        }
       }
     }
   }
 
   footer {
-    display: flex; gap: 12px; margin-top: 1.5rem;
-
+    padding: 1.5rem 2rem;
+    background: #f8fafc;
+    display: flex; gap: 12px;
     button {
-      flex: 1; padding: 0.75rem; border-radius: 8px;
+      flex: 1; padding: 0.8rem; border-radius: 10px;
       font-weight: 600; cursor: pointer; border: none; transition: 0.2s;
     }
-
-    .btn-cancel { background: #f1f5f9; color: $text-muted; &:hover { background: #e2e8f0; } }
-    .btn-confirm {
-      background: $primary-blue; color: white;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      &:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-cancel { background: #e2e8f0; color: #475569; &:hover { background: #cbd5e1; } }
+    .btn-confirm { 
+      background: $primary-blue; color: white; 
+      &:hover:not(:disabled) { background: #003366; }
+      &:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
     }
   }
 }
 
-/* --- ANIMAÇÕES --- */
+// --- ANIMAÇÕES ---
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes progressMove { 0% { left: -40%; } 100% { left: 100%; } }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }

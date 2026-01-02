@@ -34,6 +34,8 @@ services:
       SPRING_DATASOURCE_USERNAME: aluno
       SPRING_DATASOURCE_PASSWORD: aluno123
       SPRING_DEVTOOLS_RESTART_ENABLED: "true" # Ativa o Hot Reload do Spring
+      SCRAPING_PYTHON_PATH: /usr/bin/python3
+      SCRAPING_SCRIPT_PATH: /app/src/main/resources/scripts/main.py
 
   frontend:
     build:

@@ -2,7 +2,7 @@
   <div class="user-profile" (click)="toggleDropdown()">
     <div class="user-text">
       <span class="user-name">{{ usuario?.nome }}</span>
-      <span class="user-role">{{usuario?.role?.substring(5)}} - {{ usuario?.sub }}</span>
+      <span class="user-role">{{usuario?.role?.substring(5)}} - {{ usuario?.matricula }}</span>
     </div>
     <div class="user-avatar">
       {{ getInitials(usuario?.nome) }}

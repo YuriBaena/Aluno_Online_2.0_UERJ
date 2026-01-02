@@ -23,6 +23,9 @@ jobs:
           java-version: '21'
       - name: Run Backend Tests
         working-directory: backend/aluno-online
+        env:
+          SCRAPING_PYTHON_PATH: ${{ secrets.SCRAPING_PYTHON_PATH }}
+          SCRAPING_SCRIPT_PATH: ${{ secrets.SCRAPING_SCRIPT_PATH }}
         run: mvn test -Dspring.profiles.active=test
 
   test_frontend:
@@ -75,6 +78,7 @@ jobs:
           path: |
             backend/aluno-online/target/*.jar
             frontend/aluno-online/dist/aluno-online/
+            backend/aluno-online/src/main/resources/scripts/
 
   # =========================
   # Deploy (MANUAL)
@@ -91,46 +95,68 @@ jobs:
         with:
           name: deployment-assets
 
-      # ---------- DEPLOY BACKEND (EC2) ----------
-      - name: Enviar JAR para EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/aluno-online/target/*.jar"
-          target: "~/app_temp"
-          strip_components: 3
-
-      - name: Configurar JAR e Reiniciar Serviço
+      # ---------- SETUP AMBIENTE PYTHON (EC2) ----------
+      - name: Verificar e Instalar Python/Selenium na EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "--- Iniciando Deploy do Backend ---"
-            mkdir -p ~/app
+            echo "--- 🛠️ Iniciando Verificação do Ambiente de Scraping ---"
+            if ! command -v python3 &> /dev/null; then
+              sudo apt update && sudo apt install python3 -y
+            fi
+            if ! command -v pip3 &> /dev/null; then
+              sudo apt update && sudo apt install python3-pip -y
+            fi
+            if ! command -v google-chrome &> /dev/null; then
+              wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+              sudo apt install ./google-chrome-stable_current_amd64.deb -y
+              rm google-chrome-stable_current_amd64.deb
+            fi
+            pip3 install selenium webdriver-manager --break-system-packages --quiet
+            echo "✅ Ambiente Python Preparado."
+
+      # ---------- DEPLOY BACKEND E SCRIPTS (EC2) ----------
+      - name: Enviar JAR e Scripts para EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/aluno-online/target/*.jar,backend/aluno-online/src/main/resources/scripts/*"
+          target: "~/app_temp"
+          strip_components: 3
+
+      - name: Configurar JAR, Scripts e Reiniciar Serviço
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "--- Configurando Arquivos no Servidor ---"
+            mkdir -p ~/app/scripts
             
-            # Procura o ficheiro JAR de forma dinâmica para evitar erros de estrutura
+            # 1. Mover JAR
             JAR_FILE=$(find ~/app_temp -name "*.jar" | head -n 1)
 
             if [ -n "$JAR_FILE" ]; then
               echo "✅ Novo JAR encontrado em: $JAR_FILE"
               echo "🚚 Movendo para ~/app/backend.jar..."
               mv -f "$JAR_FILE" ~/app/backend.jar
-              
-              echo "🧹 Limpando pastas temporárias..."
-              rm -rf ~/app_temp
-              
-              echo "🔄 Reiniciando serviço backend.service..."
-              sudo systemctl restart backend.service
-              echo "🚀 Backend atualizado com sucesso!"
-            else
-              echo "❌ ERRO: Ficheiro JAR não encontrado em ~/app_temp"
-              ls -R ~/app_temp
-              exit 1
             fi
+
+            # 2. Sincronizar Scripts Python e dar permissão
+            echo "📂 Atualizando scripts Python..."
+            cp -r ~/app_temp/src/main/resources/scripts/* ~/app/scripts/
+            chmod +x ~/app/scripts/*.py
+            
+            # 3. Limpeza e Reinicialização
+            rm -rf ~/app_temp
+            sudo systemctl restart backend.service
+            echo "🚀 Backend e Scripts atualizados com sucesso!"
 
       # ---------- DEPLOY FRONTEND (S3) ----------
       - name: Deploy Frontend para S3

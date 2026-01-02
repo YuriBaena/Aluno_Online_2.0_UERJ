@@ -1,1 +1,0 @@
-CREATE SEQUENCE IF NOT EXISTS aluno_matricula_seq START WITH 1;

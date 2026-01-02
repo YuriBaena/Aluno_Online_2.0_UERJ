@@ -22,11 +22,10 @@ public class TokenService {
 
     public String gerarToken(Aluno aluno) {
         return Jwts.builder()
-                .setSubject(aluno.getMatricula().toString())
+                .setSubject(aluno.getId().toString()) // MUDANÇA: Usando UUID
                 .claim("nome", aluno.getNome())
-                .claim("curso", aluno.getCurso())
+                .claim("matricula", aluno.getMatricula()) // Guardamos a matrícula como claim apenas para info
                 .claim("email", aluno.getEmailInstitucional())
-                .claim("periodo_inicio", aluno.getPeriodoInicio())
                 .claim("role", aluno.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -41,9 +40,9 @@ public class TokenService {
                     .build()
                     .parseClaimsJws(token)
                     .getBody()
-                    .getSubject();
+                    .getSubject(); // Retornará o UUID como String
         } catch (Exception e) {
-            return null; // Token inválido, expirado ou alterado
+            return null;
         }
     }
 }

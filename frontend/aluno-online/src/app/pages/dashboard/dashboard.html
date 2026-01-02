@@ -6,9 +6,13 @@
     </div>
     
     <div class="sync-action">
-      <button class="btn-sync" (click)="abrirModalSync()">
-        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Aluno Online
+      <button class="btn-sync" (click)="abrirModalSync()" [class.syncing]="loadingSync">
+        <i class="fa-solid" [ngClass]="loadingSync ? 'fa-circle-notch fa-spin' : 'fa-arrows-rotate'"></i> 
+        {{ loadingSync ? 'Sincronizando...' : 'Sincronizar Aluno Online' }}
       </button>
+
+      <small *ngIf="loadingSync" class="pulse-text">Sincronização em segundo plano...</small>
+      <small *ngIf="ultimaSincronizacao && !loadingSync">Última vez: {{ ultimaSincronizacao }}</small>
 
       <div class="modal-overlay" *ngIf="exibirModalSync">
         <div class="modal-card">
@@ -18,68 +22,87 @@
           </header>
 
           <div class="modal-body">
-            <p class="instruction">
-              Insira suas credenciais do <strong>Portal Antigo</strong> para importar suas matérias.
-            </p>
-            
-            <div class="input-group">
-              <label>Matrícula</label>
-              <input type="text" [(ngModel)]="syncData.matricula" placeholder="000000000">
+            <div class="error-toast" *ngIf="mensagemErro">
+              <i class="fa-solid fa-circle-xmark"></i> {{ mensagemErro }}
             </div>
 
-            <div class="input-group">
-              <label>Senha do Portal</label>
-              <input type="password" [(ngModel)]="syncData.senha" placeholder="******">
+            <div class="success-toast" *ngIf="mensagemSucesso">
+              <i class="fa-solid fa-circle-check"></i> {{ mensagemSucesso }}
             </div>
 
-            <div class="warning-box">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              <div class="warning-text">
-                <strong>Aviso de Segurança:</strong>
-                <p>
-                  Ao prosseguir, você autoriza o sistema a realizar um acesso automatizado ao seu portal. 
-                  Não armazenamos sua senha. A responsabilidade pelo compartilhamento das credenciais é 
-                  do usuário, conforme as normas da UERJ.
+            <ng-container *ngIf="!loadingSync && !mensagemSucesso">
+              <p class="instruction">
+                Insira suas credenciais do <strong>Portal Antigo</strong> para importar suas matérias.
+              </p>
+              
+              <div class="input-group">
+                <label>Matrícula</label>
+                <input type="text" [(ngModel)]="syncData.matricula" placeholder="000000000000">
+              </div>
+
+              <div class="input-group">
+                <label>Senha do Portal</label>
+                <input type="password" [(ngModel)]="syncData.senha" placeholder="******">
+              </div>
+
+              <div class="legal-container">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="termosAceitos">
+                  <span>Autorizo o acesso automatizado aos meus dados para fins de importação.</span>
+                </label>
+                <p class="legal-link" (click)="mostrarDetalhes = !mostrarDetalhes">
+                  {{ mostrarDetalhes ? 'Ocultar detalhes legais' : 'Ver termos e responsabilidades' }}
                 </p>
+                <div class="legal-details" *ngIf="mostrarDetalhes">
+                  Ao prosseguir, você concorda que esta aplicação acesse o Portal do Aluno em seu nome para coletar disciplinas e notas. Suas credenciais são usadas apenas para esta conexão e não são armazenadas. O uso desta ferramenta é de sua inteira responsabilidade.
+                </div>
+              </div>
+            </ng-container>
+
+            <div class="loading-state" *ngIf="loadingSync">
+              <div class="loader-content">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <div class="loader-text">
+                  <strong>{{ statusTexto }}</strong>
+                  <p>Processando dados. Você pode fechar esta janela; o progresso continuará em segundo plano.</p>
+                </div>
+              </div>
+              
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill"></div>
               </div>
             </div>
           </div>
 
           <footer>
-            <button class="btn-cancel" (click)="fecharModalSync()">Cancelar</button>
-            <button class="btn-confirm" [disabled]="loadingSync" (click)="confirmarSincronizacao()">
-              <i class="fa-solid fa-spinner fa-spin" *ngIf="loadingSync"></i>
-              {{ loadingSync ? 'Sincronizando...' : 'Confirmar Importação' }}
+            <button class="btn-cancel" (click)="fecharModalSync()">
+              {{ loadingSync ? 'Ocultar e continuar' : (mensagemSucesso ? 'Fechar' : 'Cancelar') }}
+            </button>
+
+            <button class="btn-confirm" 
+                    *ngIf="!loadingSync && !mensagemSucesso" 
+                    [disabled]="!termosAceitos"
+                    (click)="confirmarSincronizacao()">
+              Confirmar Importação
             </button>
           </footer>
         </div>
       </div>
-      
-      <small *ngIf="ultimaSincronizacao">Última vez: {{ ultimaSincronizacao }}</small>
     </div>
   </header>
 
   <div class="stats-grid">
     <div class="stat-card">
       <div class="icon-box blue"><i class="fa-solid fa-ranking-star"></i></div>
-      <div class="info">
-        <span>CR Geral</span>
-        <h3>8.4</h3>
-      </div>
+      <div class="info"><span>CR Geral</span><h3>8.4</h3></div>
     </div>
     <div class="stat-card">
       <div class="icon-box green"><i class="fa-solid fa-book"></i></div>
-      <div class="info">
-        <span>Disciplinas Ativas</span>
-        <h3>6</h3>
-      </div>
+      <div class="info"><span>Disciplinas Ativas</span><h3>6</h3></div>
     </div>
     <div class="stat-card">
       <div class="icon-box orange"><i class="fa-solid fa-clock"></i></div>
-      <div class="info">
-        <span>Horas AC</span>
-        <h3>120/200</h3>
-      </div>
+      <div class="info"><span>Horas AC</span><h3>120/200</h3></div>
     </div>
   </div>
 
