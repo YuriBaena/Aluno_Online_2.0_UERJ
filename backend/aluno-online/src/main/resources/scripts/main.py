@@ -27,7 +27,7 @@ def funcaoPrincipal(login, senha):
         if("conexão" in str(e) or "login" in str(e)):
             print(f"LOG: Erro inesperado: {str(e)}", flush=True)
         else:
-            print("LOG: Erro inesperado: Falha na coleta de dados", flush=True)
+            print("LOG: Erro inesperado: Falha no scrapping", flush=True)
     finally:
         if driver:
             driver.quit()

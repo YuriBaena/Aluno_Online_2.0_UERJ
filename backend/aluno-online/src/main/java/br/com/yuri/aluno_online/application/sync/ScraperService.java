@@ -62,15 +62,15 @@ public class ScraperService {
                         logConsole("PYTHON", message);
 
                         // Mapeamento de logs para suas Exceptions personalizadas
-                        if (message.toLowerCase().contains("login inválidas")) {
+                        if (message.toLowerCase().contains("erro inesperado") && message.toLowerCase().contains("login inválidas")) {
                             throw new LoginInvalidoException();
                         }
-                        
-                        if (message.toLowerCase().contains("conexão") || message.toLowerCase().contains("scrapping")) {
+
+                        if (message.toLowerCase().contains("erro inesperado") && message.toLowerCase().contains("conexão para scrapping")) {
                             throw new PortalIndisponivelException();
                         }
 
-                        if (message.toLowerCase().contains("coleta") || message.toLowerCase().contains("dados")) {
+                        if (message.toLowerCase().contains("erro inesperado") && message.toLowerCase().contains("falha no scrapping")) {
                             throw new IntegrationException("Erro técnico no motor de busca: " + message);
                         }
 
