@@ -80,8 +80,8 @@ jobs:
             frontend/aluno-online/dist/aluno-online/
             backend/aluno-online/src/main/resources/scripts/
 
-  # =========================
-  # Deploy (MANUAL)
+# =========================
+  # 3. Deploy
   # =========================
   deploy:
     name: Deploy Fullstack
@@ -95,30 +95,7 @@ jobs:
         with:
           name: deployment-assets
 
-      # ---------- SETUP AMBIENTE PYTHON (EC2) ----------
-      - name: Verificar e Instalar Python/Selenium na EC2
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "--- 🛠️ Iniciando Verificação do Ambiente de Scraping ---"
-            if ! command -v python3 &> /dev/null; then
-              sudo apt update && sudo apt install python3 -y
-            fi
-            if ! command -v pip3 &> /dev/null; then
-              sudo apt update && sudo apt install python3-pip -y
-            fi
-            if ! command -v google-chrome &> /dev/null; then
-              wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-              sudo apt install ./google-chrome-stable_current_amd64.deb -y
-              rm google-chrome-stable_current_amd64.deb
-            fi
-            pip3 install selenium webdriver-manager --break-system-packages --quiet
-            echo "✅ Ambiente Python Preparado."
-
-      # ---------- DEPLOY BACKEND E SCRIPTS (EC2) ----------
+      # PASSO 1: Enviar ficheiros primeiro para que o requirements.txt esteja lá
       - name: Enviar JAR e Scripts para EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -127,36 +104,51 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/aluno-online/target/*.jar,backend/aluno-online/src/main/resources/scripts/*"
           target: "~/app_temp"
-          strip_components: 3
+          strip_components: 3 
 
-      - name: Configurar JAR, Scripts e Reiniciar Serviço
+      # PASSO 2: Organizar pastas, instalar dependências e reiniciar
+      - name: Configurar Servidor e Instalar Python Requirements
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "--- Configurando Arquivos no Servidor ---"
+            echo "--- 📂 Organizando Pastas na EC2 ---"
             mkdir -p ~/app/scripts
             
-            # 1. Mover JAR
-            JAR_FILE=$(find ~/app_temp -name "*.jar" | head -n 1)
-
-            if [ -n "$JAR_FILE" ]; then
-              echo "✅ Novo JAR encontrado em: $JAR_FILE"
-              echo "🚚 Movendo para ~/app/backend.jar..."
-              mv -f "$JAR_FILE" ~/app/backend.jar
+            # Mover o JAR
+            if [ -f ~/app_temp/target/*.jar ]; then
+               mv -f ~/app_temp/target/*.jar ~/app/backend.jar
+               echo "✅ JAR movido."
             fi
 
-            # 2. Sincronizar Scripts Python e dar permissão
-            echo "📂 Atualizando scripts Python..."
-            cp -r ~/app_temp/src/main/resources/scripts/* ~/app/scripts/
-            chmod +x ~/app/scripts/*.py
+            # Mover os Scripts (incluindo o requirements.txt)
+            if [ -d ~/app_temp/main/resources/scripts ]; then
+               cp -r ~/app_temp/main/resources/scripts/* ~/app/scripts/
+               chmod +x ~/app/scripts/*.py
+               echo "✅ Scripts Python e requirements.txt copiados para ~/app/scripts"
+            fi
+
+            echo "--- 🐍 Configurando Ambiente Python ---"
+            # Garante que o pip e o chrome estão presentes
+            sudo apt update -y && sudo apt install -y python3-pip google-chrome-stable || true
             
-            # 3. Limpeza e Reinicialização
+            # Instalação das dependências do ficheiro enviado
+            if [ -f ~/app/scripts/requirements.txt ]; then
+               echo "📦 Instalando dependências a partir do requirements.txt..."
+               pip3 install -r ~/app/scripts/requirements.txt --break-system-packages --quiet
+               echo "✅ Bibliotecas Python instaladas."
+            else
+               echo "⚠️ Erro: requirements.txt não encontrado em ~/app/scripts!"
+            fi
+
+            # Limpeza e Reinício
             rm -rf ~/app_temp
+            echo "🔄 Reiniciando serviço Spring Boot..."
             sudo systemctl restart backend.service
-            echo "🚀 Backend e Scripts atualizados com sucesso!"
+            sudo systemctl status backend.service --no-pager | grep Active
+            echo "🚀 Deploy do Backend e Python Concluído!"
 
       # ---------- DEPLOY FRONTEND (S3) ----------
       - name: Deploy Frontend para S3
