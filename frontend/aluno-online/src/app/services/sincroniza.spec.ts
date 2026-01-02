@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { Sincroniza } from './sincroniza';
+import { SincronizaService } from './sincroniza';
 
-describe('Sincroniza', () => {
-  let service: Sincroniza;
+describe('SincronizaService', () => {
+  let service: SincronizaService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(Sincroniza);
+    service = TestBed.inject(SincronizaService);
   });
 
   it('should be created', () => {
