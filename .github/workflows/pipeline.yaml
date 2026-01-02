@@ -145,10 +145,7 @@ jobs:
             find ~/app_temp -name "*.jar" -exec mv {} ~/app/backend.jar \;
 
             # Procura o requirements.txt
-            find ~/app_temp -name "requirements.txt" -exec cp {} ~/app/scripts/requirements.txt \;
-            # Procura o *.py
-            find ~/app_temp -name "*.py" -exec cp {} ~/app/scripts/ \;
-            
+            find ~/app_temp -name "requirements.txt" -exec cp {} ~/app/scripts/requirements.txt \;    
 
             echo "--- 🐍 Configurando Python ---"
 
