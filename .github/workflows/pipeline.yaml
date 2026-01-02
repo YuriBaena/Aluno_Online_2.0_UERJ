@@ -2,25 +2,30 @@ name: CI/CD Pipeline Fullstack
 
 on:
   push:
-    branches: [ "**" ]         # Roda testes em todas as branches
+    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]         # Roda testes em todos os PRs
-  workflow_dispatch:           # Habilita o botão de Deploy Manual no GitHub
+    branches: [ "**" ]
+  workflow_dispatch:
 
 jobs:
-  # =========================
-  # Testes
-  # =========================
+
+# =========================
+# 1. TESTES
+# =========================
+
   test_backend:
     name: Test Backend (Spring)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
+
       - name: Run Backend Tests
         working-directory: backend/aluno-online
         env:
@@ -28,48 +33,60 @@ jobs:
           SCRAPING_SCRIPT_PATH: ${{ secrets.SCRAPING_SCRIPT_PATH }}
         run: mvn test -Dspring.profiles.active=test
 
+
   test_frontend:
     name: Test Frontend (Angular)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install dependencies
         working-directory: frontend/aluno-online
         run: npm install
+
       - name: Run Frontend Tests
         working-directory: frontend/aluno-online
         run: npm test -- --watch=false --browsers=ChromeHeadless
 
-  # =========================
-  # Build
-  # =========================
+
+# =========================
+# 2. BUILD
+# =========================
+
   build:
     name: Build Backend + Frontend
     needs: [ test_backend, test_frontend ]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Java & Build Backend
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
-      - run: mvn clean package -DskipTests
+
+      - name: Build Backend
         working-directory: backend/aluno-online
+        run: mvn clean package -DskipTests
 
       - name: Setup Node & Build Frontend
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: |
+
+      - name: Build Frontend
+        working-directory: frontend/aluno-online
+        run: |
           npm install
           npm run build -- --configuration production
-        working-directory: frontend/aluno-online
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -77,25 +94,30 @@ jobs:
           name: deployment-assets
           path: |
             backend/aluno-online/target/*.jar
-            frontend/aluno-online/dist/aluno-online/
             backend/aluno-online/src/main/resources/scripts/
+            frontend/aluno-online/dist/aluno-online/
+
 
 # =========================
-  # 3. Deploy
-  # =========================
+# 3. DEPLOY
+# =========================
+
   deploy:
     name: Deploy Fullstack
     needs: build
     runs-on: ubuntu-latest
-    # SÓ EXECUTA se você for na aba Actions e clicar no botão "Run Workflow" na branch main
+
+    # Só deploy manual na main
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           name: deployment-assets
 
-      # PASSO 1: Enviar ficheiros primeiro para que o requirements.txt esteja lá
+
+      # ---------- BACKEND + PYTHON ----------
       - name: Enviar JAR e Scripts para EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -104,63 +126,62 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/aluno-online/target/*.jar,backend/aluno-online/src/main/resources/scripts/*"
           target: "~/app_temp"
-          strip_components: 3 
+          strip_components: 2
 
-      # PASSO 2: Organizar pastas, instalar dependências e reiniciar
-      - name: Configurar Servidor e Instalar Python Requirements
+
+      - name: Configurar Servidor e Instalar Dependências Python
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "--- 📂 Organizando Pastas na EC2 ---"
+            set -e
+
+            echo "--- 📂 Organizando Pastas ---"
             mkdir -p ~/app/scripts
-            
-            # Mover o JAR
-            if [ -f ~/app_temp/target/*.jar ]; then
-               mv -f ~/app_temp/target/*.jar ~/app/backend.jar
-               echo "✅ JAR movido."
+
+            mv -f ~/app_temp/target/*.jar ~/app/backend.jar
+
+            cp -r ~/app_temp/main/resources/scripts/* ~/app/scripts/
+            chmod +x ~/app/scripts/*.py
+
+            echo "--- 🐍 Configurando Python ---"
+
+            # Instala pip se necessário
+            if ! python3 -m pip --version >/dev/null 2>&1; then
+              echo "📦 Instalando python3-pip..."
+              sudo apt update -y && sudo apt install -y python3-pip || \
+              sudo yum install -y python3-pip
             fi
 
-            # Mover os Scripts (incluindo o requirements.txt)
-            if [ -d ~/app_temp/main/resources/scripts ]; then
-               cp -r ~/app_temp/main/resources/scripts/* ~/app/scripts/
-               chmod +x ~/app/scripts/*.py
-               echo "✅ Scripts Python e requirements.txt copiados para ~/app/scripts"
-            fi
+            python3 -m pip install --upgrade pip
 
-            echo "--- 🐍 Configurando Ambiente Python ---"
-            # Garante que o pip e o chrome estão presentes
-            sudo apt update -y && sudo apt install -y python3-pip google-chrome-stable || true
-            
-            # Instalação das dependências do ficheiro enviado
             if [ -f ~/app/scripts/requirements.txt ]; then
-               echo "📦 Instalando dependências a partir do requirements.txt..."
-               pip3 install -r ~/app/scripts/requirements.txt --break-system-packages --quiet
-               echo "✅ Bibliotecas Python instaladas."
+              echo "📦 Instalando dependências Python..."
+              python3 -m pip install -r ~/app/scripts/requirements.txt
             else
-               echo "⚠️ Erro: requirements.txt não encontrado em ~/app/scripts!"
+              echo "❌ requirements.txt não encontrado!"
+              exit 1
             fi
 
-            # Limpeza e Reinício
             rm -rf ~/app_temp
-            echo "🔄 Reiniciando serviço Spring Boot..."
+
+            echo "--- 🔄 Reiniciando Backend ---"
             sudo systemctl restart backend.service
             sudo systemctl status backend.service --no-pager | grep Active
-            echo "🚀 Deploy do Backend e Python Concluído!"
 
-      # ---------- DEPLOY FRONTEND (S3) ----------
+            echo "🚀 Deploy Backend + Python concluído!"
+
+
+      # ---------- FRONTEND (S3) ----------
       - name: Deploy Frontend para S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
-          echo "--- Iniciando Deploy do Frontend ---"
-          # Sincroniza o conteúdo da pasta browser diretamente na raiz do S3
           aws s3 sync frontend/aluno-online/dist/aluno-online/browser/ s3://${{ secrets.S3_BUCKET }} --delete
-          echo "✅ Sincronização com S3 finalizada."
 
       - name: Invalidação CloudFront
         env:
@@ -168,5 +189,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-2
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
-          echo "🚀 Cache do CloudFront limpo com sucesso!"
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
