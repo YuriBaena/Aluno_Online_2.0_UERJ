@@ -141,9 +141,11 @@ jobs:
             echo "--- 📂 Organizando Pastas ---"
             mkdir -p ~/app/scripts
 
-            mv -f ~/app_temp/target/*.jar ~/app/backend.jar
+            # Procura o JAR onde quer que ele tenha caído em app_temp
+            find ~/app_temp -name "*.jar" -exec mv {} ~/app/backend.jar \;
 
-            cp -r ~/app_temp/scripts/requirements.txt ~/app/scripts/requirements.txt
+            # Procura o requirements.txt
+            find ~/app_temp -name "requirements.txt" -exec cp {} ~/app/scripts/requirements.txt \;
 
             echo "--- 🐍 Configurando Python ---"
 
