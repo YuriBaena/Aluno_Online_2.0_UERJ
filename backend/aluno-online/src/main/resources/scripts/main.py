@@ -20,6 +20,9 @@ def funcaoPrincipal(login, senha):
         
         print("LOG: Sincronização concluída com sucesso.", flush=True)
 
+    except KeyboardInterrupt:
+        print("LOG: Processo interrompido pelo usuário (Ctrl+C).", flush=True)
+
     except Exception as e:
         if("conexão" in str(e) or "login" in str(e)):
             print(f"LOG: Erro inesperado: {str(e)}", flush=True)
