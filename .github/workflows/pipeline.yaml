@@ -96,6 +96,9 @@ jobs:
             backend/aluno-online/target/*.jar
             backend/aluno-online/src/main/resources/scripts/
             frontend/aluno-online/dist/aluno-online/
+          exclude: |
+            **/__pycache__/**
+            **/*.pyc
 
 
 # =========================
