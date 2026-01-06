@@ -178,6 +178,7 @@ CREATE TABLE IF NOT EXISTS em_andamento (
     id_aluno UUID NOT NULL,
     codigo_disciplina VARCHAR(50) NOT NULL,
     PRIMARY KEY (id_aluno, codigo_disciplina),
+    numero_turma SMALLINT NOT NULL,
 
     CONSTRAINT fk_aluno_em_andamento 
         FOREIGN KEY (id_aluno) 

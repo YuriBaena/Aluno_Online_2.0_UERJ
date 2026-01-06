@@ -123,9 +123,9 @@ def coletaMateriasCurriculo(driver, curso):
     mapa_horarios = {"M1": "07:00", "M2": "07:50", "M3": "08:50", "M4": "09:40", "M5": "10:40", "M6": "11:30", "T1": "12:30", "T2": "13:20", "T3": "14:20", "T4": "15:10", "T5": "16:10", "T6": "17:00", "N1": "18:00", "N2": "18:50", "N3": "19:40", "N4": "20:30", "N5": "21:20"}
 
     try:
-        driver.find_element(By.XPATH, '//a[contains(@href, "curriculo")]').click()
-    except:
         driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[3]/a').click()
+    except:
+        driver.find_element(By.XPATH, '//a[contains(@href, "curriculo")]').click()
 
     WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//table')))
     
@@ -273,24 +273,29 @@ def coletaMateriasEmAndamento(driver, login):
     tabela = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[1]/div/div[2]/div[1]/table/tbody')))
     linhas = tabela.find_elements(By.XPATH, './tr')
 
-    lista_em_andamento = []
+    lista_dados = [] # Guardaremos tuplas (codigo, turma)
     for linha in linhas[1:]:
         try:
             codigo = linha.find_element(By.XPATH, './td[2]').text.strip().split(" ")[0]
+            numero_turma = linha.find_element(By.XPATH, './td[3]').text.strip()
             if codigo:
-                lista_em_andamento.append(codigo)
+                lista_dados.append((codigo, numero_turma))
         except NoSuchElementException:
             continue
     
-    if lista_em_andamento:
-        codigos_formatados = ", ".join([f"'{c}'" for c in lista_em_andamento])
+    if lista_dados:
+        # Criamos a string de valores: ('COD1', '1'), ('COD2', '2')
+        valores_sql = ", ".join([f"('{c}', '{t}')" for c, t in lista_dados])
+        
         sql_bulk = f"""
-        INSERT INTO em_andamento (id_aluno, codigo_disciplina)
-        SELECT (SELECT id FROM aluno WHERE matricula = CAST({login} AS bigint)), codigo 
-        FROM disciplina WHERE codigo IN ({codigos_formatados})
-        ON CONFLICT (id_aluno, codigo_disciplina) DO NOTHING;
+        INSERT INTO em_andamento (id_aluno, codigo_disciplina, numero_turma)
+        SELECT (SELECT id FROM aluno WHERE matricula = CAST({login} AS bigint)), v.codigo, v.turma::smallint
+        FROM (VALUES {valores_sql}) AS v(codigo, turma)
+        ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET numero_turma = EXCLUDED.numero_turma;
         """.replace('\n', ' ').strip()
+        
         imprimir_bloco_sql(sql_bulk)
 
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/form/button'))).click()
-    return lista_em_andamento
+    
+    return lista_dados
