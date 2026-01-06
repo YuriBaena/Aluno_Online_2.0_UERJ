@@ -94,15 +94,35 @@
   <div class="stats-grid">
     <div class="stat-card">
       <div class="icon-box blue"><i class="fa-solid fa-ranking-star"></i></div>
-      <div class="info"><span>CR Geral</span><h3>8.4</h3></div>
+      <div class="info"><span>CR Geral</span><h3>{{statsAluno?.cr}}</h3></div>
     </div>
     <div class="stat-card">
       <div class="icon-box green"><i class="fa-solid fa-book"></i></div>
-      <div class="info"><span>Disciplinas Ativas</span><h3>6</h3></div>
+      <div class="info"><span>Disciplinas Ativas</span><h3>{{statsAluno?.discplinasAndamento}}</h3></div>
     </div>
-    <div class="stat-card">
-      <div class="icon-box orange"><i class="fa-solid fa-clock"></i></div>
-      <div class="info"><span>Horas AC</span><h3>120/200</h3></div>
+    <div class="stat-card chart-card">
+      <div class="chart-container">
+        <svg viewBox="0 0 36 36" class="donut-chart">
+          <path class="donut-ring"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none" stroke="#eee" stroke-width="3" />
+          
+          <path class="donut-segment"
+            [attr.stroke-dasharray]="statsAluno?.progressoCurso + ', 100'"
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none" stroke="#f39c12" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        
+        <div class="chart-percentage">
+          <h3>{{ statsAluno?.progressoCurso | number:'1.0-0' }}%</h3>
+          <span>Concluído</span>
+        </div>
+      </div>
+
+      <div class="info">
+        <span>Progresso do Curso</span>
+        <p>{{ statsAluno?.creditosFeitos }} de {{ statsAluno?.totalCreditos }} créditos</p>
+      </div>
     </div>
   </div>
 

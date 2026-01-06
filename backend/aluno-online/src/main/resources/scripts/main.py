@@ -9,14 +9,17 @@ def funcaoPrincipal(login, senha):
         funcoes.entrar(driver, login, senha)
         
         # 1. Aluno (Imprime imediato)
-        nome, curso = funcoes.coletaDadosPessoais(driver)
-        funcoes.gerar_sql_aluno(login, nome, curso)
+        nome, curso, total_creditos = funcoes.coletaDadosPessoais(driver)
+        funcoes.gerar_sql_aluno(login, nome, curso, total_creditos)
 
-        # 2. Grade (Imprime de 10 em 10 durante a execução)
-        funcoes.coletaMateriasCurriculo(driver, curso)
-        
+        # 2. Em Andamento (Imprime de 10 em 10 durante a execução)
+        funcoes.coletaMateriasEmAndamento(driver, login)
+
         # 3. Histórico (Imprime de 10 em 10 durante a execução)
         funcoes.coletaMateriasRealizadas(driver, login)
+
+        # 4. Grade (Imprime de 10 em 10 durante a execução)
+        funcoes.coletaMateriasCurriculo(driver, curso)
         
         print("LOG: Sincronização concluída com sucesso.", flush=True)
 
@@ -27,7 +30,7 @@ def funcaoPrincipal(login, senha):
         if("conexão" in str(e) or "login" in str(e)):
             print(f"LOG: Erro inesperado: {str(e)}", flush=True)
         else:
-            print("LOG: Erro inesperado: Falha no scrapping", flush=True)
+            print("LOG: Erro inesperado: Falha no scrapping - "+str(e), flush=True)
     finally:
         if driver:
             driver.quit()

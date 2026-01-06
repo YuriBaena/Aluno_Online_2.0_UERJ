@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UsuarioToken } from '../../services/auth';
 import { SincronizaService } from '../../services/sincroniza';
+import { AlunoService, StatsAluno } from '../../services/aluno';
 import { interval, Subscription, switchMap, takeWhile } from 'rxjs';
 
 @Component({
@@ -14,6 +15,9 @@ import { interval, Subscription, switchMap, takeWhile } from 'rxjs';
 })
 export class Dashboard implements OnInit, OnDestroy {
   usuario: UsuarioToken | null = null;
+
+  statsAluno: StatsAluno | null = null
+
   ultimaSincronizacao: string | null = null;
 
   exibirModalSync = false;
@@ -30,11 +34,12 @@ export class Dashboard implements OnInit, OnDestroy {
   
   private statusSubscription?: Subscription;
 
-  constructor(private service: AuthService, private sincronizaService: SincronizaService) {}
+  constructor(private service: AuthService, private sincronizaService: SincronizaService, private alunoService : AlunoService) {}
 
   ngOnInit(): void {
     this.usuario = this.service.getUsuario();
     this.carregarUltimaSinc();
+    this.alunoService.getStats().subscribe((resp: StatsAluno)=>{this.statsAluno = resp});
   }
 
   carregarUltimaSinc() {
@@ -115,7 +120,7 @@ export class Dashboard implements OnInit, OnDestroy {
     ).subscribe({
       next: (res: any) => {
         // Exemplo de resposta: { status: 'COMPLETO' | 'PROCESSANDO' | 'ERRO', message: '...' }
-        this.statusTexto = res.status_sinc || 'Sincronizando...';
+        this.statusTexto = res.detalhes || 'Sincronizando...';
 
         if (res.status_sinc === 'COMPLETO') {
           this.finalizarSucesso(res.detalhes);
