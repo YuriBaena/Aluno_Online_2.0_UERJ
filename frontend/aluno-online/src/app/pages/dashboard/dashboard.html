@@ -129,7 +129,25 @@
   <section class="main-content">
     <div class="content-card">
       <h3>Grade Horária de Hoje</h3>
-      <p class="empty-state">Nenhuma aula registrada para hoje. Aproveite para estudar!</p>
+      
+      <div class="aulas-grid" *ngIf="aulasAgrupadas.length > 0; else semAula">
+        <div class="card-aula" *ngFor="let aula of aulasAgrupadas">
+          <div class="aula-info">
+            <h4>{{ aula.disciplina }}</h4>
+            <span><i class="fa-solid fa-chalkboard-user"></i> {{ aula.professor }}</span>
+          </div>
+          
+          <div class="aula-horarios">
+            <span class="badge-horario" *ngFor="let h of aula.horarios">
+              {{ h }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #semAula>
+        <p class="empty-state">Nenhuma aula registrada para hoje. Aproveite para estudar!</p>
+      </ng-template>
     </div>
   </section>
 </div>

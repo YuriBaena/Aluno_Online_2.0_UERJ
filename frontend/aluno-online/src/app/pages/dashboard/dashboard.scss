@@ -73,6 +73,8 @@ $orange-primary: #f39c12; // Cor do gráfico
         animation: pulse 2s infinite;
       }
     }
+
+    
   }
 
   // --- GRID DE ESTATÍSTICAS ---
@@ -164,6 +166,61 @@ $orange-primary: #f39c12; // Cor do gráfico
         text-align: center;
         border: 2px dashed #e2e8f0;
         margin: 0;
+      }
+
+      .aulas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .card-aula {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.2s;
+
+        &:hover {
+          border-color: $primary-blue;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .aula-info {
+          h4 {
+            margin: 0 0 5px 0;
+            color: $text-dark;
+            font-size: 1.1rem;
+          }
+          span {
+            color: $text-muted;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+        }
+
+        .aula-horarios {
+          margin-top: 1.2rem;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          .badge-horario {
+            background: #f1f5f9;
+            color: $primary-blue;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid #e2e8f0;
+          }
+        }
       }
     }
   }

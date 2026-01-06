@@ -72,7 +72,7 @@ public class AlunoService {
             return new Aula(
                 item.getCodigo(),          // 1. String
                 item.getDisciplina(),      // 2. String
-                item.getNome_professor(),  // 3. String
+                this.capitalize(item.getNome_professor().toLowerCase()),  // 3. String
                 item.getDia().toString(),             // 4. String (Cuidado se aqui estiver item.getHora())
                 item.getCodigo_hora(),     // 5. String
                 horaConvertida             // 6. LocalTime
@@ -80,4 +80,11 @@ public class AlunoService {
         }).collect(Collectors.toList());
     }
     
+    public String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
 }

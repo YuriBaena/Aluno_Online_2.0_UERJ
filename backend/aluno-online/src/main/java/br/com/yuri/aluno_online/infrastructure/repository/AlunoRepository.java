@@ -28,7 +28,7 @@ public interface AlunoRepository extends JpaRepository<Aluno, UUID> {
         (SELECT COUNT(*) FROM em_andamento e WHERE e.id_aluno = a.id) AS disciplinasAndamento
         FROM aluno a
         JOIN curso c ON a.id_curso = c.id
-        LEFT JOIN historico h ON a.id = h.id_aluno
+        LEFT JOIN historico h ON a.id = h.id_aluno AND h.status != 'Cancelado'
         LEFT JOIN disciplina d ON h.codigo_disciplina = d.codigo
         WHERE a.id = :id_aluno
         GROUP BY a.id, c.total_creditos

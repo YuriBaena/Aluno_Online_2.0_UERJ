@@ -11,6 +11,15 @@ export interface StatsAluno {
   discplinasAndamento: number;
 }
 
+export interface Aula {
+  codigo: string;
+  disciplina: string;
+  professor: string;
+  diaSemana: 'Domingo' | 'Segunda' | 'Terca' | 'Quarta' | 'Quinta' | 'Sexta' | 'Sabado';
+  codigo_hora: string;
+  hora: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -20,5 +29,11 @@ export class AlunoService {
 
   getStats(): Observable<StatsAluno> {
     return this.http.get<StatsAluno>(`${this.API}/stats`);
+  }
+
+  getAulasHoje(dia_Semana: string): Observable<Array<Aula>> {
+    const params = { diaSemana: dia_Semana }; 
+
+    return this.http.get<Array<Aula>>(`${this.API}/aulas_hoje`, { params });
   }
 }
