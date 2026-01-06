@@ -2,12 +2,11 @@
 -- 2. TABELA CURSO
 -- ======================================================
 
--- Representa um curso de graduação
 CREATE TABLE IF NOT EXISTS curso (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- PK numérica
-    nome_curso VARCHAR(255) NOT NULL UNIQUE              -- Nome único do curso
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome_curso VARCHAR(255) NOT NULL UNIQUE,
+    total_creditos SMALLINT NOT NULL DEFAULT 0
 );
-
 
 -- ======================================================
 -- 3. TABELA PROFESSOR
@@ -15,22 +14,22 @@ CREATE TABLE IF NOT EXISTS curso (
 
 CREATE TABLE IF NOT EXISTS professor (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL
+    nome VARCHAR(255) NOT NULL,
+    -- CONSTRAINT necessária para ON CONFLICT (nome)
+    CONSTRAINT professor_nome_unique UNIQUE (nome)
 );
-
 
 -- ======================================================
 -- 4. TABELA DISCIPLINA
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS disciplina (
-    codigo VARCHAR(50) PRIMARY KEY,          -- Código oficial da disciplina
+    codigo VARCHAR(50) PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    id_curso BIGINT NOT NULL,                 -- Curso ao qual pertence
+    id_curso BIGINT NOT NULL,
     carga_horaria SMALLINT,
     creditos SMALLINT,
-    vagas SMALLINT,
-    tipo VARCHAR(50),                         -- Obrigatória / Optativa
+    tipo VARCHAR(50),
     periodo SMALLINT,
 
     CONSTRAINT fk_disciplina_curso
@@ -39,23 +38,20 @@ CREATE TABLE IF NOT EXISTS disciplina (
         ON DELETE CASCADE
 );
 
-
 -- ======================================================
 -- 5. TABELA ALUNO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS aluno (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- UUID facilita integração
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nome VARCHAR(255) NOT NULL,
     matricula BIGINT UNIQUE NOT NULL,
     email_institucional VARCHAR(255) UNIQUE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
-
-    role VARCHAR(50) NOT NULL,                       -- aluno, admin, etc
-    status_matricula status_matricula_enum NOT NULL, -- ENUM (corrigido)
+    role VARCHAR(50) NOT NULL,
+    status_matricula status_matricula_enum NOT NULL,
     periodo_inicio VARCHAR(50),
-
-    id_curso BIGINT,                                 -- Curso do aluno
+    id_curso BIGINT,
 
     CONSTRAINT fk_aluno_curso
         FOREIGN KEY (id_curso)
@@ -63,14 +59,12 @@ CREATE TABLE IF NOT EXISTS aluno (
         ON DELETE SET NULL
 );
 
-
 -- ======================================================
 -- 6. TABELAS 1:1 — DADOS DO ALUNO
 -- ======================================================
 
--- Dados pessoais
 CREATE TABLE IF NOT EXISTS dados_pessoais (
-    id UUID PRIMARY KEY,          -- Mesmo ID do aluno
+    id UUID PRIMARY KEY,
     cpf VARCHAR(14) UNIQUE,
     rg VARCHAR(20),
     data_nascimento DATE,
@@ -83,7 +77,6 @@ CREATE TABLE IF NOT EXISTS dados_pessoais (
         ON DELETE CASCADE
 );
 
--- Contato
 CREATE TABLE IF NOT EXISTS dados_contato (
     id UUID PRIMARY KEY,
     celular VARCHAR(20),
@@ -96,7 +89,6 @@ CREATE TABLE IF NOT EXISTS dados_contato (
         ON DELETE CASCADE
 );
 
--- Dados bancários
 CREATE TABLE IF NOT EXISTS dados_bancarios (
     id UUID PRIMARY KEY,
     banco VARCHAR(100),
@@ -110,7 +102,6 @@ CREATE TABLE IF NOT EXISTS dados_bancarios (
         ON DELETE CASCADE
 );
 
-
 -- ======================================================
 -- 7. TABELA TURMA
 -- ======================================================
@@ -118,8 +109,11 @@ CREATE TABLE IF NOT EXISTS dados_bancarios (
 CREATE TABLE IF NOT EXISTS turma (
     id_turma BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     codigo_disciplina VARCHAR(50) NOT NULL,
-    id_professor BIGINT NOT NULL,
-    numero SMALLINT NOT NULL, -- Ex: Turma 1, 2, 3
+    id_professor BIGINT,
+    numero SMALLINT NOT NULL,
+    vagas SMALLINT,
+
+    CONSTRAINT turma_disciplina_numero_unique UNIQUE (codigo_disciplina, numero),
 
     CONSTRAINT fk_turma_disciplina
         FOREIGN KEY (codigo_disciplina)
@@ -132,7 +126,6 @@ CREATE TABLE IF NOT EXISTS turma (
         ON DELETE CASCADE
 );
 
-
 -- ======================================================
 -- 8. TABELA HORÁRIO DE AULA
 -- ======================================================
@@ -142,14 +135,15 @@ CREATE TABLE IF NOT EXISTS horario_aula (
     id_turma BIGINT NOT NULL,
     dia dia_semana_enum NOT NULL,
     hora TIME NOT NULL,
-    codigo_hora VARCHAR(50), -- Ex: M1, T2, N3
+    codigo_hora VARCHAR(50),
+
+    CONSTRAINT horario_unico UNIQUE (id_turma, dia, hora),
 
     CONSTRAINT fk_horario_turma
         FOREIGN KEY (id_turma)
         REFERENCES turma(id_turma)
         ON DELETE CASCADE
 );
-
 
 -- ======================================================
 -- 9. TABELA HISTÓRICO
@@ -176,9 +170,29 @@ CREATE TABLE IF NOT EXISTS historico (
         REFERENCES disciplina(codigo)
 );
 
+-- ======================================================
+-- 10. TABELA EM ANDAMENTO
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS em_andamento (
+    id_aluno UUID NOT NULL,
+    codigo_disciplina VARCHAR(50) NOT NULL,
+    PRIMARY KEY (id_aluno, codigo_disciplina),
+    numero_turma SMALLINT NOT NULL,
+
+    CONSTRAINT fk_aluno_em_andamento 
+        FOREIGN KEY (id_aluno) 
+        REFERENCES aluno(id) 
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_disciplina_em_andamento 
+        FOREIGN KEY (codigo_disciplina) 
+        REFERENCES disciplina(codigo) 
+        ON DELETE CASCADE
+);
 
 -- ======================================================
--- 10. TABELA SINCRONIZAÇÃO
+-- 11. TABELA SINCRONIZAÇÃO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS sincronizacao (
@@ -186,7 +200,7 @@ CREATE TABLE IF NOT EXISTS sincronizacao (
     id_aluno UUID NOT NULL,
     data_inicio TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_fim TIMESTAMPTZ,
-    status_sinc status_sinc_enum NOT NULL DEFAULT 'PENDENTE', -- Tipo alterado aqui
+    status_sinc status_sinc_enum NOT NULL DEFAULT 'PENDENTE',
     detalhes TEXT,
     
     CONSTRAINT fk_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE

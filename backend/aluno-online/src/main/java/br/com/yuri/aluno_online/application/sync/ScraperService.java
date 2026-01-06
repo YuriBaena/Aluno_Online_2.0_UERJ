@@ -128,7 +128,9 @@ public class ScraperService {
         try {
             scraperRepository.executarComandoSql(sql);
         } catch (Exception e) {
-            logError("DB-SYNC", "Erro ao executar SQL: " + sql);
+            //logError("DB-SYNC", "Erro ao executar SQL: " + sql);
+            logError("DB-SYNC", e.getMessage());
+            throw new RuntimeException();
             // Não relançamos a exceção aqui para não matar o processo Python, 
             // mas logamos o erro no banco.
         }

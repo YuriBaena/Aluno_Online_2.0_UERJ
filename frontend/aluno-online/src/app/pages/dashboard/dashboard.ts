@@ -3,7 +3,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UsuarioToken } from '../../services/auth';
 import { SincronizaService } from '../../services/sincroniza';
+import { AlunoService, Aula, StatsAluno } from '../../services/aluno';
 import { interval, Subscription, switchMap, takeWhile } from 'rxjs';
+
+export interface AulaAgrupada {
+  disciplina: string;
+  professor: string;
+  horarios: string[]; // Ex: ["M1", "M2"]
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +21,12 @@ import { interval, Subscription, switchMap, takeWhile } from 'rxjs';
 })
 export class Dashboard implements OnInit, OnDestroy {
   usuario: UsuarioToken | null = null;
+
+  statsAluno: StatsAluno | null = null;
+
+  lista_aulas_hoje: Array<Aula> | null = null;
+  aulasAgrupadas: Array<AulaAgrupada> = [];
+
   ultimaSincronizacao: string | null = null;
 
   exibirModalSync = false;
@@ -30,11 +43,16 @@ export class Dashboard implements OnInit, OnDestroy {
   
   private statusSubscription?: Subscription;
 
-  constructor(private service: AuthService, private sincronizaService: SincronizaService) {}
+  constructor(private service: AuthService, private sincronizaService: SincronizaService, private alunoService : AlunoService) {}
 
   ngOnInit(): void {
     this.usuario = this.service.getUsuario();
     this.carregarUltimaSinc();
+    this.alunoService.getStats().subscribe((resp: StatsAluno)=>{this.statsAluno = resp});
+    this.alunoService.getAulasHoje(this.getDiaSemana()).subscribe((resp: Array<Aula>)=>{
+      this.lista_aulas_hoje = resp
+      this.agruparAulas();
+    })
   }
 
   carregarUltimaSinc() {
@@ -115,7 +133,7 @@ export class Dashboard implements OnInit, OnDestroy {
     ).subscribe({
       next: (res: any) => {
         // Exemplo de resposta: { status: 'COMPLETO' | 'PROCESSANDO' | 'ERRO', message: '...' }
-        this.statusTexto = res.status_sinc || 'Sincronizando...';
+        this.statusTexto = res.detalhes || 'Sincronizando...';
 
         if (res.status_sinc === 'COMPLETO') {
           this.finalizarSucesso(res.detalhes);
@@ -145,5 +163,32 @@ export class Dashboard implements OnInit, OnDestroy {
     if (this.statusSubscription) {
       this.statusSubscription.unsubscribe();
     }
+  }
+
+  private getDiaSemana(): string {
+    const dias = [
+      'Domingo', 'Segunda', 'Terca', 
+      'Quarta', 'Quinta', 'Sexta', 'Sabado'
+    ];
+    const hoje = new Date();
+    return dias[hoje.getDay()];
+  }
+
+  private agruparAulas() {
+    if (!this.lista_aulas_hoje) return;
+
+    const grupos = this.lista_aulas_hoje.reduce((acc: any, aula) => {
+      if (!acc[aula.disciplina]) {
+        acc[aula.disciplina] = {
+          disciplina: aula.disciplina,
+          professor: aula.professor,
+          horarios: []
+        };
+      }
+      acc[aula.disciplina].horarios.push(aula.codigo_hora);
+      return acc;
+    }, {});
+
+    this.aulasAgrupadas = Object.values(grupos);
   }
 }
