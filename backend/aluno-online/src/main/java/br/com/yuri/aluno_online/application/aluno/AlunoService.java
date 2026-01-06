@@ -1,11 +1,15 @@
 package br.com.yuri.aluno_online.application.aluno;
 
 import java.util.List;
+import java.util.Collections;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.time.LocalTime;
 
 import org.springframework.stereotype.Service;
 
 import br.com.yuri.aluno_online.domain.interfaces.ResumoAluno;
+import br.com.yuri.aluno_online.domain.interfaces.ResumoAulaDia;
 import br.com.yuri.aluno_online.infrastructure.repository.AlunoRepository;
 import br.com.yuri.aluno_online.infrastructure.web.AlunoResource.Aula;
 import br.com.yuri.aluno_online.infrastructure.web.AlunoResource.StatsAluno;
@@ -43,11 +47,37 @@ public class AlunoService {
         );
     }
 
-    /*
     
-    public List<Aula> getAulasHoje(UUID id_aluno){
-        
+    public List<Aula> getAulasHoje(UUID id_aluno, String diaSemana) {
+        // 1. Busca a lista de projeções do banco
+        List<ResumoAulaDia> dados = repository.getAulasHoje(id_aluno, diaSemana);
+        System.out.println(dados);
+
+        // 2. Se a lista estiver vazia, retorna uma lista vazia (melhor que null para evitar NPE)
+        if (dados == null || dados.isEmpty()) {
+            return Collections.emptyList(); 
+        }
+
+        // 3. Transforma (mapeia) cada ResumoAulaDia em um objeto Aula
+        return dados.stream().map(item -> {
+            // Lógica da hora que fizemos antes
+            LocalTime horaConvertida = null;
+            if (item.getHora() instanceof java.time.LocalTime) {
+                horaConvertida = (java.time.LocalTime) item.getHora();
+            } else if (item.getHora() instanceof java.sql.Time) {
+                horaConvertida = ((java.sql.Time) item.getHora()).toLocalTime();
+            }
+
+            // A ORDEM AQUI DEVE SER IDÊNTICA AO CONSTRUTOR DA CLASSE AULA
+            return new Aula(
+                item.getCodigo(),          // 1. String
+                item.getDisciplina(),      // 2. String
+                item.getNome_professor(),  // 3. String
+                item.getDia().toString(),             // 4. String (Cuidado se aqui estiver item.getHora())
+                item.getCodigo_hora(),     // 5. String
+                horaConvertida             // 6. LocalTime
+            );
+        }).collect(Collectors.toList());
     }
     
-    */
 }

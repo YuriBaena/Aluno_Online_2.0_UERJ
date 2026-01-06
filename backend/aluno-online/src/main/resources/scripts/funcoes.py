@@ -169,7 +169,7 @@ def coletaMateriasCurriculo(driver, curso):
             trs_t = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[3]/div[2]/table/tbody/tr')
             for idx, tr_t in enumerate(trs_t, 1):
                 # Pega somente o primeiro professor
-                prof = tr_t.find_element(By.XPATH, './/div[1]/div[5]/div[2]').text.strip().split(" ")[0] or "A DEFINIR"
+                prof = tr_t.find_element(By.XPATH, './/div[1]/div[5]/div[2]').text.strip().split("\n")[0] or "A DEFINIR"
                 num_t = "".join(filter(str.isdigit, tr_t.find_element(By.XPATH, './/div[1]/div[1]/div').text)) or "0"
                 vagas_txt = tr_t.find_element(By.XPATH, './/td/div/div[2]/table[1]/tbody/tr[2]/td[2]').text.strip()
                 vagas = int(vagas_txt) if vagas_txt.isdigit() else 0
