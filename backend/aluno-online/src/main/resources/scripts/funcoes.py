@@ -100,7 +100,7 @@ def coletaDadosPessoais(driver):
     # Entra Síntese da Formação
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[15]/a'))).click()
 
-    curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver)
+    curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver, wait)
 
     # Volta para pagina inicial
     try:
@@ -111,7 +111,7 @@ def coletaDadosPessoais(driver):
     print("LOG: Nome e Curso coletados", flush=True)
     return nome, curso, total_creditos
 
-def pegaDadosPessoaisSinteseFormacao(driver):
+def pegaDadosPessoaisSinteseFormacao(driver, wait):
     curso = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/div/div[2]/div[1]/div[3]'))).text.split(": ", 1)[1].strip()
 
     total_creditos = 0
