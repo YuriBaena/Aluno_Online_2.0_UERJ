@@ -87,15 +87,31 @@ def entrar(driver, login, senha):
     except:
         raise Exception("Informações para login inválidas.")
 
+# --- DADOS PESSOAIS ---
+
 def coletaDadosPessoais(driver):
     print("LOG: Coletando dados pessoais...", flush=True)
     wait = WebDriverWait(driver, 5)
 
+    # tudo = "matricula - nome"
     tudo = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[1]/td/div/div[2]/div[1]/font').text
     nome = tudo.split("-", 1)[1].strip()
 
+    # Entra Síntese da Formação
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[15]/a'))).click()
 
+    curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver, wait)
+
+    # Volta para pagina inicial
+    try:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+    except NoSuchElementException:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/div[4]/button').click()
+
+    print("LOG: Nome e Curso coletados", flush=True)
+    return nome, curso, total_creditos
+
+def pegaDadosPessoaisSinteseFormacao(driver, wait):
     curso = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/div/div[2]/div[1]/div[3]'))).text.split(": ", 1)[1].strip()
 
     total_creditos = 0
@@ -107,14 +123,10 @@ def coletaDadosPessoais(driver):
             total_creditos += int(linha.find_element(By.XPATH, './td[3]').text.strip())
         except ValueError:
             continue
+    
+    return curso, total_creditos
 
-    try:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
-    except NoSuchElementException:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/div[4]/button').click()
-
-    print("LOG: Nome e Curso coletados", flush=True)
-    return nome, curso, total_creditos
+# -- TODAS MATERIAS DO CURRICULO 
 
 def coletaMateriasCurriculo(driver, curso):
     print(f"LOG: Iniciando extração sequencial para: {curso}...", flush=True)
@@ -206,6 +218,8 @@ def coletaMateriasCurriculo(driver, curso):
             print(f"ERRO na linha {i}: {e}")
             continue
 
+# -- MATERIAS JA REALIZADAS
+
 def coletaMateriasRealizadas(driver, login):
     print("LOG: Coletando Histórico acadêmico...", flush=True)
     try:
@@ -265,15 +279,55 @@ def coletaMateriasRealizadas(driver, login):
     except: pass
     driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
 
+# --- DISCIPLINAS EM ANDAMENTO ---
+
 def coletaMateriasEmAndamento(driver, login):
     print("LOG: Coletando matérias em andamento...", flush=True)
     wait = WebDriverWait(driver, 5)
 
+    # Entra na tela de disciplinas em curso
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[7]/a'))).click()
+    
+    lista_dados = [] # Guardaremos tuplas (codigo, turma)
+
+    # Ve se existe materias
+    tem_disciplinas = verificarMateriasEmAndamento(driver)
+    
+    if(tem_disciplinas):
+        
+        #P ega materias
+        lista_dados = pegaDisciplinasEmAndamento(driver)
+        
+        # Salva materias
+        if lista_dados:
+            salvaDisciplinasEmAndamento(lista_dados)
+
+    # Volta para tela inicial
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/form/button'))).click()
+    
+    return lista_dados
+
+def verificarMateriasEmAndamento(driver):
+    xpath_mensagem = "/html/body/table/tbody/tr[3]/td/div[1]/div/div[2]/div[1]"
+    
+    try:
+        # Tenta localizar o elemento da mensagem de "vazio"
+        elemento = driver.find_element(By.XPATH, xpath_mensagem)
+        if "Não constam disciplinas" in elemento.text:
+            print("LOG: Sem disciplinas em andamento", flush=True)
+            return False # Não há matérias
+    except NoSuchElementException:
+        # Se não achar o elemento, assume-se que as matérias estão lá
+        pprint("LOG: Possui disciplinas em andamento", flush=True)
+        return True
+
+def pegaDisciplinasEmAndamento(driver):
+
+    lista_dados = []
+
     tabela = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[1]/div/div[2]/div[1]/table/tbody')))
     linhas = tabela.find_elements(By.XPATH, './tr')
 
-    lista_dados = [] # Guardaremos tuplas (codigo, turma)
     for linha in linhas[1:]:
         try:
             codigo = linha.find_element(By.XPATH, './td[2]').text.strip().split(" ")[0]
@@ -283,19 +337,17 @@ def coletaMateriasEmAndamento(driver, login):
         except NoSuchElementException:
             continue
     
-    if lista_dados:
-        # Criamos a string de valores: ('COD1', '1'), ('COD2', '2')
-        valores_sql = ", ".join([f"('{c}', '{t}')" for c, t in lista_dados])
-        
-        sql_bulk = f"""
-        INSERT INTO em_andamento (id_aluno, codigo_disciplina, numero_turma)
-        SELECT (SELECT id FROM aluno WHERE matricula = CAST({login} AS bigint)), v.codigo, v.turma::smallint
-        FROM (VALUES {valores_sql}) AS v(codigo, turma)
-        ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET numero_turma = EXCLUDED.numero_turma;
-        """.replace('\n', ' ').strip()
-        
-        imprimir_bloco_sql(sql_bulk)
-
-    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/form/button'))).click()
-    
     return lista_dados
+
+def salvaDisciplinasEmAndamento(lista_dados):
+    # Criamos a string de valores: ('COD1', '1'), ('COD2', '2')
+    valores_sql = ", ".join([f"('{c}', '{t}')" for c, t in lista_dados])
+    
+    sql_bulk = f"""
+    INSERT INTO em_andamento (id_aluno, codigo_disciplina, numero_turma)
+    SELECT (SELECT id FROM aluno WHERE matricula = CAST({login} AS bigint)), v.codigo, v.turma::smallint
+    FROM (VALUES {valores_sql}) AS v(codigo, turma)
+    ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET numero_turma = EXCLUDED.numero_turma;
+    """.replace('\n', ' ').strip()
+    
+    imprimir_bloco_sql(sql_bulk)
