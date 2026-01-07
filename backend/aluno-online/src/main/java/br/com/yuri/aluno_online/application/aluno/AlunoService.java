@@ -51,7 +51,6 @@ public class AlunoService {
     public List<Aula> getAulasHoje(UUID id_aluno, String diaSemana) {
         // 1. Busca a lista de projeções do banco
         List<ResumoAulaDia> dados = repository.getAulasHoje(id_aluno, diaSemana);
-        System.out.println(dados);
 
         // 2. Se a lista estiver vazia, retorna uma lista vazia (melhor que null para evitar NPE)
         if (dados == null || dados.isEmpty()) {
