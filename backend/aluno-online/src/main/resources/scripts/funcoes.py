@@ -96,6 +96,18 @@ def coletaDadosPessoais(driver):
 
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[15]/a'))).click()
 
+    curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver)
+
+    # Volta para pagina inicial
+    try:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+    except NoSuchElementException:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/div[4]/button').click()
+
+    print("LOG: Nome e Curso coletados", flush=True)
+    return nome, curso, total_creditos
+
+def pegaDadosPessoaisSinteseFormacao(driver):
     curso = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/div/div[2]/div[1]/div[3]'))).text.split(": ", 1)[1].strip()
 
     total_creditos = 0
@@ -107,11 +119,8 @@ def coletaDadosPessoais(driver):
             total_creditos += int(linha.find_element(By.XPATH, './td[3]').text.strip())
         except ValueError:
             continue
-
-    try:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
-    except NoSuchElementException:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/div[4]/button').click()
+    
+    return curso, total_creditos
 
     print("LOG: Nome e Curso coletados", flush=True)
     return nome, curso, total_creditos
