@@ -126,8 +126,7 @@ def pegaDadosPessoaisSinteseFormacao(driver):
     
     return curso, total_creditos
 
-    print("LOG: Nome e Curso coletados", flush=True)
-    return nome, curso, total_creditos
+# -- TODAS MATERIAS DO CURRICULO 
 
 def coletaMateriasCurriculo(driver, curso):
     print(f"LOG: Iniciando extração sequencial para: {curso}...", flush=True)
@@ -219,6 +218,8 @@ def coletaMateriasCurriculo(driver, curso):
             print(f"ERRO na linha {i}: {e}")
             continue
 
+# -- MATERIAS JA REALIZADAS
+
 def coletaMateriasRealizadas(driver, login):
     print("LOG: Coletando Histórico acadêmico...", flush=True)
     try:
@@ -278,7 +279,8 @@ def coletaMateriasRealizadas(driver, login):
     except: pass
     driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
 
-# --- DISCIPLINAS EM ANDAMENTO
+# --- DISCIPLINAS EM ANDAMENTO ---
+
 def coletaMateriasEmAndamento(driver, login):
     print("LOG: Coletando matérias em andamento...", flush=True)
     wait = WebDriverWait(driver, 5)
@@ -300,8 +302,8 @@ def coletaMateriasEmAndamento(driver, login):
         if lista_dados:
             salvaDisciplinasEmAndamento(lista_dados)
 
-        # Volta para tela inicial
-        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/form/button'))).click()
+    # Volta para tela inicial
+    wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/form/button'))).click()
     
     return lista_dados
 
@@ -312,11 +314,11 @@ def verificarMateriasEmAndamento(driver):
         # Tenta localizar o elemento da mensagem de "vazio"
         elemento = driver.find_element(By.XPATH, xpath_mensagem)
         if "Não constam disciplinas" in elemento.text:
-            print("Nenhuma disciplina encontrada para este aluno.")
+            print("LOG: Sem disciplinas em andamento", flush=True)
             return False # Não há matérias
     except NoSuchElementException:
         # Se não achar o elemento, assume-se que as matérias estão lá
-        print("Disciplinas encontradas! Prosseguindo...")
+        pprint("LOG: Possui disciplinas em andamento", flush=True)
         return True
 
 def pegaDisciplinasEmAndamento(driver):
@@ -337,7 +339,7 @@ def pegaDisciplinasEmAndamento(driver):
     
     return lista_dados
 
-def salvaDisciplinasEmAndamento(lista_dados)
+def salvaDisciplinasEmAndamento(lista_dados):
     # Criamos a string de valores: ('COD1', '1'), ('COD2', '2')
     valores_sql = ", ".join([f"('{c}', '{t}')" for c, t in lista_dados])
     
