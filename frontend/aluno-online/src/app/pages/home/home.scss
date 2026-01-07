@@ -1,14 +1,21 @@
 .main-layout {
-  display: flex;          // Ativa o alinhamento lado a lado
-  flex-direction: row;    // Garante que seja em linha
+  position: relative;
   width: 100%;
-  height: calc(100vh - 75px); // Altura total menos a altura do menu superior
-  overflow: hidden;       // Evita que a página toda role
+  height: calc(100vh - 70px); 
+  overflow: hidden;
+  display: block; 
 }
 
 .content-area {
-  flex: 1;                // Faz o dashboard ocupar todo o espaço restante
-  overflow-y: auto;       // Ativa o scroll apenas aqui se o conteúdo crescer
-  background-color: #f8fafc; // Fundo cinza claro para destacar
-  padding: 2rem;          // Espaçamento interno para o dashboard não colar nas bordas
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 1.5rem;
+  }
 }

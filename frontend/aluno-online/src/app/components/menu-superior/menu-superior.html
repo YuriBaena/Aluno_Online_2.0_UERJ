@@ -1,7 +1,6 @@
 <header class="header-container">
   <div class="logo-section">
     <img src="images/Uerj_RGB_WEB_cor.svg" alt="UERJ Logo" class="logo">
-
     <div class="brand-text">
         <h1 class="university-name">UERJ</h1>
         <span class="system-name">Aluno Online</span>
@@ -9,12 +8,12 @@
   </div>
 
   <div class="actions-section">
-    <div class="search-wrapper">
-      <span class="search-icon"><i class="fas fa-search"></i></span>
-      <input type="text" placeholder="Buscar no sistema...">
-    </div>
 
     <div class="user-controls">
+      <div class="menu-toggle" (click)="clicouNoMenu()">
+        <i class="fas fa-bars"></i>
+      </div>
+
       <div class="notification-badge">
         <span><i class="fa-regular fa-bell"></i></span>
         <span class="counter">3</span>
