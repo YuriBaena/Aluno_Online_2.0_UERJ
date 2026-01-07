@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS turma (
     codigo_disciplina VARCHAR(50) NOT NULL,
     id_professor BIGINT,
     numero SMALLINT NOT NULL,
-    vagas SMALLINT,
+    vagas SMALLINT NOT NULL DEFAULT 0,
 
     CONSTRAINT turma_disciplina_numero_unique UNIQUE (codigo_disciplina, numero),
 
