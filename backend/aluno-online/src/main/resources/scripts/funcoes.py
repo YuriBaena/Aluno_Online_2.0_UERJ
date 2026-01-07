@@ -87,13 +87,17 @@ def entrar(driver, login, senha):
     except:
         raise Exception("Informações para login inválidas.")
 
+# --- DADOS PESSOAIS ---
+
 def coletaDadosPessoais(driver):
     print("LOG: Coletando dados pessoais...", flush=True)
     wait = WebDriverWait(driver, 5)
 
+    # tudo = "matricula - nome"
     tudo = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[1]/td/div/div[2]/div[1]/font').text
     nome = tudo.split("-", 1)[1].strip()
 
+    # Entra Síntese da Formação
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[15]/a'))).click()
 
     curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver)
