@@ -3,7 +3,6 @@ $text-main: #334155;
 $text-muted: #64748b;
 $danger-red: #ef4444;
 
-// Container principal para controlar o posicionamento do dropdown
 .user-profile-container {
   position: relative;
   display: inline-block;
@@ -52,13 +51,13 @@ $danger-red: #ef4444;
     font-weight: 700;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-shrink: 0; // Garante que a bola não amasse no mobile
   }
 }
 
-// Estilização do Menu Dropdown
 .dropdown-menu {
   position: absolute;
-  top: 100%; // Cola logo abaixo do profile
+  top: 100%;
   right: 0;
   margin-top: 8px;
   min-width: 160px;
@@ -66,7 +65,7 @@ $danger-red: #ef4444;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  overflow: hidden; // Garante que o hover não saia do arredondamento
+  overflow: hidden;
   z-index: 1000;
   animation: fadeIn 0.15s ease-out;
 
@@ -78,7 +77,7 @@ $danger-red: #ef4444;
     gap: 10px;
     background: none;
     border: none;
-    color: $danger-red; // Cor de destaque para o "Sair"
+    color: $danger-red;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -86,7 +85,7 @@ $danger-red: #ef4444;
     transition: background-color 0.2s;
 
     &:hover {
-      background-color: #fef2f2; // Vermelho clarinho no hover
+      background-color: #fef2f2;
     }
 
     .icon {
@@ -95,7 +94,29 @@ $danger-red: #ef4444;
   }
 }
 
-// Animação suave para o menu aparecer
+// --- AJUSTES DE RESPONSIVIDADE ---
+@media (max-width: 768px) {
+  .user-profile {
+    gap: 0; // Remove o espaço lateral já que o texto sumiu
+    padding: 0; // Deixa mais compacto no header mobile
+    
+    .user-text {
+      display: none; // ESCONDE O NOME E MATRÍCULA NO CELULAR
+    }
+
+    .user-avatar {
+      width: 38px; // Diminui levemente a bola para o mobile
+      height: 38px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .dropdown-menu {
+    right: 0; // Garante que o menu abra alinhado à direita da bola
+    min-width: 180px;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

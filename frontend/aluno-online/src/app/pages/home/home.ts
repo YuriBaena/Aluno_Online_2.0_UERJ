@@ -12,5 +12,10 @@ import { RouterModule } from "@angular/router";
   styleUrl: './home.scss',
 })
 export class Home{
+  menuAbertoLateral = false;
 
+  toggleMenu() {
+    this.menuAbertoLateral = !this.menuAbertoLateral;
+    console.log('2. Home recebeu o evento. Estado do menuAbertoLateral:', this.menuAbertoLateral);
+  }
 }

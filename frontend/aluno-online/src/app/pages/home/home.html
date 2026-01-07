@@ -1,11 +1,12 @@
-<app-menu-superior></app-menu-superior>
+<app-menu-superior (onSanduicheClick)="toggleMenu()"></app-menu-superior>
 
 <div class="main-layout">
-  
-  <app-menu-lateral></app-menu-lateral>
-
   <main class="content-area">
     <router-outlet></router-outlet>
-    </main>
-  
+  </main>
+
+  <app-menu-lateral 
+    [isOpen]="menuAbertoLateral" 
+    (onClose)="menuAbertoLateral = false">
+  </app-menu-lateral>
 </div>

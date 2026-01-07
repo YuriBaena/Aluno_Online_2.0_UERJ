@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside class="sidebar" [class.active]="isOpen">
   <nav class="nav-menu">
     <div class="menu-section">
       <small>ACADÊMICO</small>
@@ -24,3 +24,5 @@
     <button class="help-btn"><span><i class="fa-regular fa-circle-question"></i></span> Ajuda / Suporte</button>
   </footer>
 </aside>
+
+<div class="sidebar-overlay" [class.show]="isOpen" (click)="fechar()"></div>
