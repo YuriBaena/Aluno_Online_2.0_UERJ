@@ -1,1 +1,151 @@
-<p>my-cronograma works!</p>
+<div class="planning-container">
+  <div class="menu-overlay" *ngIf="menu1Aberto || menu2Aberto" (click)="menu1Aberto = false; menu2Aberto = false"></div>
+
+  <div class="top-menus-wrapper">
+    <aside class="menu-disciplinas" [class.open]="menu1Aberto">
+      <div class="menu-content">
+        <h3>Buscar Disciplinas</h3>
+        
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="termoBusca" 
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Ex: Cálculo I, Física...">
+        </div>
+
+        <div class="list-legend">
+          <span>Disciplina / Período</span>
+          <span class="text-right">Ação</span>
+        </div>
+
+        <ul class="item-list">
+          <li *ngFor="let disc of listaDisciplinasDisponiveis" (click)="selecionarDisciplina(disc)">
+            <div class="info">
+              <span class="name">{{ disc.nome }}</span>
+             <span class="sub">
+                @if (disc.periodo) {
+                  {{ disc.periodo }}º Período
+                } @else {
+                  Sem período definido
+                }
+              </span>
+            </div>
+            <button class="add-btn"><i class="fa-solid fa-plus"></i></button>
+          </li>
+
+          <li *ngIf="termoBusca.length >= 3 && listaDisciplinasDisponiveis.length === 0" class="no-results" style="padding: 20px; text-align: center; color: #667085;">
+            Nenhuma disciplina encontrada.
+          </li>
+        </ul>
+      </div>
+      
+      <div class="tab-trigger blue-tab" (click)="menu1Aberto = !menu1Aberto; menu2Aberto = false">
+        <span>DISCIPLINAS</span>
+      </div>
+    </aside>
+
+    <aside class="menu-turmas" [class.open]="menu2Aberto">
+      <div class="menu-content">
+        <h3>Grade de Horários</h3>
+        
+        <div class="empty-selection" *ngIf="selecionadas.length === 0">
+          <p>Nenhuma disciplina selecionada.</p>
+        </div>
+
+        <div class="course-group" *ngFor="let disc of selecionadas">
+          <div class="course-header">
+            <span class="course-name">{{ disc.nome }}</span>
+            <button class="remove-course" (click)="removerDisciplina(disc)">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+
+          <div class="turma-legend">
+            <span>Professor / Turma</span>
+            <span class="text-center">Info</span>
+            <span class="text-center">Sel.</span>
+          </div>
+
+          <div class="turma-list">
+            <label *ngFor="let t of disc.turmas" class="turma-card" [class.selected]="disc.selectedTurmaId === t.id">
+              <div class="prof-info">
+                <span class="prof-name">{{ t.professor || 'A Definir' }}</span>
+              </div>
+
+              <div class="action-zone">
+                <button class="info-circle" (click)="abrirModal(t); $event.stopPropagation()">
+                  <i class="fa-solid fa-circle-info"></i>
+                </button>
+              </div>
+
+              <div class="selection-zone">
+                <input type="radio" [name]="disc.nome" [value]="t.id" [(ngModel)]="disc.selectedTurmaId">
+                <div class="custom-radio">
+                  <i class="fa-solid fa-check"></i>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-trigger teal-tab" (click)="menu2Aberto = !menu2Aberto; menu1Aberto = false">
+        <span>TURMAS</span>
+      </div>
+    </aside>
+  </div>
+
+  <main class="calendar-area">
+    <div class="placeholder-grid">
+      <i class="fa-regular fa-calendar-days"></i>
+      <p>Sua Grade de Horários</p>
+      <span>As turmas selecionadas aparecerão aqui após a escolha.</span>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModal" (click)="fecharModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <header>
+      <h3>Detalhes da Turma</h3>
+      <button class="close-btn" (click)="fecharModal()">&times;</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="info-item">
+        <label>Professor</label>
+        <div class="value">
+          <i class="fa-solid fa-user-tie"></i>
+          {{ turmaSelecionadaDetalhe?.professor || 'Não informado' }}
+        </div>
+      </div>
+
+      <div class="info-item">
+        <label>Grade de Horários Agrupada</label>
+        <div class="horarios-container">
+          <div *ngFor="let grupo of getHorariosAgrupados(turmaSelecionadaDetalhe?.horario)" class="horario-badge">
+            <span class="dia">{{ grupo.dia }}</span>
+            <div class="codigos-wrapper">
+              <span *ngFor="let cod of grupo.codigos" class="codigo">{{ cod }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <label>Disponibilidade</label>
+        <div class="vagas-info">
+          <i class="fa-solid fa-users"></i>
+          <span>{{ turmaSelecionadaDetalhe?.vagas || 0 }} vagas totais</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="fecharModal()">Fechar</button>
+      <button class="btn-confirm" (click)="fecharModal()">Confirmar Seleção</button>
+    </footer>
+  </div>
+</div>
