@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-not-found',
@@ -8,5 +9,9 @@ import { RouterModule } from '@angular/router';
   styleUrl: './not-found.scss',
 })
 export class NotFound {
+  constructor(private location: Location) {}
 
+  voltar(): void {
+    this.location.back();
+  }
 }

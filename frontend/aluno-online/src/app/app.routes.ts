@@ -4,6 +4,7 @@ import { Register } from './pages/register/register';
 import { Home } from './pages/home/home';
 import { NotFound } from './pages/not-found/not-found';
 import { Dashboard } from './pages/dashboard/dashboard';
+import { MyCronograma } from './pages/my-cronograma/my-cronograma';
 
 // Importação dos Guardiões de Rota
 import { authGuard } from './guards/auth-guard';
@@ -55,9 +56,21 @@ export const routes: Routes = [
           { path: 'dashboard', component: Dashboard },
 
           /**
+           * COMPONENTE DASHBOARD
+           * URL: /home/my-cronograma
+           */
+          { path: 'my-cronograma', component: MyCronograma },
+
+          /**
            * FUTURAS ROTAS FILHAS
            * Ex: { path: 'materias', component: Materias } -> URL: /home/materias
            */
+
+          /**
+           * ESTE DEVE SER O ÚLTIMO FILHO
+           * Captura erros dentro de /home/qualquer-coisa-errada
+           */
+          { path: '**', component: NotFound },
         ]
       },
     ]
