@@ -120,15 +120,35 @@
         <h3>Ações Rápidas <i class="fa-solid fa-bolt" style="color: #eab308; margin-left: 8px;"></i></h3>
         
         <div class="quick-actions-grid">
-          <button class="action-btn">
+          <button class="action-btn" title="Retorna lista de materias possiveis para adicionar no cronograma atual">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Otimizar Atual</span>
+          </button>
+          
+          <button class="action-btn" (click)="abrirModalOtimizar()" title="Cria cronograma baseado em informações de horários disponiveis">
+            <i class="fa-solid fa-clock"></i>
             <span>Otimizar por Turno</span>
           </button>
           
-          <button class="action-btn">
-            <i class="fa-solid fa-graduation-cap"></i>
-            <span>Preencher Período</span>
-          </button>
+          <div class="dropdown-wrapper">
+            <button class="action-btn" 
+                    (click)="submenuPeriodoAberto = !submenuPeriodoAberto" 
+                    [class.active]="submenuPeriodoAberto"
+                    title="Cria cronograma baseado no periodo escolhido">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <span>Preencher Período</span>
+              <i class="fa-solid fa-chevron-down arrow-icon"></i>
+            </button>
+
+            <div class="action-submenu" *ngIf="submenuPeriodoAberto">
+              <div class="submenu-header">Escolha o período:</div>
+              <div class="submenu-grid">
+                <button *ngFor="let p of [1,2,3,4,5,6,7,8,9,10]" (click)="preencherPorPeriodo(p)">
+                  {{p}}º
+                </button>
+              </div>
+            </div>
+          </div>
 
           <button class="action-btn danger" (click)="confirmarLimparTudo(); menu3Aberto=false;">
             <i class="fa-solid fa-trash-can"></i>
@@ -253,6 +273,83 @@
 
     <footer>
       <button class="btn-cancel" style="width: 100%" (click)="exibirModalConflito = false">Entendido, vou ajustar</button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalOtimizar" (click)="exibirModalOtimizar = false">
+  <div class="modal-card smart-modal wide-modal" (click)="$event.stopPropagation()">
+    <header>
+      <div class="header-title">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <h3>Assistente de Grade</h3>
+      </div>
+      <button class="close-btn" (click)="exibirModalOtimizar = false">&times;</button>
+    </header>
+
+    <div class="tabs-nav">
+      <button [class.active]="abaAtiva === 'turnos'" (click)="abaAtiva = 'turnos'">Turnos padrão</button>
+      <button [class.active]="abaAtiva === 'personalizado'" (click)="abaAtiva = 'personalizado'">Minha Disponibilidade</button>
+    </div>
+
+    <div class="modal-body scrollable">
+      
+      <div *ngIf="abaAtiva === 'turnos'" class="tab-content">
+        <p class="description">Selecione um período padrão para priorizar suas turmas:</p>
+        <div class="turno-options">
+          <div class="turno-card" [class.active]="turnoSelecionado === 'M'" (click)="turnoSelecionado = 'M'">
+            <i class="fa-solid fa-sun"></i>
+            <strong>Manhã</strong>
+          </div>
+          <div class="turno-card" [class.active]="turnoSelecionado === 'T'" (click)="turnoSelecionado = 'T'">
+            <i class="fa-solid fa-cloud-sun"></i>
+            <strong>Tarde</strong>
+          </div>
+          <div class="turno-card" [class.active]="turnoSelecionado === 'N'" (click)="turnoSelecionado = 'N'">
+            <i class="fa-solid fa-moon"></i>
+            <strong>Noite</strong>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="abaAtiva === 'personalizado'" class="tab-content">
+        <p class="description">Adicione as janelas de tempo em que você está <strong>disponível</strong>:</p>
+        
+        <div class="disp-list scrollable">
+          <div class="day-group" *ngFor="let dia of diasSemana">
+            <div class="day-header">
+              <span class="day-label">{{ dia }}</span>
+              <button class="add-window-btn" (click)="adicionarJanela(dia)">
+                <i class="fa-solid fa-plus"></i> Novo Horário
+              </button>
+            </div>
+
+            <div class="windows-container">
+              <div class="no-windows" *ngIf="disponibilidade[dia].length === 0">
+                Nenhum horário livre definido
+              </div>
+              
+              <div class="disp-row-window" *ngFor="let janela of disponibilidade[dia]; let i = index">
+                <div class="time-inputs">
+                  <input type="time" [(ngModel)]="janela.inicio">
+                  <span>às</span>
+                  <input type="time" [(ngModel)]="janela.fim">
+                </div>
+                <button class="remove-window" (click)="removerJanela(dia, i)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="exibirModalOtimizar = false">Cancelar</button>
+      <button class="btn-confirm purple-btn" (click)="executarOtimizacao()">
+        Gerar Melhor Grade
+      </button>
     </footer>
   </div>
 </div>

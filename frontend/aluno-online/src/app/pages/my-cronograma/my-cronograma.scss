@@ -57,12 +57,27 @@ $tab-height: 42px;
         z-index: 99; 
         .tab-trigger { background: $purple-action; } 
 
-        // Estilo interno para os botões de ação
+        .menu-content { 
+          padding: 1.5rem; 
+          max-height: 500px; 
+          overflow-y: auto; 
+          h3 { font-size: 1.1rem; font-weight: 700; color: $text-dark; margin-bottom: 1.2rem; }
+        }
+
+        // --- GRID DE AÇÕES RÁPIDAS ---
         .quick-actions-grid {
           display: flex;
           flex-direction: column;
           gap: 12px;
           margin-top: 10px;
+
+          // Wrapper para o botão + submenu
+          .dropdown-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+          }
 
           .action-btn {
             display: flex;
@@ -75,8 +90,17 @@ $tab-height: 42px;
             cursor: pointer;
             transition: all 0.2s;
             text-align: left;
+            width: 100%;
 
             i { font-size: 1.2rem; color: $purple-action; width: 25px; text-align: center; }
+            
+            .arrow-icon {
+              margin-left: auto;
+              font-size: 0.7rem;
+              transition: 0.3s;
+              color: $text-muted;
+            }
+
             .txt {
               display: flex;
               flex-direction: column;
@@ -89,6 +113,72 @@ $tab-height: 42px;
               border-color: $purple-action;
               background: $white;
               box-shadow: 0 4px 12px rgba($purple-action, 0.1);
+            }
+
+            // Estilo quando o menu de períodos está aberto
+            &.active {
+              border-color: $purple-action;
+              background: $white;
+              border-radius: 12px 12px 0 0; // Quadrado embaixo para conectar
+              transform: none;
+              box-shadow: none;
+              
+              .arrow-icon { 
+                transform: rotate(180deg); 
+                color: $purple-action; 
+              }
+            }
+
+            &.danger {
+              i { color: #ef4444; }
+              &:hover { border-color: #ef4444; box-shadow: 0 4px 12px rgba(#ef4444, 0.1); }
+            }
+          }
+
+          // --- SUBMENU DE PERÍODOS (O QUE "DESCE") ---
+          .action-submenu {
+            background: $white;
+            border: 1px solid $purple-action;
+            border-top: 1px dashed rgba($purple-action, 0.2);
+            border-radius: 0 0 12px 12px;
+            padding: 15px;
+            z-index: 10;
+            box-shadow: 0 10px 15px -5px rgba(0, 0, 0, 0.1);
+            animation: slideDownSubmenu 0.2s ease-out;
+
+            .submenu-header {
+              display: block;
+              font-size: 0.65rem;
+              font-weight: 800;
+              color: $text-muted;
+              text-transform: uppercase;
+              margin-bottom: 10px;
+              letter-spacing: 0.5px;
+            }
+
+            .submenu-grid {
+              display: grid;
+              grid-template-columns: repeat(5, 1fr);
+              gap: 8px;
+
+              button {
+                padding: 10px 0;
+                border: 1px solid $border-color;
+                background: $bg-light;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: $text-dark;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &:hover {
+                  background: $purple-action;
+                  color: white;
+                  border-color: $purple-action;
+                  transform: translateY(-2px);
+                }
+              }
             }
           }
         }
@@ -520,6 +610,174 @@ $tab-height: 42px;
     background: #fee2e2;
     padding: 8px;
     border-radius: 8px;
+  }
+}
+
+.smart-modal {
+  border-top: 6px solid $purple-action;
+
+  header .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    i { color: $purple-action; font-size: 1.2rem; }
+    h3 { margin: 0; }
+  }
+
+  &.wide-modal {
+    max-width: 500px; 
+
+    .tabs-nav {
+      display: flex;
+      background: $bg-light;
+      padding: 5px;
+      border-radius: 12px;
+      margin: 1rem 2rem 1.5rem;
+      
+      button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: $text-muted;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: 0.2s;
+        text-transform: uppercase;
+
+        &.active {
+          background: $white;
+          color: $purple-action;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+      }
+    }
+
+    .scrollable { 
+      max-height: 400px; 
+      overflow-y: auto; 
+      padding-right: 10px;
+      
+      &::-webkit-scrollbar { width: 5px; }
+      &::-webkit-scrollbar-thumb { background: $border-color; border-radius: 10px; }
+    }
+
+    .tab-content {
+      animation: fadeIn 0.3s ease-out;
+      .description { font-size: 0.8rem; color: $text-muted; margin-bottom: 15px; }
+    }
+
+    .turno-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      
+      .turno-card {
+        padding: 20px 10px;
+        border: 2px solid $border-color;
+        border-radius: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s;
+
+        i { display: block; font-size: 1.5rem; margin-bottom: 10px; color: $text-muted; }
+        strong { font-size: 0.8rem; color: $text-dark; }
+
+        &:hover { border-color: color.adjust($purple-action, $alpha: -0.6); }
+
+        &.active {
+          border-color: $purple-action;
+          background: #f5f3ff;
+          i { color: $purple-action; }
+          strong { color: $purple-action; }
+        }
+      }
+    }
+
+    // --- SISTEMA DE MÚLTIPLAS JANELAS POR DIA ---
+    .day-group {
+      margin-bottom: 1rem;
+      background: $white;
+      border: 1px solid $border-color;
+      border-radius: 12px;
+      overflow: hidden;
+
+      .day-header {
+        background: $bg-light;
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid $border-color;
+
+        .day-label { 
+          font-weight: 800; 
+          color: $text-dark; 
+          font-size: 0.75rem; 
+          text-transform: uppercase;
+        }
+        
+        .add-window-btn {
+          background: none; border: none; color: $purple-action;
+          font-size: 0.65rem; font-weight: 700; cursor: pointer;
+          display: flex; align-items: center; gap: 4px;
+          &:hover { filter: brightness(0.8); }
+        }
+      }
+
+      .windows-container {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .no-windows {
+          font-size: 0.7rem; color: $text-muted; text-align: center; padding: 5px;
+          font-style: italic;
+        }
+
+        .disp-row-window {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: #fdfbff;
+          border: 1px dashed color.adjust($purple-action, $alpha: -0.7);
+          padding: 8px 12px;
+          border-radius: 8px;
+          animation: fadeIn 0.2s ease-out;
+
+          .time-inputs {
+            display: flex; align-items: center; gap: 8px;
+            input[type="time"] {
+              border: 1px solid $border-color; 
+              border-radius: 6px;
+              padding: 4px 6px; 
+              font-size: 0.8rem;
+              background: white;
+              color: $text-dark;
+              &:focus { outline: none; border-color: $purple-action; }
+            }
+            span { font-size: 0.7rem; color: $text-muted; font-weight: 600; }
+          }
+
+          .remove-window {
+            background: none; border: none; color: #f87171; cursor: pointer;
+            font-size: 1rem;
+            display: flex; align-items: center;
+            &:hover { color: #ef4444; }
+          }
+        }
+      }
+    }
+  }
+
+  .purple-btn {
+    background: $purple-action !important;
+    color: white !important;
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:hover:not(:disabled) { filter: brightness(1.1); }
   }
 }
 

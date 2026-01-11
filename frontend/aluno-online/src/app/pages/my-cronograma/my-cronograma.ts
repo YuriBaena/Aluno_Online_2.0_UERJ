@@ -61,8 +61,28 @@ export class MyCronograma implements OnInit, OnDestroy {
   menu3Aberto = false;
   exibirModal = false;
 
+  submenuPeriodoAberto = false;
+
   exibirModalConflito = false;
   conflitoInfo: any = null;
+
+ exibirModalOtimizar = false;
+  abaAtiva: 'turnos' | 'personalizado' = 'turnos';
+
+  // Configuração de Turno
+  turnoSelecionado: 'M' | 'T' | 'N' | null = null;
+
+  // Estrutura flexível: cada dia pode ter N janelas de tempo
+  disponibilidade: any = {
+    'SEG': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'TER': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'QUA': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'QUI': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'SEX': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'SAB': []
+  };
+
+  diasSemana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
 
   turmaSelecionadaDetalhe: any = null;
   disiplinaSelecionada: any = null;
@@ -214,6 +234,43 @@ export class MyCronograma implements OnInit, OnDestroy {
       }
     }
     return null;
+  }
+
+  abrirModalOtimizar() {
+    this.menu3Aberto = false;
+    this.exibirModalOtimizar = true;
+  }
+
+  executarOtimizacao() {
+    if (this.abaAtiva === 'turnos') {
+      console.log("Otimizando para Turno:", this.turnoSelecionado);
+    } else {
+      console.log("Otimizando para Grade Personalizada:", this.disponibilidade);
+    }
+    this.exibirModalOtimizar = false;
+  }
+
+  adicionarJanela(dia: string) {
+    this.disponibilidade[dia].push({ inicio: '08:00', fim: '12:00' });
+  }
+
+  removerJanela(dia: string, index: number) {
+    this.disponibilidade[dia].splice(index, 1);
+  }
+
+  // No seu método que fecha os menus, adicione:
+  fecharMenus() {
+    this.menu1Aberto = false;
+    this.menu2Aberto = false;
+    this.menu3Aberto = false;
+    this.submenuPeriodoAberto = false; // Fecha o submenu também
+  }
+
+  preencherPorPeriodo(periodo: number) {
+    console.log("Preenchendo período:", periodo);
+    // Aqui vai sua lógica de preenchimento
+    this.submenuPeriodoAberto = false;
+    this.menu3Aberto = false;
   }
 
   // Método auxiliar para dar cores automáticas às matérias
