@@ -13,107 +13,429 @@ $tab-height: 42px;
 :host { display: block; width: 100%; margin: -2rem; padding: 0; }
 
 .planning-container {
-  position: relative; height: calc(100vh - 70px); width: calc(100% + 4rem); background-color: $bg-light; overflow: hidden; animation: fadeIn 0.4s ease-out;
+  position: relative; 
+  min-height: calc(100vh - 70px); 
+  width: calc(100% + 4rem); 
+  background-color: $bg-light; 
+  overflow: visible; 
+  animation: fadeIn 0.4s ease-out;
 
-  .menu-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.05); backdrop-filter: blur(2px); z-index: 999; }
+  .menu-overlay { 
+    position: absolute; 
+    inset: 0; 
+    background: rgba(15, 23, 42, 0.05); 
+    backdrop-filter: blur(2px); 
+    z-index: 999; 
+  }
 
   .top-menus-wrapper {
-    position: absolute; top: 0; left: 2rem; width: calc(100% - 4rem); z-index: 1000; display: flex; gap: 5px;
+    position: absolute; 
+    top: 0; 
+    left: 2rem; 
+    width: calc(100% - 4rem); 
+    z-index: 1000; 
+    display: flex; 
+    gap: 5px;
     
     aside {
-      position: relative; width: 360px; background: $white; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-radius: 0 0 20px 20px; border: 1px solid $border-color; border-top: none; transform: translateY(-100%); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative; 
+      width: 360px; 
+      background: $white; 
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); 
+      border-radius: 0 0 20px 20px; 
+      border: 1px solid $border-color; 
+      border-top: none; 
+      transform: translateY(-100%); 
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
       &.open { transform: translateY(0); }
       &.menu-disciplinas { border-bottom: 4px solid $primary-blue; z-index: 101; .tab-trigger { background: $primary-blue; } }
       &.menu-turmas { border-bottom: 4px solid $teal-accent; z-index: 100; .tab-trigger { background: $teal-accent; } }
 
-      .menu-content { padding: 1.5rem; max-height: 500px; overflow-y: auto; h3 { font-size: 1.1rem; font-weight: 700; color: $text-dark; margin-bottom: 1.2rem; } }
+      .menu-content { 
+        padding: 1.5rem; 
+        max-height: 500px; 
+        overflow-y: auto; 
+        h3 { font-size: 1.1rem; font-weight: 700; color: $text-dark; margin-bottom: 1.2rem; }
+      }
     }
   }
 
-  // --- COMPONENTES DE UI ---
-  .tab-trigger {
-    position: absolute; bottom: -$tab-height; height: $tab-height; min-width: 140px; display: flex; align-items: center; justify-content: center; border-radius: 0 0 14px 14px; cursor: pointer; color: $white; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); transition: all 0.2s;
-    &:hover { filter: brightness(1.1); transform: translateY(2px); }
-  }
-
+  // --- BUSCA E LEGENDAS ---
   .search-box {
-    position: relative; margin-bottom: 1.5rem;
+    position: relative; 
+    margin-bottom: 1.5rem;
     i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: $text-muted; }
-    input { width: 100%; padding: 0.8rem 0.8rem 0.8rem 2.5rem; border: 1px solid $border-color; border-radius: 12px; background: $bg-light; &:focus { outline: none; border-color: $primary-blue; background: $white; box-shadow: 0 0 0 3px rgba($primary-blue, 0.1); } }
+    input { 
+      width: 100%; 
+      padding: 0.8rem 0.8rem 0.8rem 2.5rem; 
+      border: 1px solid $border-color; 
+      border-radius: 12px; 
+      background: $bg-light; 
+      &:focus { outline: none; border-color: $primary-blue; background: $white; box-shadow: 0 0 0 3px rgba($primary-blue, 0.1); } 
+    }
   }
 
-  .list-legend, .turma-legend { display: grid; padding: 0 0.5rem 0.5rem; font-size: 0.65rem; font-weight: 700; color: $text-muted; text-transform: uppercase; }
+  .list-legend, .turma-legend { 
+    display: grid; 
+    padding: 0 0.5rem 0.5rem; 
+    font-size: 0.65rem; 
+    font-weight: 700; 
+    color: $text-muted; 
+    text-transform: uppercase; 
+  }
   .list-legend { grid-template-columns: 1fr 60px; }
-  .turma-legend { grid-template-columns: 1fr 50px 50px; }
+  .turma-legend { grid-template-columns: 1fr 50px 50px; margin-top: 10px; }
 
-  // --- CARDS ---
+  // --- LISTA DE DISCIPLINAS (MENU 1) ---
   .item-list li {
-    display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: $white; border: 1px solid $border-color; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s;
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 1rem; background: $white; border: 1px solid $border-color; 
+    border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s;
     &:hover { transform: translateY(-2px); border-color: $primary-blue; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .info { .name { display: block; font-weight: 700; font-size: 0.9rem; } .sub { font-size: 0.75rem; color: $text-muted; } }
     .add-btn { background: none; border: none; color: $primary-blue; font-size: 1.1rem; }
   }
 
+  // --- ACCORDION GESTÃO DE CICLO (MENU 2) ---
   .course-group {
-    margin-bottom: 1.5rem;
-    .course-header { display: flex; justify-content: space-between; align-items: center; background: color.adjust($teal-accent, $alpha: -0.92); padding: 6px 12px; border-radius: 8px; margin-bottom: 1rem; .course-name { font-weight: 700; font-size: 0.8rem; color: $teal-accent; } .remove-course { background: none; border: none; color: $text-muted; cursor: pointer; &:hover { color: #ef4444; } } }
-  }
+    margin-bottom: 0.8rem;
+    border: 1px solid $border-color;
+    border-radius: 12px;
+    overflow: hidden;
+    background: $white;
 
-  .turma-card {
-    display: grid; grid-template-columns: 1fr 50px 50px; align-items: center; background: $white; border: 1px solid $border-color; padding: 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.3s;
-    &:hover { border-color: $teal-accent; background: $bg-light; }
-    &.selected { border-color: $teal-accent; background: color.adjust($teal-accent, $alpha: -0.97); .custom-radio { background: $teal-accent; border-color: $teal-accent; i { transform: scale(1); opacity: 1; } } }
-    
-    .prof-info { 
-      display: flex; flex-direction: column; 
-      .prof-name { font-size: 0.85rem; font-weight: 700; color: $text-dark; }
-      .mini-horarios { display: flex; gap: 5px; font-size: 0.65rem; color: $text-muted; margin-top: 4px; span { background: #f1f5f9; padding: 1px 4px; border-radius: 4px; } }
+    .course-header {
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 12px 16px; 
+      background: #f8fafc; 
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover { background: #f1f5f9; }
+
+      .header-main {
+        display: flex; align-items: center; gap: 10px;
+        i { font-size: 0.7rem; color: $text-muted; transition: transform 0.3s; }
+        .course-name { font-weight: 700; font-size: 0.85rem; color: $text-dark; }
+      }
+
+      .header-actions {
+        display: flex; align-items: center; gap: 10px;
+        .selected-badge {
+          background: $teal-accent; color: white; font-size: 0.6rem;
+          padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase;
+        }
+        .remove-course { 
+          background: none; border: none; color: $text-muted; cursor: pointer;
+          &:hover { color: #ef4444; }
+        }
+      }
     }
-    .info-circle { background: none; border: none; color: #94a3b8; cursor: pointer; &:hover { color: $teal-accent; } }
-    .selection-zone { display: flex; justify-content: center; input { display: none; } .custom-radio { width: 20px; height: 20px; border: 2px solid $border-color; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; i { color: white; font-size: 0.6rem; transform: scale(0); opacity: 0; transition: 0.2s; } } }
+
+    .turma-wrapper {
+      padding: 0 12px 12px;
+      animation: slideDown 0.3s ease-out;
+    }
   }
 
-  .calendar-area { width: 100%; height: 100%; padding-top: 80px; display: flex; justify-content: center; align-items: flex-start; .placeholder-grid { width: 92%; max-width: 1100px; height: 500px; background: $white; border: 2px dashed color.adjust($border-color, $lightness: -5%); border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: $text-muted; text-align: center; i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.2; } p { font-size: 1.2rem; font-weight: 700; color: $text-dark; margin: 0; } span { font-size: 0.9rem; margin-top: 8px; } } }
+  // --- CARDS DE TURMA ---
+  .turma-card {
+    display: grid; 
+    grid-template-columns: 1fr 50px 50px; 
+    align-items: center; 
+    background: $white; 
+    border: 1px solid $border-color; 
+    padding: 12px; 
+    border-radius: 10px; 
+    margin-bottom: 6px; 
+    cursor: pointer; 
+    transition: all 0.2s;
+
+    &:hover { border-color: $teal-accent; background: #fafafa; }
+    
+    &.selected { 
+      border-color: $teal-accent; 
+      background: color.adjust($teal-accent, $alpha: -0.97); 
+      .custom-radio { 
+        background: $teal-accent; 
+        border-color: $teal-accent; 
+        i { transform: scale(1); opacity: 1; } 
+      } 
+    }
+    
+    .prof-name { font-size: 0.85rem; font-weight: 700; color: $text-dark; }
+    .info-circle { 
+      background: none; border: none; color: #94a3b8; cursor: pointer; 
+      font-size: 1.1rem;
+      &:hover { color: $primary-blue; } 
+    }
+    .selection-zone { 
+      display: flex; justify-content: center; 
+      input { display: none; } 
+      .custom-radio { 
+        width: 20px; height: 20px; border: 2px solid $border-color; 
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        transition: 0.2s;
+        i { color: white; font-size: 0.65rem; transform: scale(0); opacity: 0; transition: 0.2s; } 
+      } 
+    }
+  }
+
+  // --- BOTÃO LIMPAR TUDO ---
+  .menu-footer {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $border-color;
+    
+    .btn-clear-all {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px dashed #ef4444;
+      color: #ef4444;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #fef2f2;
+        border-style: solid;
+      }
+    }
+  }
+
+  // --- ÁREA DO CALENDÁRIO ---
+  .calendar-area { 
+    width: 100%; height: auto; padding-top: 80px; padding-bottom: 50px; 
+    display: flex; justify-content: center; align-items: flex-start; 
+    .placeholder-grid { 
+      width: 92%; max-width: 1100px; height: 500px; background: $white; 
+      border: 2px dashed color.adjust($border-color, $lightness: -5%); 
+      border-radius: 24px; display: flex; flex-direction: column; 
+      justify-content: center; align-items: center; color: $text-muted; text-align: center; 
+      i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.2; } 
+      p { font-size: 1.2rem; font-weight: 700; color: $text-dark; margin: 0; } 
+      span { font-size: 0.9rem; margin-top: 8px; } 
+    } 
+  }
+
+  .tab-trigger {
+    position: absolute; bottom: -$tab-height; height: $tab-height; 
+    min-width: 140px; display: flex; align-items: center; justify-content: center; 
+    border-radius: 0 0 14px 14px; cursor: pointer; color: $white; 
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); transition: all 0.2s;
+    &:hover { filter: brightness(1.1); transform: translateY(2px); }
+  }
+
+  .schedule-container {
+    width: 95%;
+    max-width: 1200px;
+    background: $white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    overflow: hidden;
+    margin: 0 auto;
+    border: 1px solid $border-color;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 800px;
+
+    thead {
+      background: $white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      
+      th {
+        padding: 15px;
+        color: $text-muted;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 2px solid $bg-light;
+      }
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba($border-color, 0.5);
+      &:hover { background: rgba($bg-light, 0.5); }
+    }
+
+    .time-column {
+      width: 110px;
+      padding: 10px;
+      background: $bg-light;
+      text-align: center;
+      border-right: 1px solid $border-color;
+
+      .code { display: block; font-weight: 800; color: $primary-blue; font-size: 0.9rem; }
+      .interval { display: block; font-size: 0.65rem; color: $text-muted; margin-top: 2px; }
+    }
+
+    td {
+      height: 60px;
+      padding: 4px;
+      border-right: 1px solid rgba($border-color, 0.3);
+      position: relative;
+      
+      &.has-class { background: rgba($primary-blue, 0.02); }
+    }
+
+    .class-card {
+      background: $white;
+      border: 1px solid $border-color;
+      border-left: 4px solid $primary-blue; // A cor pode ser dinâmica por disciplina
+      padding: 6px 8px;
+      border-radius: 6px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+
+      .class-name { 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        color: $text-dark;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .class-prof { font-size: 0.6rem; color: $text-muted; }
+    }
+  }
+
+  // --- RESPONSIVIDADE MOBILE (GAVETA LATERAL) ---
+  @media (max-width: 768px) {
+    .top-menus-wrapper {
+      left: 0; 
+      top: 0; 
+      width: 0; // Remove a largura total para não bloquear o clique no centro
+      flex-direction: column;
+      
+      aside {
+        position: fixed; 
+        left: 0; 
+        top: 0; 
+        height: 100vh; // Altura total da tela
+        width: 85vw; 
+        max-width: 310px;
+        border-radius: 0 20px 20px 0; // Arredonda apenas o lado direito
+        border-right: 4px solid; 
+        border-bottom: none; 
+        
+        // MUDANÇA CHAVE: Sai de cima e vai para a esquerda
+        transform: translateX(-100%); 
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        
+        &.open { transform: translateX(0); }
+        &.menu-disciplinas { border-right-color: $primary-blue; }
+        &.menu-turmas { border-right-color: $teal-accent; }
+
+        .menu-content { 
+          max-height: 100vh; // No mobile permite scroll na altura toda
+          padding-top: 2rem;
+        }
+
+        // REPOSICIONAMENTO DA ABA (TRIGGER)
+        .tab-trigger {
+          position: absolute;
+          left: 100%; // Cola na borda direita do menu
+          top: 0;
+          bottom: auto;
+          width: 150px;
+          height: 52px;
+          border-radius: 16px 16px 0 0;
+          
+          // Gira a aba para ficar vertical na lateral
+          transform: rotate(90deg) translateY(-100%);
+          transform-origin: top left;
+          box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+          z-index: 1;
+
+          &:not(.open) { animation: pulseAttentionMobile 2.5s infinite; }
+
+          &.blue-tab { top: 180px; } 
+          &.teal-tab { top: 340px; }
+          
+          span { transform: none; } // Garante que o texto não inverta
+        }
+      }
+    }
+    
+    .calendar-area { padding: 20px; }
+  }
 }
 
 // --- MODAL ---
-.modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+.modal-overlay { 
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); 
+  backdrop-filter: blur(4px); display: flex; justify-content: center; 
+  align-items: center; z-index: 2000; 
+}
+
 .modal-card {
-  background: $white; width: 95%; max-width: 420px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: modalSlideUp 0.3s ease-out;
-  header { padding: 1.5rem 2rem 0.5rem; display: flex; justify-content: space-between; align-items: center; h3 { margin: 0; color: $text-dark; font-weight: 700; } .close-btn { background: none; border: none; font-size: 1.8rem; color: $text-muted; cursor: pointer; } }
+  background: $white; width: 95%; max-width: 420px; border-radius: 20px; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+  animation: modalSlideUp 0.3s ease-out;
+
+  header { 
+    padding: 1.5rem 2rem 0.5rem; display: flex; justify-content: space-between; align-items: center; 
+    h3 { margin: 0; color: $text-dark; font-weight: 700; } 
+    .close-btn { background: none; border: none; font-size: 1.8rem; color: $text-muted; cursor: pointer; } 
+  }
+
   .modal-body { 
     padding: 1rem 2rem; 
     .info-item { margin-bottom: 1.5rem; label { display: block; font-size: 0.7rem; font-weight: 700; color: $text-muted; text-transform: uppercase; margin-bottom: 8px; } }
     .value { display: flex; align-items: center; gap: 10px; font-weight: 600; color: $text-dark; i { color: $primary-blue; } }
     
-    // --- NOVO DESIGN DE BADGES AGRUPADAS ---
     .horarios-container { 
       display: flex; flex-wrap: wrap; gap: 10px; 
       .horario-badge { 
         display: flex; border-radius: 8px; overflow: hidden; font-size: 0.75rem; 
         border: 1px solid color.adjust($primary-blue, $alpha: -0.8); background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-
         .dia { background: $primary-blue; color: white; padding: 6px 12px; font-weight: 700; text-transform: uppercase; }
-        
         .codigos-wrapper {
           display: flex; background: color.adjust($primary-blue, $alpha: -0.96);
-          .codigo { 
-            padding: 6px 12px; color: $primary-blue; font-weight: 700; position: relative;
-            &:not(:last-child)::after {
-              content: ''; position: absolute; right: 0; top: 25%; height: 50%; width: 1px;
-              background: color.adjust($primary-blue, $alpha: -0.85);
-            }
-          }
+          .codigo { padding: 6px 12px; color: $primary-blue; font-weight: 700; }
         }
       } 
     }
-
-    .vagas-info { display: flex; align-items: center; gap: 8px; font-weight: 600; i { color: $teal-accent; } }
-    .instruction { background: $bg-light; padding: 1rem; border-radius: 12px; font-size: 0.8rem; color: $text-muted; line-height: 1.4; border: 1px solid $border-color; margin-top: 1rem; }
   }
-  footer { padding: 1.5rem 2rem; background: #f8fafc; display: flex; gap: 12px; button { flex: 1; padding: 0.8rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; } .btn-cancel { background: #e2e8f0; color: #475569; } .btn-confirm { background: $primary-blue; color: white; } }
+
+  footer { 
+    padding: 1.5rem 2rem; background: #f8fafc; display: flex; gap: 12px; 
+    button { flex: 1; padding: 0.8rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; } 
+    .btn-cancel { background: #e2e8f0; color: #475569; } 
+    .btn-confirm { background: $primary-blue; color: white; } 
+  }
 }
 
+// --- ANIMAÇÕES ---
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes modalSlideUp { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes slideDown { from { opacity: 0; height: 0; } to { opacity: 1; height: auto; } }
+@keyframes pulseAttentionMobile {
+  0% { transform: rotate(90deg) translateY(-100%) translateX(0); }
+  50% { transform: rotate(90deg) translateY(-100%) translateX(10px); } // Empurra para a direita
+  100% { transform: rotate(90deg) translateY(-100%) translateX(0); }
+}

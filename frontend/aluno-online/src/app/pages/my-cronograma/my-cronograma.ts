@@ -33,101 +33,148 @@ export interface Disciplina {
   styleUrl: './my-cronograma.scss',
 })
 export class MyCronograma implements OnInit, OnDestroy {
-  // Injeção de Dependência
   private cronogramaService = inject(MyCronogramaService);
 
-  // Estados da Interface
+  listaHorariosDefinidos = [
+    { codigo: 'M1', intervalo: '07:00 - 07:50' },
+    { codigo: 'M2', intervalo: '07:50 - 08:40' },
+    { codigo: 'M3', intervalo: '08:50 - 09:40' },
+    { codigo: 'M4', intervalo: '09:40 - 10:30' },
+    { codigo: 'M5', intervalo: '10:40 - 11:30' },
+    { codigo: 'M6', intervalo: '11:30 - 12:20' },
+    { codigo: 'T1', intervalo: '12:30 - 13:20' },
+    { codigo: 'T2', intervalo: '13:20 - 14:10' },
+    { codigo: 'T3', intervalo: '14:20 - 15:10' },
+    { codigo: 'T4', intervalo: '15:10 - 16:00' },
+    { codigo: 'T5', intervalo: '16:10 - 17:00' },
+    { codigo: 'T6', intervalo: '17:00 - 17:50' },
+    { codigo: 'N1', intervalo: '18:00 - 18:50' },
+    { codigo: 'N2', intervalo: '18:50 - 19:40' },
+    { codigo: 'N3', intervalo: '19:40 - 20:30' },
+    { codigo: 'N4', intervalo: '20:30 - 21:20' },
+    { codigo: 'N5', intervalo: '21:20 - 22:10' }
+  ];
+
+  // Estados
   menu1Aberto = false;
   menu2Aberto = false;
   exibirModal = false;
-  turmaSelecionadaDetalhe: Turma | null = null;
+  turmaSelecionadaDetalhe: any = null;
+  disiplinaSelecionada: any = null;
 
-  // Gerenciamento de Dados
-  listaDisciplinasDisponiveis: Disciplina[] = [];
-  selecionadas: Disciplina[] = [];
-  
-  // Controle de Busca reativa
+  // Dados
+  listaDisciplinasDisponiveis: any[] = [];
+  selecionadas: any[] = [];
   termoBusca: string = '';
+
   private searchSubject = new Subject<string>();
-  private searchSubscription?: Subscription;
+  private searchSub?: Subscription;
 
-  ngOnInit(): void {
-    // Configura o observador de busca
-    this.searchSubscription = this.searchSubject.pipe(
-      debounceTime(400),        // Aguarda 400ms após o último clique
-      distinctUntilChanged()    // Só busca se o texto for diferente do anterior
-    ).subscribe(termo => {
-      this.executarBusca(termo);
-    });
+  ngOnInit() {
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(termo => this.executarBusca(termo));
   }
 
-  ngOnDestroy(): void {
-    // Limpa a inscrição para evitar vazamento de memória
-    this.searchSubscription?.unsubscribe();
-  }
+  ngOnDestroy() { this.searchSub?.unsubscribe(); }
 
-  // --- Lógica de Busca ---
-  onSearchChange(valor: string) {
-    this.searchSubject.next(valor);
-  }
+  onSearchChange(v: string) { this.searchSubject.next(v); }
 
   executarBusca(termo: string) {
-    if (!termo || termo.length < 3) {
-      this.listaDisciplinasDisponiveis = [];
-      return;
-    }
-
-    this.cronogramaService.buscar(termo).subscribe({
-      next: (dados) => {
-        this.listaDisciplinasDisponiveis = dados;
-      },
-      error: (err) => {
-        console.error('Erro ao buscar disciplinas no banco:', err);
-        this.listaDisciplinasDisponiveis = [];
-      }
-    });
+    if (termo.length < 3) { this.listaDisciplinasDisponiveis = []; return; }
+    this.cronogramaService.buscar(termo).subscribe(res => this.listaDisciplinasDisponiveis = res);
   }
 
-  // --- Lógica de Seleção ---
-  selecionarDisciplina(disc: Disciplina) {
-    const existe = this.selecionadas.find(item => item.nome === disc.nome);
-    if (!existe) {
-      // Faz uma cópia para evitar que a seleção de turma em um lugar afete o outro
-      this.selecionadas.push({ ...disc });
+  selecionarDisciplina(disc: any) {
+    if (!this.selecionadas.find(d => d.nome === disc.nome)) {
+      // Adiciona cores para o card e expande
+      this.selecionadas.push({ 
+        ...disc, 
+        expandida: true,
+        cor: this.gerarCorHex(disc.nome) 
+      });
+      
+      // UX: Fecha a busca e abre as turmas para o próximo passo
+      this.termoBusca = '';
+      this.listaDisciplinasDisponiveis = [];
       this.menu1Aberto = false;
       this.menu2Aberto = true;
     }
   }
 
-  removerDisciplina(disc: Disciplina) {
-    this.selecionadas = this.selecionadas.filter(item => item.nome !== disc.nome);
+  removerDisciplina(disc: any) {
+    this.selecionadas = this.selecionadas.filter(d => d.nome !== disc.nome);
   }
 
-  // --- Utilitários ---
-  getHorariosAgrupados(horarios: Horario[] | undefined) {
-    if (!horarios) return [];
+  toggleExpandir(disc: any) {
+    disc.expandida = !disc.expandida;
+  }
 
+  confirmarLimparTudo() {
+    if (confirm("Deseja realmente remover TODAS as disciplinas e turmas selecionadas?")) {
+      this.selecionadas = [];
+    }
+  }
+
+  abrirModal(disc: Disciplina, t: Turma) { this.disiplinaSelecionada = disc; this.turmaSelecionadaDetalhe = t; this.exibirModal = true; }
+  fecharModal() { this.exibirModal = false; }
+  selecionarTurmaModal(){ 
+    this.disiplinaSelecionada.selectedTurmaId =  (this.disiplinaSelecionada.selectedTurmaId === this.turmaSelecionadaDetalhe.id ? undefined : this.turmaSelecionadaDetalhe.id);
+    this.fecharModal();
+  }
+
+  getHorariosAgrupados(horarios: any[]) {
+    if (!horarios) return [];
     return horarios.reduce((acc: any[], curr) => {
-      const diaExistente = acc.find((item: any) => item.dia === curr.dia);
-      if (diaExistente) {
-        diaExistente.codigos.push(curr.hora_codigo);
-      } else {
-        acc.push({ dia: curr.dia, codigos: [curr.hora_codigo] });
-      }
+      const dia = acc.find(item => item.dia === curr.dia);
+      dia ? dia.codigos.push(curr.hora_codigo) : acc.push({ dia: curr.dia, codigos: [curr.hora_codigo] });
       return acc;
     }, []);
   }
 
-  // --- Modal ---
-  abrirModal(turma: Turma) {
-    this.turmaSelecionadaDetalhe = turma;
-    this.exibirModal = true;
-    document.body.style.overflow = 'hidden';
+  getAulaNoSlot(dia: string, horaCodigo: string) {
+    // Tradução dos dias para bater com o que vem do seu banco/interface
+    const mapaDias: { [key: string]: string } = {
+      'SEG': 'Segunda', 'TER': 'Terça', 'QUA': 'Quarta', 
+      'QUI': 'Quinta', 'SEX': 'Sexta', 'SAB': 'Sábado'
+    };
+
+    const diaBusca = mapaDias[dia];
+
+    for (const disc of this.selecionadas) {
+      // Só verifica se a disciplina tiver uma turma selecionada
+      if (disc.selectedTurmaId) {
+        const turmaAtiva = disc.turmas.find((t: Turma) => t.id === disc.selectedTurmaId);
+        
+        if (turmaAtiva) {
+          // Verifica se algum horário da turma bate com o dia e código da célula
+          const ocupado = turmaAtiva.horario.some((h: Horario) => 
+            h.dia.toLowerCase().includes(diaBusca.toLowerCase()) && 
+            h.hora_codigo === horaCodigo
+          );
+
+          if (ocupado) {
+            return {
+              nome: disc.nome,
+              professor: turmaAtiva.professor,
+              // Gerar uma cor consistente baseada no nome da disciplina
+              cor: this.gerarCorHex(disc.nome) 
+            };
+          }
+        }
+      }
+    }
+    return null;
   }
 
-  fecharModal() {
-    this.exibirModal = false;
-    this.turmaSelecionadaDetalhe = null;
-    document.body.style.overflow = 'auto';
+  // Método auxiliar para dar cores automáticas às matérias
+  private gerarCorHex(str: string) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return '#' + '00000'.substring(0, 6 - c.length) + c;
   }
 }

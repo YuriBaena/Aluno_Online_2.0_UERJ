@@ -24,18 +24,14 @@
           <li *ngFor="let disc of listaDisciplinasDisponiveis" (click)="selecionarDisciplina(disc)">
             <div class="info">
               <span class="name">{{ disc.nome }}</span>
-             <span class="sub">
-                @if (disc.periodo) {
-                  {{ disc.periodo }}º Período
-                } @else {
-                  Sem período definido
-                }
+              <span class="sub">
+                {{ disc.periodo ? disc.periodo + 'º Período' : 'Sem período definido' }}
               </span>
             </div>
             <button class="add-btn"><i class="fa-solid fa-plus"></i></button>
           </li>
 
-          <li *ngIf="termoBusca.length >= 3 && listaDisciplinasDisponiveis.length === 0" class="no-results" style="padding: 20px; text-align: center; color: #667085;">
+          <li *ngIf="termoBusca.length >= 3 && listaDisciplinasDisponiveis.length === 0" class="no-results">
             Nenhuma disciplina encontrada.
           </li>
         </ul>
@@ -54,39 +50,59 @@
           <p>Nenhuma disciplina selecionada.</p>
         </div>
 
+        <div class="menu-footer" *ngIf="selecionadas.length > 0">
+          <button class="btn-clear-all" (click)="confirmarLimparTudo()">
+            <i class="fa-solid fa-broom"></i> Limpar Todas as Atividades
+          </button>
+        </div>
+
         <div class="course-group" *ngFor="let disc of selecionadas">
-          <div class="course-header">
-            <span class="course-name">{{ disc.nome }}</span>
-            <button class="remove-course" (click)="removerDisciplina(disc)">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
+          <div class="course-header" (click)="toggleExpandir(disc)">
+            <div class="header-main">
+              <i class="fa-solid" [ngClass]="disc.expandida ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+              <span class="course-name">{{ disc.nome }}</span>
+            </div>
+            <div class="header-actions">
+              <span *ngIf="!disc.expandida && disc.selectedTurmaId" class="selected-badge"><i class="fa-solid fa-check"></i></span>
+              <button class="remove-course" (click)="removerDisciplina(disc); $event.stopPropagation()">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
           </div>
 
-          <div class="turma-legend">
-            <span>Professor / Turma</span>
-            <span class="text-center">Info</span>
-            <span class="text-center">Sel.</span>
-          </div>
+          <div class="turma-wrapper" *ngIf="disc.expandida">
+            <div class="turma-legend">
+              <span>Professor / Turma</span>
+              <span class="text-center">Info</span>
+              <span class="text-center">Sel.</span>
+            </div>
 
-          <div class="turma-list">
-            <label *ngFor="let t of disc.turmas" class="turma-card" [class.selected]="disc.selectedTurmaId === t.id">
-              <div class="prof-info">
-                <span class="prof-name">{{ t.professor || 'A Definir' }}</span>
-              </div>
+            <div class="turma-list">
+              <div *ngFor="let t of disc.turmas" 
+                   class="turma-card" 
+                   [class.selected]="disc.selectedTurmaId === t.id"
+                   (click)="disc.selectedTurmaId = (disc.selectedTurmaId === t.id ? undefined : t.id)">
+                
+                <div class="prof-info">
+                  <span class="prof-name">{{ t.professor || 'A Definir' }}</span>
+                </div>
 
-              <div class="action-zone">
-                <button class="info-circle" (click)="abrirModal(t); $event.stopPropagation()">
-                  <i class="fa-solid fa-circle-info"></i>
-                </button>
-              </div>
+                <div class="action-zone">
+                  <button class="info-circle" 
+                          title="Ver detalhes da turma"
+                          (click)="abrirModal(disc, t); $event.stopPropagation()">
+                    <i class="fa-solid fa-circle-info"></i>
+                  </button>
+                </div>
 
-              <div class="selection-zone">
-                <input type="radio" [name]="disc.nome" [value]="t.id" [(ngModel)]="disc.selectedTurmaId">
-                <div class="custom-radio">
-                  <i class="fa-solid fa-check"></i>
+                <div class="selection-zone">
+                  <input type="radio" [name]="disc.nome" [value]="t.id" [checked]="disc.selectedTurmaId === t.id">
+                  <div class="custom-radio">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
                 </div>
               </div>
-            </label>
+            </div>
           </div>
         </div>
       </div>
@@ -98,11 +114,46 @@
   </div>
 
   <main class="calendar-area">
-    <div class="placeholder-grid">
-      <i class="fa-regular fa-calendar-days"></i>
-      <p>Sua Grade de Horários</p>
-      <span>As turmas selecionadas aparecerão aqui após a escolha.</span>
+    <div class="schedule-container" *ngIf="selecionadas.length > 0; else emptyState">
+      <div class="table-responsive">
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>Tempo</th>
+              <th>Segunda</th>
+              <th>Terça</th>
+              <th>Quarta</th>
+              <th>Quinta</th>
+              <th>Sexta</th>
+              <th>Sábado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let horario of listaHorariosDefinidos">
+              <td class="time-column">
+                <span class="code">{{ horario.codigo }}</span>
+                <span class="interval">{{ horario.intervalo }}</span>
+              </td>
+              <td *ngFor="let dia of ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']" 
+                  [class.has-class]="getAulaNoSlot(dia, horario.codigo)">
+                <div class="class-card" *ngIf="getAulaNoSlot(dia, horario.codigo) as aula" [style.border-left-color]="aula.cor">
+                  <span class="class-name">{{ aula.nome }}</span>
+                  <span class="class-prof">{{ aula.professor }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <ng-template #emptyState>
+      <div class="placeholder-grid">
+        <i class="fa-regular fa-calendar-days"></i>
+        <p>Sua Grade de Horários</p>
+        <span>As turmas selecionadas aparecerão aqui após a escolha.</span>
+      </div>
+    </ng-template>
   </main>
 </div>
 
@@ -116,10 +167,7 @@
     <div class="modal-body">
       <div class="info-item">
         <label>Professor</label>
-        <div class="value">
-          <i class="fa-solid fa-user-tie"></i>
-          {{ turmaSelecionadaDetalhe?.professor || 'Não informado' }}
-        </div>
+        <div class="value"><i class="fa-solid fa-user-tie"></i> {{ turmaSelecionadaDetalhe?.professor || 'Não informado' }}</div>
       </div>
 
       <div class="info-item">
@@ -133,19 +181,11 @@
           </div>
         </div>
       </div>
-
-      <div class="info-item">
-        <label>Disponibilidade</label>
-        <div class="vagas-info">
-          <i class="fa-solid fa-users"></i>
-          <span>{{ turmaSelecionadaDetalhe?.vagas || 0 }} vagas totais</span>
-        </div>
-      </div>
     </div>
 
     <footer>
       <button class="btn-cancel" (click)="fecharModal()">Fechar</button>
-      <button class="btn-confirm" (click)="fecharModal()">Confirmar Seleção</button>
+      <button class="btn-confirm" (click)="selecionarTurmaModal()">Confirmar Seleção</button>
     </footer>
   </div>
 </div>
