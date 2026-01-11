@@ -20,7 +20,7 @@ public interface MyCronogramaRepository extends JpaRepository<Disciplina, String
             'periodo', d.periodo,
             'turmas', COALESCE((
                 SELECT jsonb_agg(jsonb_build_object(
-                    'id', t.id_turma,
+                    'id', t.numero,
                     'nome', 'Turma ' || t.numero,
                     'professor', p.nome,
                     'vagas', t.vagas,
