@@ -2,6 +2,7 @@
 
 // --- VARIÁVEIS ---
 $primary-blue: #004587;
+$purple-action: #8b5cf6;
 $teal-accent: #14b8a6;
 $bg-light: #f8fafc;
 $white: #ffffff;
@@ -51,7 +52,47 @@ $tab-height: 42px;
       &.open { transform: translateY(0); }
       &.menu-disciplinas { border-bottom: 4px solid $primary-blue; z-index: 101; .tab-trigger { background: $primary-blue; } }
       &.menu-turmas { border-bottom: 4px solid $teal-accent; z-index: 100; .tab-trigger { background: $teal-accent; } }
+      &.menu-acoes { 
+        border-bottom: 4px solid $purple-action; 
+        z-index: 99; 
+        .tab-trigger { background: $purple-action; } 
 
+        // Estilo interno para os botões de ação
+        .quick-actions-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 10px;
+
+          .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px;
+            background: $bg-light;
+            border: 1px solid $border-color;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+
+            i { font-size: 1.2rem; color: $purple-action; width: 25px; text-align: center; }
+            .txt {
+              display: flex;
+              flex-direction: column;
+              strong { font-size: 0.9rem; color: $text-dark; }
+              span { font-size: 0.7rem; color: $text-muted; }
+            }
+
+            &:hover {
+              transform: translateX(5px);
+              border-color: $purple-action;
+              background: $white;
+              box-shadow: 0 4px 12px rgba($purple-action, 0.1);
+            }
+          }
+        }
+      }
       .menu-content { 
         padding: 1.5rem; 
         max-height: 500px; 
@@ -349,6 +390,7 @@ $tab-height: 42px;
         &.open { transform: translateX(0); }
         &.menu-disciplinas { border-right-color: $primary-blue; }
         &.menu-turmas { border-right-color: $teal-accent; }
+        &.menu-acoes { border-right-color: $purple-action; }
 
         .menu-content { 
           max-height: 100vh; // No mobile permite scroll na altura toda
@@ -375,6 +417,7 @@ $tab-height: 42px;
 
           &.blue-tab { top: 180px; } 
           &.teal-tab { top: 340px; }
+          &.purple-tab { top: 500px; }
           
           span { transform: none; } // Garante que o texto não inverta
         }
@@ -428,6 +471,62 @@ $tab-height: 42px;
     .btn-cancel { background: #e2e8f0; color: #475569; } 
     .btn-confirm { background: $primary-blue; color: white; } 
   }
+}
+
+.conflict-modal {
+  border-top: 6px solid #ef4444; // Vermelho de erro
+
+  header h3 {
+    color: #b91c1c;
+    i { margin-right: 8px; }
+  }
+
+  .warning-text {
+    font-size: 0.9rem;
+    color: $text-muted;
+    margin-bottom: 20px;
+  }
+
+  .conflict-details {
+    display: flex;
+    align-items: center;
+    background: #fff1f2;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #fecaca;
+    gap: 10px;
+
+    .item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      label { font-size: 0.65rem; text-transform: uppercase; font-weight: 800; color: #991b1b; margin-bottom: 4px; }
+      strong { font-size: 0.85rem; color: $text-dark; }
+      span { font-size: 0.75rem; color: #7f1d1d; opacity: 0.8; }
+    }
+
+    .separator {
+      color: #ef4444;
+      font-size: 1.2rem;
+      animation: pulse 1.5s infinite;
+    }
+  }
+
+  .time-alert {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #991b1b;
+    background: #fee2e2;
+    padding: 8px;
+    border-radius: 8px;
+  }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
 }
 
 // --- ANIMAÇÕES ---

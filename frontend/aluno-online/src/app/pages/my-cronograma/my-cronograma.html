@@ -1,5 +1,8 @@
 <div class="planning-container">
-  <div class="menu-overlay" *ngIf="menu1Aberto || menu2Aberto" (click)="menu1Aberto = false; menu2Aberto = false"></div>
+  <div class="menu-overlay" 
+       *ngIf="menu1Aberto || menu2Aberto || menu3Aberto" 
+       (click)="menu1Aberto = false; menu2Aberto = false; menu3Aberto = false">
+  </div>
 
   <div class="top-menus-wrapper">
     <aside class="menu-disciplinas" [class.open]="menu1Aberto">
@@ -81,10 +84,10 @@
               <div *ngFor="let t of disc.turmas" 
                    class="turma-card" 
                    [class.selected]="disc.selectedTurmaId === t.id"
-                   (click)="disc.selectedTurmaId = (disc.selectedTurmaId === t.id ? undefined : t.id)">
+                   (click)="selecionarTurmaComVerificacao(disc, t)">
                 
                 <div class="prof-info">
-                  <span class="prof-name">{{ t.professor || 'A Definir' }}</span>
+                  <span class="prof-name">{{ t.professor + ' / ' + t.id || 'A Definir' }}</span>
                 </div>
 
                 <div class="action-zone">
@@ -109,6 +112,33 @@
 
       <div class="tab-trigger teal-tab" (click)="menu2Aberto = !menu2Aberto; menu1Aberto = false">
         <span>TURMAS</span>
+      </div>
+    </aside>
+
+    <aside class="menu-acoes" [class.open]="menu3Aberto">
+      <div class="menu-content">
+        <h3>Ações Rápidas <i class="fa-solid fa-bolt" style="color: #eab308; margin-left: 8px;"></i></h3>
+        
+        <div class="quick-actions-grid">
+          <button class="action-btn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Otimizar por Turno</span>
+          </button>
+          
+          <button class="action-btn">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Preencher Período</span>
+          </button>
+
+          <button class="action-btn danger" (click)="confirmarLimparTudo(); menu3Aberto=false;">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Resetar Grade</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="tab-trigger purple-tab" (click)="menu3Aberto = !menu3Aberto; menu1Aberto = false; menu2Aberto = false">
+        <span>AÇÕES</span>
       </div>
     </aside>
   </div>
@@ -186,6 +216,43 @@
     <footer>
       <button class="btn-cancel" (click)="fecharModal()">Fechar</button>
       <button class="btn-confirm" (click)="selecionarTurmaModal()">Confirmar Seleção</button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalConflito" (click)="exibirModalConflito = false">
+  <div class="modal-card conflict-modal" (click)="$event.stopPropagation()">
+    <header>
+      <h3><i class="fa-solid fa-triangle-exclamation"></i> Conflito de Horário</h3>
+      <button class="close-btn" (click)="exibirModalConflito = false">&times;</button>
+    </header>
+
+    <div class="modal-body">
+      <p class="warning-text">Não é possível selecionar esta turma pois ela coincide com uma disciplina já agendada.</p>
+      
+      <div class="conflict-details">
+        <div class="item current">
+          <label>Já na sua grade:</label>
+          <strong>{{ conflitoInfo?.turmaExistente.disciplina }}</strong>
+          <span>{{ conflitoInfo?.turmaExistente.professor }}</span>
+        </div>
+
+        <div class="separator"><i class="fa-solid fa-bolt"></i></div>
+
+        <div class="item target">
+          <label>Tentando adicionar:</label>
+          <strong>{{ conflitoInfo?.turmaNova.nome }}</strong>
+          <span>{{ conflitoInfo?.turmaNova.professor }}</span>
+        </div>
+      </div>
+
+      <div class="time-alert">
+        Conflito detectado no horário: <strong>{{ conflitoInfo?.turmaExistente.slot }}</strong>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" style="width: 100%" (click)="exibirModalConflito = false">Entendido, vou ajustar</button>
     </footer>
   </div>
 </div>

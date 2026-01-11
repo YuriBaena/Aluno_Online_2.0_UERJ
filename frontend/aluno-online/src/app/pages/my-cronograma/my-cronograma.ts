@@ -58,7 +58,12 @@ export class MyCronograma implements OnInit, OnDestroy {
   // Estados
   menu1Aberto = false;
   menu2Aberto = false;
+  menu3Aberto = false;
   exibirModal = false;
+
+  exibirModalConflito = false;
+  conflitoInfo: any = null;
+
   turmaSelecionadaDetalhe: any = null;
   disiplinaSelecionada: any = null;
 
@@ -112,9 +117,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   confirmarLimparTudo() {
-    if (confirm("Deseja realmente remover TODAS as disciplinas e turmas selecionadas?")) {
-      this.selecionadas = [];
-    }
+    this.selecionadas = [];
   }
 
   abrirModal(disc: Disciplina, t: Turma) { this.disiplinaSelecionada = disc; this.turmaSelecionadaDetalhe = t; this.exibirModal = true; }
@@ -134,13 +137,6 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   getAulaNoSlot(dia: string, horaCodigo: string) {
-    // Tradução dos dias para bater com o que vem do seu banco/interface
-    const mapaDias: { [key: string]: string } = {
-      'SEG': 'Segunda', 'TER': 'Terça', 'QUA': 'Quarta', 
-      'QUI': 'Quinta', 'SEX': 'Sexta', 'SAB': 'Sábado'
-    };
-
-    const diaBusca = mapaDias[dia];
 
     for (const disc of this.selecionadas) {
       // Só verifica se a disciplina tiver uma turma selecionada
@@ -150,7 +146,7 @@ export class MyCronograma implements OnInit, OnDestroy {
         if (turmaAtiva) {
           // Verifica se algum horário da turma bate com o dia e código da célula
           const ocupado = turmaAtiva.horario.some((h: Horario) => 
-            h.dia.toLowerCase().includes(diaBusca.toLowerCase()) && 
+            h.dia.toLowerCase().includes(dia.toLowerCase()) && 
             h.hora_codigo === horaCodigo
           );
 
@@ -160,6 +156,58 @@ export class MyCronograma implements OnInit, OnDestroy {
               professor: turmaAtiva.professor,
               // Gerar uma cor consistente baseada no nome da disciplina
               cor: this.gerarCorHex(disc.nome) 
+            };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  selecionarTurmaComVerificacao(disciplina: any, turma: any) {
+    // 1. Se o usuário clicar na turma que JÁ está selecionada, ele quer desmarcar
+    if (disciplina.selectedTurmaId === turma.id) {
+      disciplina.selectedTurmaId = undefined;
+      return;
+    }
+
+    // 2. Verificar conflitos APENAS com OUTRAS disciplinas
+    const conflito = this.checarConflito(turma, disciplina.nome);
+
+    if (conflito) {
+      this.conflitoInfo = {
+        turmaNova: { 
+          nome: disciplina.nome, 
+          professor: turma.professor, 
+          horario: turma.horario 
+        },
+        turmaExistente: conflito
+      };
+      this.exibirModalConflito = true;
+    } else {
+      // 3. Se não houver conflito (ou se for a mesma matéria), seleciona/substitui
+      disciplina.selectedTurmaId = turma.id;
+    }
+  }
+
+  checarConflito(turmaNova: any, nomeDisciplinaAtual: string) {
+    for (const disc of this.selecionadas) {
+      // REGRA CHAVE: Se for a mesma disciplina, pula a verificação de conflito
+      if (!disc.selectedTurmaId || disc.nome === nomeDisciplinaAtual) {
+        continue;
+      }
+      
+      const turmaAtiva = disc.turmas.find((t: any) => t.id === disc.selectedTurmaId);
+      if (!turmaAtiva) continue;
+
+      // Compara os horários
+      for (const hNova of turmaNova.horario) {
+        for (const hAtiva of turmaAtiva.horario) {
+          if (hNova.dia === hAtiva.dia && hNova.hora_codigo === hAtiva.hora_codigo) {
+            return { 
+              disciplina: disc.nome, 
+              professor: turmaAtiva.professor, 
+              slot: hNova.hora_codigo 
             };
           }
         }
