@@ -15,4 +15,14 @@ export class MyCronogramaService {
     const params = new HttpParams().set('busca', busca);
     return this.http.get<Disciplina[]>(`${this.API}`, { params });
   }
+
+  pegaPorPeriodo(busca: number): Observable<Disciplina[]> {
+    const params = new HttpParams()
+    return this.http.get<Disciplina[]>(`${this.API}/periodo/${busca}`, { params });
+  }
+
+  pegaNumPeriodos(): Observable<number> {
+    const params = new HttpParams()
+    return this.http.get<number>(`${this.API}/numero-de-periodos`, { params });
+  }
 }

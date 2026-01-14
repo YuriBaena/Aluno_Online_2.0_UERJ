@@ -143,7 +143,7 @@
             <div class="action-submenu" *ngIf="submenuPeriodoAberto">
               <div class="submenu-header">Escolha o período:</div>
               <div class="submenu-grid">
-                <button *ngFor="let p of [1,2,3,4,5,6,7,8,9,10]" (click)="preencherPorPeriodo(p)">
+                <button *ngFor="let p of this.periodos" (click)="preencherPorPeriodo(p)">
                   {{p}}º
                 </button>
               </div>
@@ -188,7 +188,7 @@
                   [class.has-class]="getAulaNoSlot(dia, horario.codigo)">
                 <div class="class-card" *ngIf="getAulaNoSlot(dia, horario.codigo) as aula" [style.border-left-color]="aula.cor">
                   <span class="class-name">{{ aula.nome }}</span>
-                  <span class="class-prof">{{ aula.professor }}</span>
+                  <span class="class-prof">Turma: {{ aula.turma }}</span>
                 </div>
               </td>
             </tr>

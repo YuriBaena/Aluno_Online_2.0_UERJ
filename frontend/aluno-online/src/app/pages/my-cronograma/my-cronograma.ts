@@ -55,6 +55,8 @@ export class MyCronograma implements OnInit, OnDestroy {
     { codigo: 'N5', intervalo: '21:20 - 22:10' }
   ];
 
+  periodos:number[] = [];
+
   // Estados
   menu1Aberto = false;
   menu2Aberto = false;
@@ -66,7 +68,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   exibirModalConflito = false;
   conflitoInfo: any = null;
 
- exibirModalOtimizar = false;
+  exibirModalOtimizar = false;
   abaAtiva: 'turnos' | 'personalizado' = 'turnos';
 
   // Configuração de Turno
@@ -100,6 +102,13 @@ export class MyCronograma implements OnInit, OnDestroy {
       debounceTime(400),
       distinctUntilChanged()
     ).subscribe(termo => this.executarBusca(termo));
+    this.cronogramaService.pegaNumPeriodos().subscribe(res => {
+      this.periodos = [];
+      const total = res || 12;
+      for (let i = 1; i <= total; i++) {
+        this.periodos.push(i);
+      }
+    });
   }
 
   ngOnDestroy() { this.searchSub?.unsubscribe(); }
@@ -174,6 +183,7 @@ export class MyCronograma implements OnInit, OnDestroy {
             return {
               nome: disc.nome,
               professor: turmaAtiva.professor,
+              turma: turmaAtiva.id,
               // Gerar uma cor consistente baseada no nome da disciplina
               cor: this.gerarCorHex(disc.nome) 
             };
@@ -267,7 +277,14 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   preencherPorPeriodo(periodo: number) {
-    console.log("Preenchendo período:", periodo);
+    this.cronogramaService.pegaPorPeriodo(periodo).subscribe(
+      (res)=> {
+        res.forEach(
+          (disc)=>{ disc.selectedTurmaId = disc.turmas[0].id;}
+        );
+        this.selecionadas = res;
+      }
+    )
     // Aqui vai sua lógica de preenchimento
     this.submenuPeriodoAberto = false;
     this.menu3Aberto = false;

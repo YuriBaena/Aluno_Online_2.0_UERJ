@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,20 @@ public class MyCronogramaResource{
     public ResponseEntity<List<DisciplinaDTO>> list(@AuthenticationPrincipal Aluno aluno, @RequestParam(required = false) String busca){
         return ResponseEntity.ok(
             servico.list(busca, aluno.getId())
+        );
+    }
+
+    @GetMapping("/periodo/{num}")
+    public ResponseEntity<List<DisciplinaDTO>> pegaPorPeriodo(@AuthenticationPrincipal Aluno aluno, @PathVariable("num") int num){
+        return ResponseEntity.ok(
+            servico.pegaMelhorCombinacaoPeriodo(num, aluno.getId())
+        );
+    }
+
+    @GetMapping("/numero-de-periodos")
+    public ResponseEntity<Integer> pegaNumPeriodos(@AuthenticationPrincipal Aluno aluno){
+        return ResponseEntity.ok(
+            servico.maiorPeriodo(aluno.getId())
         );
     }
 
