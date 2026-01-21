@@ -1,7 +1,7 @@
 package br.com.yuri.aluno_online.infrastructure.web;
 
 import br.com.yuri.aluno_online.application.sync.ScraperService;
-import br.com.yuri.aluno_online.domain.model.Aluno; // Assumindo sua classe de usuário
+import br.com.yuri.aluno_online.domain.model.Aluno;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

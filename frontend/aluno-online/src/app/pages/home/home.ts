@@ -16,6 +16,5 @@ export class Home{
 
   toggleMenu() {
     this.menuAbertoLateral = !this.menuAbertoLateral;
-    console.log('2. Home recebeu o evento. Estado do menuAbertoLateral:', this.menuAbertoLateral);
   }
 }

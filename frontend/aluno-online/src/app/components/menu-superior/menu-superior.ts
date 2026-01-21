@@ -13,7 +13,6 @@ export class MenuSuperior {
   @Output() onSanduicheClick = new EventEmitter<void>();
 
   clicouNoMenu() {
-    console.log('1. Clique detectado no Menu Superior');
     this.onSanduicheClick.emit();
   }
 }

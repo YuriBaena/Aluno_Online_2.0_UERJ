@@ -3,11 +3,37 @@
     <div class="menu-section">
       <small>ACADÊMICO</small>
       <ul>
-        <li class="active"><span><i class="fa-solid fa-chart-line"></i></span> Dashboard</li>
-        <li><span><i class="fa-solid fa-book"></i></span> Disciplinas do Curso</li>
-        <li><span><i class="fa-solid fa-check-circle"></i></span> Disciplinas Realizadas</li>
-        <li><span><i class="fa-solid fa-clipboard-list"></i></span> Histórico Escolar</li>
-        <li><span><i class="fa-solid fa-calendar-days"></i></span> Grade Horária</li>
+        <a routerLink="/home/dashboard" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'dashboard'">
+            <span><i class="fa-solid fa-chart-line"></i></span> Dashboard
+          </li>
+        </a>
+        <a routerLink="/home/disciplinas-curso" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'disciplinas-curso'">
+            <span><i class="fa-solid fa-book"></i></span> Disciplinas do Curso
+          </li>
+        </a>
+        <a routerLink="/home/disciplinas-realizadas" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'disciplinas-realizadas'">
+            <span><i class="fa-solid fa-check-circle"></i></span> Disciplinas Realizadas
+          </li>
+        </a>
+        <a routerLink="/home/historico" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'historico'">
+            <span><i class="fa-solid fa-clipboard-list"></i></span> Histórico Escolar
+          </li>
+        </a>
+        <a routerLink="/home/grade-horaria" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'grade-horaria'">
+            <span><i class="fa-solid fa-calendar-days"></i></span> Grade Horária
+          </li>
+        </a>
+        <a routerLink="/home/my-cronograma" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'monte seu cronograma'">
+            <span><i class="fa-solid fa-calendar-plus"></i></span> Monte seu Cronograma
+          </li>
+        </a>
+        
       </ul>
     </div>
 

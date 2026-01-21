@@ -129,6 +129,10 @@ def pegaDadosPessoaisSinteseFormacao(driver, wait):
 # -- TODAS MATERIAS DO CURRICULO 
 
 def coletaMateriasCurriculo(driver, curso):
+    print(f"LOG: Limpando dados existentes: {curso}...", flush=True)
+
+    imprimir_bloco_sql("TRUNCATE TABLE public.professor, public.turma, public.horario_aula RESTART IDENTITY CASCADE;")
+
     print(f"LOG: Iniciando extração sequencial para: {curso}...", flush=True)
     
     mapa_dias = {"SEG": "Segunda", "TER": "Terca", "QUA": "Quarta", "QUI": "Quinta", "SEX": "Sexta", "SAB": "Sabado"}
@@ -282,6 +286,17 @@ def coletaMateriasRealizadas(driver, login):
 # --- DISCIPLINAS EM ANDAMENTO ---
 
 def coletaMateriasEmAndamento(driver, login):
+
+    print("LOG: Limpando materias feitas no periodo anterior", flush=True)
+
+    # Use format_val para garantir as aspas se necessário e o CAST para garantir o tipo BIGINT
+    imprimir_bloco_sql(f"""
+        DELETE FROM public.em_andamento
+        WHERE id_aluno = (
+            SELECT id FROM public.aluno WHERE matricula = CAST({format_val(login)} AS bigint)
+        );
+    """.replace('\n', ' ').strip())
+
     print("LOG: Coletando matérias em andamento...", flush=True)
     wait = WebDriverWait(driver, 5)
 

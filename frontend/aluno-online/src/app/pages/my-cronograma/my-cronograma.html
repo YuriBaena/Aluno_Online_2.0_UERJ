@@ -1,0 +1,355 @@
+<div class="planning-container">
+  <div class="menu-overlay" 
+       *ngIf="menu1Aberto || menu2Aberto || menu3Aberto" 
+       (click)="menu1Aberto = false; menu2Aberto = false; menu3Aberto = false">
+  </div>
+
+  <div class="top-menus-wrapper">
+    <aside class="menu-disciplinas" [class.open]="menu1Aberto">
+      <div class="menu-content">
+        <h3>Buscar Disciplinas</h3>
+        
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="termoBusca" 
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Ex: Cálculo I, Física...">
+        </div>
+
+        <div class="list-legend">
+          <span>Disciplina / Período</span>
+          <span class="text-right">Ação</span>
+        </div>
+
+        <ul class="item-list">
+          <li *ngFor="let disc of listaDisciplinasDisponiveis" (click)="selecionarDisciplina(disc)">
+            <div class="info">
+              <span class="name">{{ disc.nome }}</span>
+              <span class="sub">
+                {{ disc.periodo ? disc.periodo + 'º Período' : 'Sem período definido' }}
+              </span>
+            </div>
+            <button class="add-btn"><i class="fa-solid fa-plus"></i></button>
+          </li>
+
+          <li *ngIf="termoBusca.length >= 3 && listaDisciplinasDisponiveis.length === 0" class="no-results">
+            Nenhuma disciplina encontrada.
+          </li>
+        </ul>
+      </div>
+      
+      <div class="tab-trigger blue-tab" (click)="menu1Aberto = !menu1Aberto; menu2Aberto = false">
+        <span>DISCIPLINAS</span>
+      </div>
+    </aside>
+
+    <aside class="menu-turmas" [class.open]="menu2Aberto">
+      <div class="menu-content">
+        <h3>Grade de Horários</h3>
+        
+        <div class="empty-selection" *ngIf="selecionadas.length === 0">
+          <p>Nenhuma disciplina selecionada.</p>
+        </div>
+
+        <div class="menu-footer" *ngIf="selecionadas.length > 0">
+          <button class="btn-clear-all" (click)="confirmarLimparTudo()">
+            <i class="fa-solid fa-broom"></i> Limpar Todas as Atividades
+          </button>
+        </div>
+
+        <div class="course-group" *ngFor="let disc of selecionadas">
+          <div class="course-header" (click)="toggleExpandir(disc)">
+            <div class="header-main">
+              <i class="fa-solid" [ngClass]="disc.expandida ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+              <span class="course-name">{{ disc.nome }}</span>
+            </div>
+            <div class="header-actions">
+              <span *ngIf="!disc.expandida && disc.selectedTurmaId" class="selected-badge"><i class="fa-solid fa-check"></i></span>
+              <button class="remove-course" (click)="removerDisciplina(disc); $event.stopPropagation()">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="turma-wrapper" *ngIf="disc.expandida">
+            <div class="turma-legend">
+              <span>Professor / Turma</span>
+              <span class="text-center">Info</span>
+              <span class="text-center">Sel.</span>
+            </div>
+
+            <div class="turma-list">
+              <div *ngFor="let t of disc.turmas" 
+                   class="turma-card" 
+                   [class.selected]="disc.selectedTurmaId === t.id"
+                   (click)="selecionarTurmaComVerificacao(disc, t)">
+                
+                <div class="prof-info">
+                  <span class="prof-name">{{ t.professor + ' / ' + t.id || 'A Definir' }}</span>
+                </div>
+
+                <div class="action-zone">
+                  <button class="info-circle" 
+                          title="Ver detalhes da turma"
+                          (click)="abrirModal(disc, t); $event.stopPropagation()">
+                    <i class="fa-solid fa-circle-info"></i>
+                  </button>
+                </div>
+
+                <div class="selection-zone">
+                  <input type="radio" [name]="disc.nome" [value]="t.id" [checked]="disc.selectedTurmaId === t.id">
+                  <div class="custom-radio">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-trigger teal-tab" (click)="menu2Aberto = !menu2Aberto; menu1Aberto = false">
+        <span>TURMAS</span>
+      </div>
+    </aside>
+
+    <aside class="menu-acoes" [class.open]="menu3Aberto">
+      <div class="menu-content">
+        <h3>Ações Rápidas <i class="fa-solid fa-bolt" style="color: #eab308; margin-left: 8px;"></i></h3>
+        
+        <div class="quick-actions-grid">
+          <button class="action-btn" title="Retorna lista de materias possiveis para adicionar no cronograma atual">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Otimizar Atual</span>
+          </button>
+          
+          <button class="action-btn" (click)="abrirModalOtimizar()" title="Cria cronograma baseado em informações de horários disponiveis">
+            <i class="fa-solid fa-clock"></i>
+            <span>Otimizar por Turno</span>
+          </button>
+          
+          <div class="dropdown-wrapper">
+            <button class="action-btn" 
+                    (click)="submenuPeriodoAberto = !submenuPeriodoAberto" 
+                    [class.active]="submenuPeriodoAberto"
+                    title="Cria cronograma baseado no periodo escolhido">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <span>Preencher Período</span>
+              <i class="fa-solid fa-chevron-down arrow-icon"></i>
+            </button>
+
+            <div class="action-submenu" *ngIf="submenuPeriodoAberto">
+              <div class="submenu-header">Escolha o período:</div>
+              <div class="submenu-grid">
+                <button *ngFor="let p of this.periodos" (click)="preencherPorPeriodo(p)">
+                  {{p}}º
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button class="action-btn danger" (click)="confirmarLimparTudo(); menu3Aberto=false;">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Resetar Grade</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="tab-trigger purple-tab" (click)="menu3Aberto = !menu3Aberto; menu1Aberto = false; menu2Aberto = false">
+        <span>AÇÕES</span>
+      </div>
+    </aside>
+  </div>
+
+  <main class="calendar-area">
+    <div class="schedule-container" *ngIf="selecionadas.length > 0; else emptyState">
+      <div class="table-responsive">
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>Tempo</th>
+              <th>Segunda</th>
+              <th>Terça</th>
+              <th>Quarta</th>
+              <th>Quinta</th>
+              <th>Sexta</th>
+              <th>Sábado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let horario of listaHorariosDefinidos">
+              <td class="time-column">
+                <span class="code">{{ horario.codigo }}</span>
+                <span class="interval">{{ horario.intervalo }}</span>
+              </td>
+              <td *ngFor="let dia of ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']" 
+                  [class.has-class]="getAulaNoSlot(dia, horario.codigo)">
+                <div class="class-card" *ngIf="getAulaNoSlot(dia, horario.codigo) as aula" [style.border-left-color]="aula.cor">
+                  <span class="class-name">{{ aula.nome }}</span>
+                  <span class="class-prof">Turma: {{ aula.turma }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="placeholder-grid">
+        <i class="fa-regular fa-calendar-days"></i>
+        <p>Sua Grade de Horários</p>
+        <span>As turmas selecionadas aparecerão aqui após a escolha.</span>
+      </div>
+    </ng-template>
+  </main>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModal" (click)="fecharModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <header>
+      <h3>Detalhes da Turma</h3>
+      <button class="close-btn" (click)="fecharModal()">&times;</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="info-item">
+        <label>Professor</label>
+        <div class="value"><i class="fa-solid fa-user-tie"></i> {{ turmaSelecionadaDetalhe?.professor || 'Não informado' }}</div>
+      </div>
+
+      <div class="info-item">
+        <label>Grade de Horários Agrupada</label>
+        <div class="horarios-container">
+          <div *ngFor="let grupo of getHorariosAgrupados(turmaSelecionadaDetalhe?.horario)" class="horario-badge">
+            <span class="dia">{{ grupo.dia }}</span>
+            <div class="codigos-wrapper">
+              <span *ngFor="let cod of grupo.codigos" class="codigo">{{ cod }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="fecharModal()">Fechar</button>
+      <button class="btn-confirm" (click)="selecionarTurmaModal()">Confirmar Seleção</button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalConflito" (click)="exibirModalConflito = false">
+  <div class="modal-card conflict-modal" (click)="$event.stopPropagation()">
+    <header>
+      <h3><i class="fa-solid fa-triangle-exclamation"></i> Conflito de Horário</h3>
+      <button class="close-btn" (click)="exibirModalConflito = false">&times;</button>
+    </header>
+
+    <div class="modal-body">
+      <p class="warning-text">Não é possível selecionar esta turma pois ela coincide com uma disciplina já agendada.</p>
+      
+      <div class="conflict-details">
+        <div class="item current">
+          <label>Já na sua grade:</label>
+          <strong>{{ conflitoInfo?.turmaExistente.disciplina }}</strong>
+          <span>{{ conflitoInfo?.turmaExistente.professor }}</span>
+        </div>
+
+        <div class="separator"><i class="fa-solid fa-bolt"></i></div>
+
+        <div class="item target">
+          <label>Tentando adicionar:</label>
+          <strong>{{ conflitoInfo?.turmaNova.nome }}</strong>
+          <span>{{ conflitoInfo?.turmaNova.professor }}</span>
+        </div>
+      </div>
+
+      <div class="time-alert">
+        Conflito detectado no horário: <strong>{{ conflitoInfo?.turmaExistente.slot }}</strong>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" style="width: 100%" (click)="exibirModalConflito = false">Entendido, vou ajustar</button>
+    </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalOtimizar" (click)="exibirModalOtimizar = false">
+  <div class="modal-card smart-modal wide-modal" (click)="$event.stopPropagation()">
+    <header>
+      <div class="header-title">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <h3>Assistente de Grade</h3>
+      </div>
+      <button class="close-btn" (click)="exibirModalOtimizar = false">&times;</button>
+    </header>
+
+    <div class="tabs-nav">
+      <button [class.active]="abaAtiva === 'turnos'" (click)="abaAtiva = 'turnos'">Turnos padrão</button>
+      <button [class.active]="abaAtiva === 'personalizado'" (click)="abaAtiva = 'personalizado'">Minha Disponibilidade</button>
+    </div>
+
+    <div class="modal-body scrollable">
+      
+      <div *ngIf="abaAtiva === 'turnos'" class="tab-content">
+        <p class="description">Selecione um período padrão para priorizar suas turmas:</p>
+        <div class="turno-options">
+          <div class="turno-card" [class.active]="turnoSelecionado === 'M'" (click)="turnoSelecionado = 'M'">
+            <i class="fa-solid fa-sun"></i>
+            <strong>Manhã</strong>
+          </div>
+          <div class="turno-card" [class.active]="turnoSelecionado === 'T'" (click)="turnoSelecionado = 'T'">
+            <i class="fa-solid fa-cloud-sun"></i>
+            <strong>Tarde</strong>
+          </div>
+          <div class="turno-card" [class.active]="turnoSelecionado === 'N'" (click)="turnoSelecionado = 'N'">
+            <i class="fa-solid fa-moon"></i>
+            <strong>Noite</strong>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="abaAtiva === 'personalizado'" class="tab-content">
+        <p class="description">Adicione as janelas de tempo em que você está <strong>disponível</strong>:</p>
+        
+        <div class="disp-list scrollable">
+          <div class="day-group" *ngFor="let dia of diasSemana">
+            <div class="day-header">
+              <span class="day-label">{{ dia }}</span>
+              <button class="add-window-btn" (click)="adicionarJanela(dia)">
+                <i class="fa-solid fa-plus"></i> Novo Horário
+              </button>
+            </div>
+
+            <div class="windows-container">
+              <div class="no-windows" *ngIf="disponibilidade[dia].length === 0">
+                Nenhum horário livre definido
+              </div>
+              
+              <div class="disp-row-window" *ngFor="let janela of disponibilidade[dia]; let i = index">
+                <div class="time-inputs">
+                  <input type="time" [(ngModel)]="janela.inicio">
+                  <span>às</span>
+                  <input type="time" [(ngModel)]="janela.fim">
+                </div>
+                <button class="remove-window" (click)="removerJanela(dia, i)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="exibirModalOtimizar = false">Cancelar</button>
+      <button class="btn-confirm purple-btn" (click)="executarOtimizacao()">
+        Gerar Melhor Grade
+      </button>
+    </footer>
+  </div>
+</div>
