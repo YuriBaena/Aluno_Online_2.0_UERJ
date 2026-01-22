@@ -5,6 +5,9 @@ import br.com.yuri.aluno_online.domain.enums.Role;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,8 +44,8 @@ public class Aluno implements UserDetails { // 1. Implementar UserDetails
     @JoinColumn(name = "id_curso", foreignKey = @ForeignKey(name = "fk_aluno_curso"))
     private Curso curso;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status_matricula", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status_matricula")
     private StatusMatricula statusMatricula;
 
     @Column(name = "email_institucional", unique = true, nullable = false)

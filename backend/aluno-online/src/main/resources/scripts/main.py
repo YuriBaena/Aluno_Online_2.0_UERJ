@@ -12,14 +12,14 @@ def funcaoPrincipal(login, senha):
         nome, curso, total_creditos = funcoes.coletaDadosPessoais(driver)
         funcoes.gerar_sql_aluno(login, nome, curso, total_creditos)
 
-        # 2. Em Andamento (Imprime de 10 em 10 durante a execução)
+        # 2. Grade (Imprime de 10 em 10 durante a execução)
+        funcoes.coletaMateriasCurriculo(driver, curso)
+
+        # 3. Em Andamento (Imprime de 10 em 10 durante a execução)
         funcoes.coletaMateriasEmAndamento(driver, login)
 
-        # 3. Histórico (Imprime de 10 em 10 durante a execução)
+        # 4. Histórico (Imprime de 10 em 10 durante a execução)
         funcoes.coletaMateriasRealizadas(driver, login)
-
-        # 4. Grade (Imprime de 10 em 10 durante a execução)
-        funcoes.coletaMateriasCurriculo(driver, curso)
         
         print("LOG: Sincronização concluída com sucesso.", flush=True)
 

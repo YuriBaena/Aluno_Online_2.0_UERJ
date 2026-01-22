@@ -102,9 +102,9 @@ public class MyCronogramaRepository {
         return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
     }
 
-    public int getNumPeriodos(UUID id_aluno){
+    public int getNumPeriodos(UUID id_aluno) {
         String sql = """
-            SELECT MAX(d.periodo)
+            SELECT COALESCE(MAX(d.periodo), 0)
             FROM disciplina d
             INNER JOIN aluno a ON a.id_curso = d.id_curso
             WHERE a.id = :id_aluno
@@ -115,6 +115,7 @@ public class MyCronogramaRepository {
 
         return npJdbc.queryForObject(sql, params, Integer.class);
     }
+
 
     @RequiredArgsConstructor
     private static class DisciplinaJsonRowMapper implements RowMapper<DisciplinaDTO> {

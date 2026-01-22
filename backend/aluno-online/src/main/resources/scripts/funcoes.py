@@ -222,6 +222,10 @@ def coletaMateriasCurriculo(driver, curso):
             print(f"ERRO na linha {i}: {e}")
             continue
 
+    # Volta para tela inicial
+    driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+
+
 # -- MATERIAS JA REALIZADAS
 
 def coletaMateriasRealizadas(driver, login):

@@ -6,7 +6,7 @@
 DO '
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = ''status_matricula_enum'') THEN
-        CREATE TYPE status_matricula_enum AS ENUM (''Ativo'', ''Inativo'', ''Trancado'', ''Formado'');
+        CREATE TYPE status_matricula_enum AS ENUM (''ATIVO'', ''CANCELADO'', ''TRANCADO'', ''FORMADO'');
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = ''dia_semana_enum'') THEN
