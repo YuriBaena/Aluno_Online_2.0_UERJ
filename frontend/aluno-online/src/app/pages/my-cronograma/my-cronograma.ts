@@ -19,6 +19,7 @@ export interface Turma {
 }
 
 export interface Disciplina {
+  codigo: string;
   nome: string;
   periodo: number;
   selectedTurmaId?: number;
@@ -62,6 +63,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   menu2Aberto = false;
   menu3Aberto = false;
   exibirModal = false;
+  exibirModalResumo = false;
 
   submenuPeriodoAberto = false;
 
@@ -277,18 +279,62 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   preencherPorPeriodo(periodo: number) {
-    this.cronogramaService.pegaPorPeriodo(periodo).subscribe(
-      (res)=> {
-        res.forEach(
-          (disc)=>{ disc.selectedTurmaId = disc.turmas[0].id;}
-        );
-        this.selecionadas = res;
+    this.cronogramaService.pegaPorPeriodo(periodo).subscribe(res => {
+
+      for (const disc of res) {
+
+        // 1️⃣ Evita duplicar disciplina
+        const jaExiste = this.selecionadas.find(d => d.nome === disc.nome);
+        if (jaExiste) continue;
+
+        // 2️⃣ Seleciona a turma padrão (primeira)
+        const turmaPadrao = disc.turmas?.[0];
+        if (!turmaPadrao) continue;
+
+        // 3️⃣ Verifica conflito com as já selecionadas
+        const conflito = this.checarConflito(turmaPadrao, disc.nome);
+
+        if (conflito) {
+          // 4️⃣ Se houver conflito, abre modal e PARA
+          this.conflitoInfo = {
+            turmaNova: {
+              nome: disc.nome,
+              professor: turmaPadrao.professor,
+              horario: turmaPadrao.horario
+            },
+            turmaExistente: conflito
+          };
+
+          this.exibirModalConflito = true;
+          break; // ⛔ Para no primeiro conflito
+        }
+
+        // 5️⃣ Se não houver conflito, adiciona
+        this.selecionadas.push({
+          ...disc,
+          selectedTurmaId: turmaPadrao.id,
+          expandida: false,
+          cor: this.gerarCorHex(disc.nome)
+        });
       }
-    )
-    // Aqui vai sua lógica de preenchimento
-    this.submenuPeriodoAberto = false;
-    this.menu3Aberto = false;
+
+      // UX
+      this.submenuPeriodoAberto = false;
+      this.menu3Aberto = false;
+
+      console.log("Disciplinas após preenchimento por período:", this.selecionadas);
+    });
   }
+
+  abrirModalResumo() {
+    this.exibirModalResumo = true;
+  }
+
+  fecharModalResumo() {
+    this.exibirModalResumo = false;
+  }
+
+
 
   // Método auxiliar para dar cores automáticas às matérias
   private gerarCorHex(str: string) {

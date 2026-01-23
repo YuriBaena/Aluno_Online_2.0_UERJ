@@ -518,6 +518,32 @@ $tab-height: 42px;
   }
 }
 
+
+.resume-bar {
+  position: sticky;
+  bottom: 0;
+  background: #0f172a;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #1e293b;
+  z-index: 20;
+}
+
+.resume-btn {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resume-btn i {
+  margin-right: 8px;
+}
+
 // --- MODAL ---
 .modal-overlay { 
   position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); 
@@ -553,6 +579,28 @@ $tab-height: 42px;
         }
       } 
     }
+
+    .resume-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .resume-table th,
+    .resume-table td {
+      padding: 10px;
+      border-bottom: 1px solid #1e293b;
+      text-align: left;
+    }
+
+    .resume-table th {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .resume-table td {
+      color: #4c4c4c;
+    }
+
   }
 
   footer { 

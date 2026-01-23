@@ -45,7 +45,8 @@ public class MyCronogramaResource{
         );
     }
 
-    public record DisciplinaDTO(String nome,
+    public record DisciplinaDTO(String codigo,
+                                String nome,
                                 Integer periodo,
                                 List<TurmaDTO> turmas) {}
 

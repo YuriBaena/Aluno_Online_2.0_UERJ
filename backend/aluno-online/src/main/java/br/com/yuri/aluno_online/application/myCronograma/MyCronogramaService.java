@@ -74,6 +74,7 @@ public class MyCronogramaService {
                 
                 // Cria uma nova instância da disciplina contendo APENAS a turma escolhida
                 DisciplinaDTO disciplinaComTurmaEscolhida = new DisciplinaDTO(
+                    disciplina.codigo(),
                     disciplina.nome(), 
                     disciplina.periodo(), 
                     List.of(turma)

@@ -205,6 +205,14 @@
       </div>
     </ng-template>
   </main>
+
+  <div class="resume-bar" *ngIf="selecionadas.length > 0">
+    <button class="resume-btn" (click)="abrirModalResumo()">
+      <i class="fa-solid fa-list-check"></i>
+      Ver Resumo das Seleções
+    </button>
+  </div>
+
 </div>
 
 <div class="modal-overlay" *ngIf="exibirModal" (click)="fecharModal()">
@@ -351,5 +359,47 @@
         Gerar Melhor Grade
       </button>
     </footer>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalResumo" (click)="fecharModalResumo()">
+  <div class="modal-card wide-modal" (click)="$event.stopPropagation()">
+    
+    <header>
+      <h3><i class="fa-solid fa-clipboard-list"></i> Resumo do Cronograma</h3>
+      <button class="close-btn" (click)="fecharModalResumo()">&times;</button>
+    </header>
+
+    <div class="modal-body">
+      
+      <div *ngIf="selecionadas.length === 0" class="empty-selection">
+        Nenhuma disciplina selecionada.
+      </div>
+
+      <table class="resume-table" *ngIf="selecionadas.length > 0">
+        <thead>
+          <tr>
+            <th>Disciplina</th>
+            <th>Código</th>
+            <th>Turma</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let disc of selecionadas">
+            <td>{{ disc.nome }}</td>
+            <td>{{ disc.codigo || '—' }}</td>
+            <td>
+              {{ disc.selectedTurmaId || 'Não selecionada' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="fecharModalResumo()">Fechar</button>
+    </footer>
+
   </div>
 </div>

@@ -28,6 +28,7 @@ public class MyCronogramaRepository {
         String sql = """
             SELECT jsonb_build_object(
                 'nome', d.nome,
+                'codigo', d.codigo,
                 'periodo', d.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
@@ -67,6 +68,7 @@ public class MyCronogramaRepository {
         String sql = """
             SELECT jsonb_build_object(
                 'nome', d.nome,
+                'codigo', d.codigo,
                 'periodo', d.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
