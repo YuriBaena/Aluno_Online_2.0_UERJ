@@ -1,6 +1,7 @@
 package br.com.yuri.aluno_online.infrastructure.repository;
 
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.DisciplinaDTO;
+import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.HorarioDTO;
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
@@ -64,6 +65,61 @@ public class MyCronogramaRepository {
         return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
     }
 
+    public List<DisciplinaDTO> listDiaHora(HorarioDTO dia_hora, UUID id_aluno) {
+        String sql = """
+            SELECT jsonb_build_object(
+                'nome', d.nome,
+                'codigo', d.codigo,
+                'periodo', d.periodo,
+                'turmas', COALESCE((
+                    SELECT jsonb_agg(jsonb_build_object(
+                        'id', t.numero,
+                        'nome', 'Turma ' || t.numero,
+                        'professor', p.nome,
+                        'vagas', t.vagas,
+                        'horario', COALESCE((
+                            SELECT jsonb_agg(jsonb_build_object(
+                                'dia', h.dia,
+                                'hora_codigo', h.codigo_hora
+                            ))
+                            FROM horario_aula h
+                            WHERE h.id_turma = t.id_turma
+                        ), '[]'::jsonb)
+                    ))
+                    FROM turma t
+                    LEFT JOIN professor p ON t.id_professor = p.id
+                    WHERE t.codigo_disciplina = d.codigo
+                    AND EXISTS (
+                        SELECT 1
+                        FROM horario_aula h2
+                        WHERE h2.id_turma = t.id_turma
+                            AND h2.dia = :dia::dia_semana_enum
+                            AND h2.codigo_hora = :hora
+                    )
+                ), '[]'::jsonb)
+            ) AS json_data
+            FROM disciplina d
+            INNER JOIN aluno a ON a.id_curso = d.id_curso
+            WHERE a.id = :id_aluno
+            AND EXISTS (
+                SELECT 1
+                FROM turma t2
+                JOIN horario_aula h ON h.id_turma = t2.id_turma
+                WHERE t2.codigo_disciplina = d.codigo
+                AND h.dia = :dia::dia_semana_enum
+                AND h.codigo_hora = :hora
+            )
+            ORDER BY d.periodo, d.nome;
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id_aluno", id_aluno)
+                .addValue("dia", dia_hora.dia())
+                .addValue("hora", dia_hora.hora_codigo());
+
+        return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
+    }
+
     public List<DisciplinaDTO> pegaMelhorCombinacaoPeriodo(int num, UUID id_aluno) {
         String sql = """
             SELECT jsonb_build_object(
@@ -117,7 +173,6 @@ public class MyCronogramaRepository {
 
         return npJdbc.queryForObject(sql, params, Integer.class);
     }
-
 
     @RequiredArgsConstructor
     private static class DisciplinaJsonRowMapper implements RowMapper<DisciplinaDTO> {

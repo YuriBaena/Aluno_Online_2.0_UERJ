@@ -37,6 +37,7 @@ $tab-height: 42px;
     z-index: 1000; 
     display: flex; 
     gap: 5px;
+    pointer-events: none;
     
     aside {
       position: relative; 
@@ -49,13 +50,15 @@ $tab-height: 42px;
       transform: translateY(-100%); 
       transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 
-      &.open { transform: translateY(0); }
-      &.menu-disciplinas { border-bottom: 4px solid $primary-blue; z-index: 101; .tab-trigger { background: $primary-blue; } }
-      &.menu-turmas { border-bottom: 4px solid $teal-accent; z-index: 100; .tab-trigger { background: $teal-accent; } }
+      &.open { 
+        transform: translateY(0);
+        pointer-events: auto; }
+      &.menu-disciplinas { border-bottom: 4px solid $primary-blue; z-index: 101; .tab-trigger { background: $primary-blue; pointer-events: auto;} }
+      &.menu-turmas { border-bottom: 4px solid $teal-accent; z-index: 100; .tab-trigger { background: $teal-accent; pointer-events: auto;} }
       &.menu-acoes { 
         border-bottom: 4px solid $purple-action; 
         z-index: 99; 
-        .tab-trigger { background: $purple-action; } 
+        .tab-trigger { background: $purple-action; pointer-events: auto;} 
 
         .menu-content { 
           padding: 1.5rem; 
@@ -391,24 +394,35 @@ $tab-height: 42px;
 
     thead {
       background: $white;
+    }
+
+    thead th {
       position: sticky;
       top: 0;
-      z-index: 10;
-      
-      th {
-        padding: 15px;
-        color: $text-muted;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border-bottom: 2px solid $bg-light;
-      }
+      z-index: 5;
+      background: $white;
+
+      padding: 15px;
+      color: $text-muted;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 2px solid $bg-light;
+    }
+
+    tbody {
+      position: relative;
+      z-index: 1;
     }
 
     tbody tr {
       border-bottom: 1px solid rgba($border-color, 0.5);
-      &:hover { background: rgba($bg-light, 0.5); }
+
+      &:hover {
+        background: rgba($bg-light, 0.5);
+      }
     }
+
 
     .time-column {
       width: 110px;
@@ -430,27 +444,59 @@ $tab-height: 42px;
       &.has-class { background: rgba($primary-blue, 0.02); }
     }
 
-    .class-card {
-      background: $white;
-      border: 1px solid $border-color;
-      border-left: 4px solid $primary-blue; // A cor pode ser dinâmica por disciplina
-      padding: 6px 8px;
-      border-radius: 6px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    .slot-cell {
+      position: relative;
+      transition: background 0.2s ease;
+      z-index: 3;
 
-      .class-name { 
-        font-size: 0.75rem; 
-        font-weight: 700; 
-        color: $text-dark;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      .empty-slot {
+        position: absolute;
+        inset: 0;                 // ocupa toda a célula
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #aaa;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 5;               // 🔑 garante que recebe o clique
       }
-      .class-prof { font-size: 0.6rem; color: $text-muted; }
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.04);
+
+        .empty-slot {
+          color: #4f46e5;
+        }
+      }
+
+      .class-card {
+        position: relative;
+        z-index: 2;               // abaixo do empty-slot
+        background: $white;
+        border: 1px solid $border-color;
+        border-left: 4px solid $primary-blue;
+        padding: 6px 8px;
+        border-radius: 6px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+
+        .class-name { 
+          font-size: 0.75rem; 
+          font-weight: 700; 
+          color: $text-dark;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .class-prof { 
+          font-size: 0.6rem; 
+          color: $text-muted; 
+        }
+      }
     }
   }
 
@@ -826,6 +872,168 @@ $tab-height: 42px;
     color: white !important;
     &:disabled { opacity: 0.5; cursor: not-allowed; }
     &:hover:not(:disabled) { filter: brightness(1.1); }
+  }
+}
+
+.slot-picker-modal {
+  max-width: 500px; 
+  max-height: 85vh; 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Garante que bordas arredondadas funcionem com o scroll interno
+
+  header {
+    flex-shrink: 0; 
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid $border-color;
+    
+    h3 { margin: 0; font-size: 1.1rem; color: $text-dark; }
+    
+    .subtitle {
+      font-size: 0.8rem;
+      color: $text-muted;
+      margin-top: 4px;
+    }
+  }
+
+  .modal-body.scrollable {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    padding: 1.5rem;
+    background: #f8fafc; // Fundo levemente cinza para destacar os cards brancos
+
+    // Barra de rolagem elegante
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+      &:hover { background: #94a3b8; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: $text-muted;
+      font-size: 0.9rem;
+    }
+  }
+
+  .discipline-slot-card {
+    background: $white;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+    border: 1px solid $border-color;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+    .disc-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      
+      h4 { font-size: 0.95rem; margin: 0; color: $text-dark; font-weight: 700; }
+      
+      .badge-periodo {
+        background: rgba($primary-blue, 0.1);
+        color: $primary-blue;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  .turmas-grid {
+    display: flex;
+    flex-direction: column; 
+    gap: 8px;
+  }
+
+  .turma-option {
+    display: flex;
+    flex-direction: row; 
+    align-items: center;
+    padding: 12px;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    // Estado Normal (Livre)
+    &:hover {
+      border-color: $teal-accent;
+      background: rgba($teal-accent, 0.02);
+      transform: translateX(4px);
+    }
+
+    // Estado de Conflito (Substitui o antigo .disabled)
+    &.has-conflict {
+      border-left: 4px solid #f87171; // Borda de destaque vermelha
+      background-color: #fffafb;
+      
+      &:hover {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+      }
+
+      .t-prof { color: #991b1b; }
+    }
+
+    // Estilo Selecionado
+    &.selected {
+      border-color: $primary-blue;
+      background: rgba($primary-blue, 0.05);
+      outline: 2px solid rgba($primary-blue, 0.2);
+    }
+
+    .turma-main-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      .t-id { font-size: 0.65rem; font-weight: 800; color: $text-muted; letter-spacing: 0.5px; }
+      .t-prof { font-size: 0.85rem; font-weight: 600; color: $text-dark; }
+    }
+
+    .status-indicator {
+      margin-left: 10px;
+      
+      .tag-conflito { 
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #e11d48; 
+        font-size: 0.7rem; 
+        font-weight: 700; 
+        background: #ffe4e6;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      
+      .tag-livre { 
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: $teal-accent; 
+        font-size: 0.7rem; 
+        font-weight: 700; 
+        background: rgba($teal-accent, 0.1);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+    }
+  }
+
+  footer {
+    flex-shrink: 0; 
+    border-top: 1px solid $border-color;
+    padding: 1.2rem 1.5rem;
+    background: white;
+    display: flex;
+    justify-content: flex-end;
   }
 }
 

@@ -185,11 +185,20 @@
                 <span class="interval">{{ horario.intervalo }}</span>
               </td>
               <td *ngFor="let dia of ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']" 
-                  [class.has-class]="getAulaNoSlot(dia, horario.codigo)">
-                <div class="class-card" *ngIf="getAulaNoSlot(dia, horario.codigo) as aula" [style.border-left-color]="aula.cor">
-                  <span class="class-name">{{ aula.nome }}</span>
-                  <span class="class-prof">Turma: {{ aula.turma }}</span>
-                </div>
+                  [class.has-class]="getAulaNoSlot(dia, horario.codigo)"
+                  class="slot-cell">
+                <ng-container *ngIf="getAulaNoSlot(dia, horario.codigo) as aula; else vazio">
+                  <div class="class-card" [style.border-left-color]="aula.cor">
+                    <span class="class-name">{{ aula.nome }}</span>
+                    <span class="class-prof">Turma: {{ aula.turma }}</span>
+                  </div>
+                </ng-container>
+
+                <ng-template #vazio>
+                  <div class="empty-slot" (click)="onSlotClick(dia, horario.codigo)">
+                    <i class="fa-solid fa-plus"></i>
+                  </div>
+                </ng-template>
               </td>
             </tr>
           </tbody>
@@ -401,5 +410,59 @@
       <button class="btn-cancel" (click)="fecharModalResumo()">Fechar</button>
     </footer>
 
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalSlot" (click)="exibirModalSlot = false">
+  <div class="modal-card slot-picker-modal" (click)="$event.stopPropagation()">
+    <header>
+      <div>
+        <h3>Disciplinas para {{ diaSelecionadoNome }} - {{ horaSelecionadaCodigo }}</h3>
+        <p class="subtitle">Selecione uma turma livre para adicionar à sua grade</p>
+      </div>
+      <button class="close-btn" (click)="exibirModalSlot = false">&times;</button>
+    </header>
+
+    <div class="modal-body scrollable">
+      <div *ngIf="possiveisSlot.length === 0" class="empty-state">
+        Nenhuma disciplina disponível para este horário.
+      </div>
+
+      <div class="discipline-slot-card" *ngFor="let disc of possiveisSlot">
+        <div class="disc-info">
+          <span class="badge-periodo">{{ disc.periodo ? disc.periodo + 'º Período' : 'Eletiva' }}</span>
+          <h4>{{ disc.nome }}</h4>
+        </div>
+
+        <div class="turmas-grid">
+          <div *ngFor="let t of disc.turmas" 
+               class="turma-option" 
+               [class.disabled]="t.conflito"
+               [class.selected]="disc.selectedTurmaId === t.id"
+               (click)="adicionarPeloSlot(disc, t)">
+            
+            <div class="turma-main-info">
+              <span class="t-id">T-{{ t.id }}</span>
+              <span class="t-prof">{{ t.professor }}</span>
+            </div>
+
+            <div class="status-indicator">
+              <ng-container *ngIf="t.conflito; else livre">
+                <span class="tag-conflito" [title]="'Conflito com: ' + t.conflito.disciplina">
+                  <i class="fa-solid fa-ban"></i> Em Conflito
+                </span>
+              </ng-container>
+              <ng-template #livre>
+                <span class="tag-livre"><i class="fa-solid fa-check"></i> Selecionar</span>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <button class="btn-cancel" (click)="exibirModalSlot = false">Fechar</button>
+    </footer>
   </div>
 </div>

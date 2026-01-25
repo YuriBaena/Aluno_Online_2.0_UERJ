@@ -64,6 +64,10 @@ export class MyCronograma implements OnInit, OnDestroy {
   menu3Aberto = false;
   exibirModal = false;
   exibirModalResumo = false;
+  exibirModalSlot = false;
+
+  diaSelecionadoNome = '';
+  horaSelecionadaCodigo = '';
 
   submenuPeriodoAberto = false;
 
@@ -94,6 +98,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   // Dados
   listaDisciplinasDisponiveis: any[] = [];
   selecionadas: any[] = [];
+  possiveisSlot: any[] = [];
   termoBusca: string = '';
 
   private searchSubject = new Subject<string>();
@@ -103,8 +108,8 @@ export class MyCronograma implements OnInit, OnDestroy {
     this.searchSub = this.searchSubject.pipe(
       debounceTime(400),
       distinctUntilChanged()
-    ).subscribe(termo => this.executarBusca(termo));
-    this.cronogramaService.pegaNumPeriodos().subscribe(res => {
+    ).subscribe((termo:any) => this.executarBusca(termo));
+    this.cronogramaService.pegaNumPeriodos().subscribe((res:any) => {
       this.periodos = [];
       const total = res || 12;
       for (let i = 1; i <= total; i++) {
@@ -119,7 +124,7 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   executarBusca(termo: string) {
     if (termo.length < 3) { this.listaDisciplinasDisponiveis = []; return; }
-    this.cronogramaService.buscar(termo).subscribe(res => this.listaDisciplinasDisponiveis = res);
+    this.cronogramaService.buscar(termo).subscribe((res:any) => this.listaDisciplinasDisponiveis = res);
   }
 
   selecionarDisciplina(disc: any) {
@@ -182,13 +187,13 @@ export class MyCronograma implements OnInit, OnDestroy {
           );
 
           if (ocupado) {
-            return {
+            const aula = {
               nome: disc.nome,
               professor: turmaAtiva.professor,
               turma: turmaAtiva.id,
-              // Gerar uma cor consistente baseada no nome da disciplina
-              cor: this.gerarCorHex(disc.nome) 
+              cor: this.gerarCorHex(disc.nome)
             };
+            return aula;
           }
         }
       }
@@ -270,7 +275,6 @@ export class MyCronograma implements OnInit, OnDestroy {
     this.disponibilidade[dia].splice(index, 1);
   }
 
-  // No seu método que fecha os menus, adicione:
   fecharMenus() {
     this.menu1Aberto = false;
     this.menu2Aberto = false;
@@ -279,7 +283,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   preencherPorPeriodo(periodo: number) {
-    this.cronogramaService.pegaPorPeriodo(periodo).subscribe(res => {
+    this.cronogramaService.pegaPorPeriodo(periodo).subscribe((res:any) => {
 
       for (const disc of res) {
 
@@ -321,9 +325,73 @@ export class MyCronograma implements OnInit, OnDestroy {
       // UX
       this.submenuPeriodoAberto = false;
       this.menu3Aberto = false;
-
-      console.log("Disciplinas após preenchimento por período:", this.selecionadas);
     });
+  }
+
+  onSlotClick(dia: string, hora_codigo: string) {
+    this.diaSelecionadoNome = dia;
+    this.horaSelecionadaCodigo = hora_codigo;
+    
+    // Mapeamento para o serviço (se necessário)
+    const diaMap: any = { 'SEG': 'Segunda', 'TER': 'Terca', 'QUA': 'Quarta', 'QUI': 'Quinta', 'SEX': 'Sexta', 'SAB': 'Sabado' };
+    const diaBusca = diaMap[dia] || dia;
+
+    this.cronogramaService.pegaPorSlot(diaBusca, hora_codigo).subscribe(
+      (resp: Disciplina[]) => {
+        // Processamos cada disciplina para verificar se ela "pode" ser escolhida
+        this.possiveisSlot = resp.map(disc => {
+          // Mapeia as turmas da disciplina injetando a informação de conflito
+          const turmasProcessadas = disc.turmas.map(t => {
+            const conflito = this.checarConflito(t, disc.nome);
+            return {
+              ...t,
+              conflito: conflito // null se livre, objeto com detalhes se ocupado
+            };
+          });
+
+          return {
+            ...disc,
+            turmas: turmasProcessadas,
+            podeAdicionar: turmasProcessadas.some(t => !t.conflito) // Ao menos uma turma livre
+          };
+        });
+        
+        this.exibirModalSlot = true;
+      }
+    );
+  }
+
+  adicionarPeloSlot(disc: any, turma: any) {
+    // Se houver conflito, em vez de apenas retornar, abrimos o modal de conflito
+    if (turma.conflito) {
+      this.conflitoInfo = {
+        turmaNova: { 
+          nome: disc.nome, 
+          professor: turma.professor, 
+          horario: turma.horario 
+        },
+        turmaExistente: turma.conflito // O objeto de conflito já foi calculado no onSlotClick
+      };
+      
+      this.exibirModalSlot = false;
+      this.exibirModalConflito = true;
+      return; 
+    }
+
+    // Lógica normal de adição caso NÃO haja conflito
+    let discExistente = this.selecionadas.find(d => d.nome === disc.nome);
+
+    if (!discExistente) {
+      discExistente = { 
+        ...disc, 
+        expandida: false, 
+        cor: this.gerarCorHex(disc.nome) 
+      };
+      this.selecionadas.push(discExistente);
+    }
+
+    discExistente.selectedTurmaId = turma.id;
+    this.exibirModalSlot = false; // Fecha o seletor de slots
   }
 
   abrirModalResumo() {

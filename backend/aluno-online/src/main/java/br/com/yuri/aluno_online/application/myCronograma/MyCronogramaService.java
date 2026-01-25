@@ -30,6 +30,10 @@ public class MyCronogramaService {
         return repository.list(busca, id_aluno);
     }
 
+    public List<DisciplinaDTO> listDiaHora(HorarioDTO dia_hora, UUID id_aluno) {
+        return repository.listDiaHora(dia_hora, id_aluno);
+    }
+
     public List<DisciplinaDTO> pegaMelhorCombinacaoPeriodo(int num, UUID id_aluno){
         // 1. Busca todas as disciplinas do período com suas respectivas turmas
         List<DisciplinaDTO> todasDisciplinas = repository.pegaMelhorCombinacaoPeriodo(num, id_aluno);
