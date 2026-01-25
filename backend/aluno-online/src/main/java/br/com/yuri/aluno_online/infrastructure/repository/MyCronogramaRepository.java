@@ -55,6 +55,13 @@ public class MyCronogramaRepository {
             INNER JOIN aluno a ON a.id_curso = d.id_curso
             WHERE a.id = :id_aluno
             AND (d.nome ILIKE '%' || :busca || '%' OR d.codigo ILIKE '%' || :busca || '%')
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM historico h 
+                WHERE h.id_aluno = a.id 
+                AND h.codigo_disciplina = d.codigo 
+                AND h.status = 'Aprov. Nota'
+            )
             ORDER BY d.periodo, d.nome
             """;
 
@@ -109,6 +116,13 @@ public class MyCronogramaRepository {
                 AND h.dia = :dia::dia_semana_enum
                 AND h.codigo_hora = :hora
             )
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM historico h 
+                WHERE h.id_aluno = a.id 
+                AND h.codigo_disciplina = d.codigo 
+                AND h.status = 'Aprov. Nota'
+            )
             ORDER BY d.periodo, d.nome;
             """;
 
@@ -150,6 +164,13 @@ public class MyCronogramaRepository {
             INNER JOIN aluno a ON a.id_curso = d.id_curso
             WHERE a.id = :id_aluno
             AND d.periodo = :per
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM historico h 
+                WHERE h.id_aluno = a.id 
+                AND h.codigo_disciplina = d.codigo 
+                AND h.status = 'Aprov. Nota'
+            )
             ORDER BY d.periodo, d.nome
             """;
 
