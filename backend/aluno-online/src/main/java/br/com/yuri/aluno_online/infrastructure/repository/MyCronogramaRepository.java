@@ -56,13 +56,6 @@ public class MyCronogramaRepository {
             INNER JOIN aluno a ON a.id_curso = d.id_curso
             WHERE a.id = :id_aluno
             AND (d.nome ILIKE '%' || :busca || '%' OR d.codigo ILIKE '%' || :busca || '%')
-            AND NOT EXISTS (
-                SELECT 1 
-                FROM historico h 
-                WHERE h.id_aluno = a.id 
-                AND h.codigo_disciplina = d.codigo 
-                AND h.status = 'Aprov. Nota'
-            )
             ORDER BY d.periodo, d.nome
             """;
 
