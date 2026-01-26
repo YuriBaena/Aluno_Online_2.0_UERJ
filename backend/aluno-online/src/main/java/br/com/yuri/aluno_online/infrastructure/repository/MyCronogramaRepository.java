@@ -1,6 +1,7 @@
 package br.com.yuri.aluno_online.infrastructure.repository;
 
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.DisciplinaDTO;
+import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.DisponibilidadeDTO;
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.HorarioDTO;
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -177,6 +178,140 @@ public class MyCronogramaRepository {
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("id_aluno", id_aluno)
                 .addValue("per", num);
+
+        return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
+    }
+
+    public List<DisciplinaDTO> pegaMelhorCombinacaoTurno(String turno, UUID id_aluno) {
+        String sql = """
+            SELECT jsonb_build_object(
+                'nome', d.nome,
+                'codigo', d.codigo,
+                'periodo', d.periodo,
+                'turmas', COALESCE((
+                    SELECT jsonb_agg(jsonb_build_object(
+                        'id', t.numero,
+                        'nome', 'Turma ' || t.numero,
+                        'professor', p.nome,
+                        'vagas', t.vagas,
+                        'horario', COALESCE((
+                            SELECT jsonb_agg(jsonb_build_object(
+                                'dia', h.dia,
+                                'hora_codigo', h.codigo_hora
+                            ))
+                            FROM horario_aula h
+                            WHERE h.id_turma = t.id_turma
+                        ), '[]'::jsonb)
+                    ))
+                    FROM turma t
+                    LEFT JOIN professor p ON t.id_professor = p.id
+                    WHERE t.codigo_disciplina = d.codigo
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM horario_aula h2
+                        WHERE h2.id_turma = t.id_turma
+                        AND h2.codigo_hora NOT LIKE :turno || '%'
+                    )
+                ), '[]'::jsonb)
+            ) as json_data
+            FROM disciplina d
+            INNER JOIN aluno a ON a.id_curso = d.id_curso
+            WHERE a.id = :id_aluno
+           AND NOT EXISTS (
+                SELECT 1 
+                FROM historico h 
+                WHERE h.id_aluno = a.id 
+                AND h.codigo_disciplina = d.codigo 
+                AND h.status = 'Aprov. Nota'
+            )
+            ORDER BY d.periodo, d.nome
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id_aluno", id_aluno)
+                .addValue("turno", turno);
+
+        return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
+    }
+
+    public List<DisciplinaDTO> pegaMelhorCombinacaoDisponibilidade(DisponibilidadeDTO dto, UUID id_aluno) {
+        // 1. Transformamos o Map em uma lista de strings: "DIA|00:00|00:00"
+        // Ex: "SEG|07:30|11:00"
+        List<String> filtros = dto.disponibilidade().entrySet().stream()
+            .flatMap(entry -> entry.getValue().stream()
+                .map(h -> entry.getKey() + "|" + h.inicio() + "|" + h.fim()))
+            .toList();
+
+        String sql = """
+            WITH disp_aluno AS (
+                -- Explode a lista de strings em uma tabela temporária com tipos corretos
+                SELECT 
+                    split_part(val, '|', 1) as d_dia,
+                    split_part(val, '|', 2)::time as d_inicio,
+                    split_part(val, '|', 3)::time as d_fim
+                FROM unnest(:filtros::text[]) as val
+            )
+            SELECT jsonb_build_object(
+                'nome', d.nome,
+                'codigo', d.codigo,
+                'periodo', d.periodo,
+                'turmas', COALESCE((
+                    SELECT jsonb_agg(jsonb_build_object(
+                        'id', t.numero,
+                        'nome', 'Turma ' || t.numero,
+                        'professor', p.nome,
+                        'vagas', t.vagas,
+                        'horario', (
+                            SELECT jsonb_agg(jsonb_build_object('dia', h.dia, 'hora_codigo', h.codigo_hora))
+                            FROM horario_aula h WHERE h.id_turma = t.id_turma
+                        )
+                    ))
+                    FROM turma t
+                    LEFT JOIN professor p ON t.id_professor = p.id
+                    WHERE t.codigo_disciplina = d.codigo
+                    -- REGRA: A turma só entra se TODAS as suas aulas estiverem na disponibilidade do aluno
+                    AND NOT EXISTS (
+                        SELECT 1 FROM horario_aula ha
+                        WHERE ha.id_turma = t.id_turma
+                        AND NOT EXISTS (
+                            SELECT 1 FROM disp_aluno da
+                            WHERE da.d_dia = ha.dia::text
+                            AND ha.hora >= da.d_inicio 
+                            AND ha.hora < da.d_fim
+                        )
+                    )
+                ), '[]'::jsonb)
+            ) as json_data
+            FROM disciplina d
+            INNER JOIN aluno a ON a.id_curso = d.id_curso
+            WHERE a.id = :id_aluno
+            -- Filtra Disciplinas que possuem pelo menos uma turma válida para o aluno
+            AND EXISTS (
+                SELECT 1 FROM turma t2
+                WHERE t2.codigo_disciplina = d.codigo
+                AND NOT EXISTS (
+                    SELECT 1 FROM horario_aula ha2
+                    WHERE ha2.id_turma = t2.id_turma
+                    AND NOT EXISTS (
+                        SELECT 1 FROM disp_aluno da2 
+                        WHERE da2.d_dia = ha2.dia::text 
+                        AND ha2.hora >= da2.d_inicio 
+                        AND ha2.hora < da2.d_fim
+                    )
+                )
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM historico hist 
+                WHERE hist.id_aluno = a.id 
+                AND hist.codigo_disciplina = d.codigo 
+                AND hist.status = 'Aprov. Nota'
+            )
+            ORDER BY d.periodo, d.nome;
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("id_aluno", id_aluno)
+                .addValue("filtros", filtros.toArray(new String[0]));
 
         return npJdbc.query(sql, params, new DisciplinaJsonRowMapper(objectMapper));
     }

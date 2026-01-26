@@ -78,19 +78,19 @@ export class MyCronograma implements OnInit, OnDestroy {
   abaAtiva: 'turnos' | 'personalizado' = 'turnos';
 
   // Configuração de Turno
-  turnoSelecionado: 'M' | 'T' | 'N' | null = null;
+  turnoSelecionado: 'Manha' | 'Tarde' | 'Noite' | null = null;
 
   // Estrutura flexível: cada dia pode ter N janelas de tempo
   disponibilidade: any = {
-    'SEG': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
-    'TER': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
-    'QUA': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
-    'QUI': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
-    'SEX': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
-    'SAB': []
+    'Segunda': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'Terca': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'Quarta': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'Quinta': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'Sexta': [{ inicio: '07:30', fim: '11:00' }, { inicio: '19:00', fim: '22:00' }],
+    'Sabado': []
   };
 
-  diasSemana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+  diasSemana = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
 
   turmaSelecionadaDetalhe: any = null;
   disiplinaSelecionada: any = null;
@@ -260,9 +260,83 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   executarOtimizacao() {
     if (this.abaAtiva === 'turnos') {
-      console.log("Otimizando para Turno:", this.turnoSelecionado);
+      this.cronogramaService.pegaPorTurno(this.turnoSelecionado).subscribe((resp: any) => {
+          for (const disc of resp) {
+
+          // 1️⃣ Evita duplicar disciplina
+          const jaExiste = this.selecionadas.find(d => d.nome === disc.nome);
+          if (jaExiste) continue;
+
+          // 2️⃣ Seleciona a turma padrão (primeira)
+          const turmaPadrao = disc.turmas?.[0];
+          if (!turmaPadrao) continue;
+
+          // 3️⃣ Verifica conflito com as já selecionadas
+          const conflito = this.checarConflito(turmaPadrao, disc.nome);
+
+          if (conflito) {
+            // 4️⃣ Se houver conflito, abre modal e PARA
+            this.conflitoInfo = {
+              turmaNova: {
+                nome: disc.nome,
+                professor: turmaPadrao.professor,
+                horario: turmaPadrao.horario
+              },
+              turmaExistente: conflito
+            };
+
+            this.exibirModalConflito = true;
+            break; // ⛔ Para no primeiro conflito
+          }
+
+          // 5️⃣ Se não houver conflito, adiciona
+          this.selecionadas.push({
+            ...disc,
+            selectedTurmaId: turmaPadrao.id,
+            expandida: false,
+            cor: this.gerarCorHex(disc.nome)
+          });
+        }
+      });
     } else {
-      console.log("Otimizando para Grade Personalizada:", this.disponibilidade);
+      this.cronogramaService.pegaPorDisponibilidade(this.disponibilidade).subscribe((resp: any) => {
+          for (const disc of resp) {
+
+          // 1️⃣ Evita duplicar disciplina
+          const jaExiste = this.selecionadas.find(d => d.nome === disc.nome);
+          if (jaExiste) continue;
+
+          // 2️⃣ Seleciona a turma padrão (primeira)
+          const turmaPadrao = disc.turmas?.[0];
+          if (!turmaPadrao) continue;
+
+          // 3️⃣ Verifica conflito com as já selecionadas
+          const conflito = this.checarConflito(turmaPadrao, disc.nome);
+
+          if (conflito) {
+            // 4️⃣ Se houver conflito, abre modal e PARA
+            this.conflitoInfo = {
+              turmaNova: {
+                nome: disc.nome,
+                professor: turmaPadrao.professor,
+                horario: turmaPadrao.horario
+              },
+              turmaExistente: conflito
+            };
+
+            this.exibirModalConflito = true;
+            break; // ⛔ Para no primeiro conflito
+          }
+
+          // 5️⃣ Se não houver conflito, adiciona
+          this.selecionadas.push({
+            ...disc,
+            selectedTurmaId: turmaPadrao.id,
+            expandida: false,
+            cor: this.gerarCorHex(disc.nome)
+          });
+        }
+      });
     }
     this.exibirModalOtimizar = false;
   }
