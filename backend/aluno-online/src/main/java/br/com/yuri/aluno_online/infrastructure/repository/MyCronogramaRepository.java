@@ -100,7 +100,7 @@ public class MyCronogramaRepository {
                         SELECT 1
                         FROM horario_aula h2
                         WHERE h2.id_turma = t.id_turma
-                            AND h2.dia = :dia::dia_semana_enum
+                            AND h2.dia::text = :dia
                             AND h2.codigo_hora = :hora
                     )
                 ), '[]'::jsonb)
@@ -113,7 +113,7 @@ public class MyCronogramaRepository {
                 FROM turma t2
                 JOIN horario_aula h ON h.id_turma = t2.id_turma
                 WHERE t2.codigo_disciplina = d.codigo
-                AND h.dia = :dia::dia_semana_enum
+                AND h.dia::text = :dia
                 AND h.codigo_hora = :hora
             )
             AND NOT EXISTS (
