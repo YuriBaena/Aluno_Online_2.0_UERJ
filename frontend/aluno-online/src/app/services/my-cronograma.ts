@@ -21,6 +21,16 @@ export class MyCronogramaService {
     return this.http.get<Disciplina[]>(`${this.API}/periodo/${busca}`, { params });
   }
 
+  pegaPorTurno(busca: string|null): Observable<Disciplina[]> {
+    const params = new HttpParams()
+    return this.http.get<Disciplina[]>(`${this.API}/turno/${busca}`, { params });
+  }
+
+  pegaPorDisponibilidade(disponibilidade: any): Observable<Disciplina[]> {
+    const body = {disponibilidade};
+    return this.http.post<Disciplina[]>(`${this.API}/disponibilidade`, body);
+  }
+
   pegaPorSlot(dia: string, hora_codigo: string): Observable<Disciplina[]>{
     const body = {dia, hora_codigo};
     return this.http.post<Disciplina[]>(`${this.API}/dia-horario`, body);

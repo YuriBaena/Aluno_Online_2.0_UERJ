@@ -598,9 +598,12 @@ $tab-height: 42px;
 }
 
 .modal-card {
-  background: $white; width: 95%; max-width: 420px; border-radius: 20px; 
+  background: $white; width: 95%; max-width: 420px; border-radius: 20px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
   animation: modalSlideUp 0.3s ease-out;
+  display: flex;             // Habilita o comportamento de pilha
+  flex-direction: column;    // Empilha Header, Body e Footer
+  overflow: hidden;
 
   header { 
     padding: 1.5rem 2rem 0.5rem; display: flex; justify-content: space-between; align-items: center; 
@@ -610,8 +613,12 @@ $tab-height: 42px;
 
   .modal-body { 
     padding: 1rem 2rem; 
-    .info-item { margin-bottom: 1.5rem; label { display: block; font-size: 0.7rem; font-weight: 700; color: $text-muted; text-transform: uppercase; margin-bottom: 8px; } }
-    .value { display: flex; align-items: center; gap: 10px; font-weight: 600; color: $text-dark; i { color: $primary-blue; } }
+    max-height: 70vh;
+    flex: 1;            // Ocupa o espaço central
+    overflow-y: auto;   // Ativa a barra de rolagem vertical
+    min-height: 0;
+    .info-item { margin-bottom: 1.5rem; label { display: block; font-size: 0.7rem; font-weight: 500; color: $text-muted; text-transform: uppercase; margin-bottom: 8px; } }
+    .value { display: flex; align-items: center; gap: 10px; font-weight: 400; color: $text-dark; i { color: $primary-blue; } }
     
     .horarios-container { 
       display: flex; flex-wrap: wrap; gap: 10px; 
@@ -633,14 +640,14 @@ $tab-height: 42px;
 
     .resume-table th,
     .resume-table td {
-      padding: 10px;
+      padding: 5px;
       border-bottom: 1px solid #1e293b;
       text-align: left;
     }
 
     .resume-table th {
       color: #94a3b8;
-      font-weight: 600;
+      font-weight: 200;
     }
 
     .resume-table td {
@@ -650,7 +657,7 @@ $tab-height: 42px;
   }
 
   footer { 
-    padding: 1.5rem 2rem; background: #f8fafc; display: flex; gap: 12px; 
+    padding: 1rem 1rem; background: #f8fafc; display: flex; gap: 6px; 
     button { flex: 1; padding: 0.8rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; } 
     .btn-cancel { background: #e2e8f0; color: #475569; } 
     .btn-confirm { background: $primary-blue; color: white; } 

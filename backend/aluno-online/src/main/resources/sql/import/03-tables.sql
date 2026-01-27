@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS curso (
     total_creditos SMALLINT NOT NULL DEFAULT 0
 );
 
+INSERT INTO public.curso (nome_curso, total_creditos) 
+VALUES ('Eletivas Universais', 0)
+ON CONFLICT (nome_curso) DO NOTHING;
+
 -- ======================================================
 -- 3. TABELA PROFESSOR
 -- ======================================================

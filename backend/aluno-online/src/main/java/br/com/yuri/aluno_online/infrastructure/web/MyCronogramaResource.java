@@ -1,6 +1,7 @@
 package br.com.yuri.aluno_online.infrastructure.web;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.yuri.aluno_online.application.myCronograma.MyCronogramaService;
 import br.com.yuri.aluno_online.domain.model.Aluno;
+import br.com.yuri.aluno_online.domain.model.Disciplina;
 
 @RestController
 @RequestMapping("/my-cron")
@@ -34,9 +36,7 @@ public class MyCronogramaResource{
     }
 
     @PostMapping("/dia-horario")
-    public ResponseEntity<List<DisciplinaDTO>> listDiaHora(@AuthenticationPrincipal Aluno aluno,
-                                                            @RequestBody HorarioDTO dia_hora
-    ){
+    public ResponseEntity<List<DisciplinaDTO>> listDiaHora(@AuthenticationPrincipal Aluno aluno, @RequestBody HorarioDTO dia_hora){
         return ResponseEntity.ok(
             servico.listDiaHora(dia_hora, aluno.getId())
         );
@@ -46,6 +46,20 @@ public class MyCronogramaResource{
     public ResponseEntity<List<DisciplinaDTO>> pegaPorPeriodo(@AuthenticationPrincipal Aluno aluno, @PathVariable("num") int num){
         return ResponseEntity.ok(
             servico.pegaMelhorCombinacaoPeriodo(num, aluno.getId())
+        );
+    }
+
+    @GetMapping("/turno/{turno}")
+    public ResponseEntity<List<DisciplinaDTO>> pegaPorTurno(@AuthenticationPrincipal Aluno aluno, @PathVariable("turno") String turno){
+        return ResponseEntity.ok(
+            servico.pegaMelhorCombinacaoTurno(turno, aluno.getId())
+        );
+    }
+
+    @PostMapping("/disponibilidade")
+    public ResponseEntity<List<DisciplinaDTO>> pegaPorisponibilidade(@AuthenticationPrincipal Aluno aluno, @RequestBody DisponibilidadeDTO disponibilidade){
+        return ResponseEntity.ok(
+            servico.pegaMelhorCombinacaoDisponibilidade(disponibilidade, aluno.getId())
         );
     }
 
@@ -70,4 +84,10 @@ public class MyCronogramaResource{
     public record HorarioDTO(String dia,
                             String hora_codigo) {}
 
+    public record TempoDTO(String inicio, 
+                            String fim) {}
+    
+    public record DisponibilidadeDTO(
+                            Map<String, List<TempoDTO>> disponibilidade
+                        ) {}
 }

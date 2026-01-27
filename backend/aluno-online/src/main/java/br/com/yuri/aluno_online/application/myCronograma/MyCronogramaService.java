@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import br.com.yuri.aluno_online.infrastructure.repository.MyCronogramaRepository;
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.DisciplinaDTO;
+import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.DisponibilidadeDTO;
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.HorarioDTO;
 import br.com.yuri.aluno_online.infrastructure.web.MyCronogramaResource.TurmaDTO;
 
@@ -45,6 +46,42 @@ public class MyCronogramaService {
         return resultado;
     }
 
+    public List<DisciplinaDTO> pegaMelhorCombinacaoTurno(String turno, UUID id_aluno){
+        switch (turno.toLowerCase()) {
+            case "manha":
+                turno = "M";
+                break;
+            case "tarde":
+                turno = "T";
+                break;
+            case "noite":
+                turno = "N";
+                break;
+            default:
+                turno = "M";
+                break;
+        }
+
+        // 1. Busca todas as disciplinas do turno com suas respectivas turmas
+        List<DisciplinaDTO> todasDisciplinas = repository.pegaMelhorCombinacaoTurno(turno, id_aluno);
+
+        // 2. Tenta encontrar a combinação ideal
+        List<DisciplinaDTO> resultado = new ArrayList<>();
+        encontrarMelhorCombinacao(todasDisciplinas, 0, new HashSet<String>(), new ArrayList<>(), resultado);
+
+        return resultado;
+    }
+
+    public List<DisciplinaDTO> pegaMelhorCombinacaoDisponibilidade(DisponibilidadeDTO disponibilidade, UUID id_aluno){
+        // 1. Busca todas as disciplinas do turno com suas respectivas turmas
+        List<DisciplinaDTO> todasDisciplinas = repository.pegaMelhorCombinacaoDisponibilidade(disponibilidade, id_aluno);
+
+        // 2. Tenta encontrar a combinação ideal
+        List<DisciplinaDTO> resultado = new ArrayList<>();
+        encontrarMelhorCombinacao(todasDisciplinas, 0, new HashSet<String>(), new ArrayList<>(), resultado);
+
+        return resultado;
+    }
 
     /**
      * Algoritmo de Backtracking para encaixar o máximo de disciplinas

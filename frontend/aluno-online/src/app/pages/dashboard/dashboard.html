@@ -79,6 +79,16 @@
               {{ loadingSync ? 'Ocultar e continuar' : (mensagemSucesso ? 'Fechar' : 'Cancelar') }}
             </button>
 
+            <button 
+              class="btn-confirm"
+              *ngIf="usuario?.role == 'ROLE_ADMIN' && !loadingSync && !mensagemSucesso"
+              [disabled]="!termosAceitos"
+              (click)="confirmarSincronizacao(true)"
+            >
+              <i class="fa-solid fa-bolt"></i>
+              Executar ETL FULL (Admin)
+            </button>
+
             <button class="btn-confirm" 
                     *ngIf="!loadingSync && !mensagemSucesso" 
                     [disabled]="!termosAceitos"

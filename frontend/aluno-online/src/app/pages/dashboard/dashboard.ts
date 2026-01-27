@@ -31,6 +31,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   exibirModalSync = false;
   loadingSync = false;
+  syncFull = false;
   
   mensagemErro: string | null = null;
   mensagemSucesso: string | null = null;
@@ -86,7 +87,8 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   }
 
-  confirmarSincronizacao() {
+  confirmarSincronizacao(full: boolean = false) {
+    this.syncFull = full;
     this.mensagemErro = null;
     this.mensagemSucesso = null;
 
@@ -106,7 +108,8 @@ export class Dashboard implements OnInit, OnDestroy {
     // 1. Chama o serviço para iniciar
     this.sincronizaService.sincronizaDados({
       login: this.syncData.matricula,
-      senha: this.syncData.senha
+      senha: this.syncData.senha,
+      full: this.syncFull
     }).subscribe({
       next: () => {
         // 2. Se o início deu certo, começa a monitorar o andamento

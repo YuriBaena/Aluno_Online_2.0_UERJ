@@ -120,11 +120,6 @@
         <h3>Ações Rápidas <i class="fa-solid fa-bolt" style="color: #eab308; margin-left: 8px;"></i></h3>
         
         <div class="quick-actions-grid">
-          <button class="action-btn" title="Retorna lista de materias possiveis para adicionar no cronograma atual">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span>Otimizar Atual</span>
-          </button>
-          
           <button class="action-btn" (click)="abrirModalOtimizar()" title="Cria cronograma baseado em informações de horários disponiveis">
             <i class="fa-solid fa-clock"></i>
             <span>Otimizar por Turno</span>
@@ -314,15 +309,15 @@
       <div *ngIf="abaAtiva === 'turnos'" class="tab-content">
         <p class="description">Selecione um período padrão para priorizar suas turmas:</p>
         <div class="turno-options">
-          <div class="turno-card" [class.active]="turnoSelecionado === 'M'" (click)="turnoSelecionado = 'M'">
+          <div class="turno-card" [class.active]="turnoSelecionado === 'Manha'" (click)="turnoSelecionado = 'Manha'">
             <i class="fa-solid fa-sun"></i>
             <strong>Manhã</strong>
           </div>
-          <div class="turno-card" [class.active]="turnoSelecionado === 'T'" (click)="turnoSelecionado = 'T'">
+          <div class="turno-card" [class.active]="turnoSelecionado === 'Tarde'" (click)="turnoSelecionado = 'Tarde'">
             <i class="fa-solid fa-cloud-sun"></i>
             <strong>Tarde</strong>
           </div>
-          <div class="turno-card" [class.active]="turnoSelecionado === 'N'" (click)="turnoSelecionado = 'N'">
+          <div class="turno-card" [class.active]="turnoSelecionado === 'Noite'" (click)="turnoSelecionado = 'Noite'">
             <i class="fa-solid fa-moon"></i>
             <strong>Noite</strong>
           </div>
@@ -372,7 +367,7 @@
 </div>
 
 <div class="modal-overlay" *ngIf="exibirModalResumo" (click)="fecharModalResumo()">
-  <div class="modal-card wide-modal" (click)="$event.stopPropagation()">
+  <div class="modal-card wide-modal" (click)="$event.stopPropagation()" style="max-height: 70%;">
     
     <header>
       <h3><i class="fa-solid fa-clipboard-list"></i> Resumo do Cronograma</h3>

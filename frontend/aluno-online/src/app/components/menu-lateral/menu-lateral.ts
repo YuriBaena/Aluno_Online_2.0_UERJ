@@ -23,7 +23,7 @@ export class MenuLateral {
   constructor(private router: Router) {
     // Sempre que a navegação terminar, verificamos a URL
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
+      filter((event:any) => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.atualizarAbaAtiva(event.url);
     });
@@ -32,7 +32,7 @@ export class MenuLateral {
   atualizarAbaAtiva(url: string) {
     if (url.includes('dashboard')) this.aba_aberta = 'dashboard';
     if (url.includes('disciplinas-curso')) this.aba_aberta = 'disciplinas-curso';
-    if (url.includes('disciplinas-realizadas')) this.aba_aberta = 'disciplinas-realizadas';
+    if (url.includes('estatisticas')) this.aba_aberta = 'estatisticas';
     if (url.includes('historico')) this.aba_aberta = 'hitorico';
     if (url.includes('grade-horaria')) this.aba_aberta = 'grade-horaria';
     if (url.includes('my-cronograma')) this.aba_aberta = 'monte seu cronograma';
