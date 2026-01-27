@@ -221,7 +221,6 @@ def coletaMateriasCurriculo(driver, curso):
     # Volta para tela inicial
     driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
 
-
 # -- MATERIAS JA REALIZADAS
 
 def coletaMateriasRealizadas(driver, login):
@@ -233,15 +232,38 @@ def coletaMateriasRealizadas(driver, login):
 
     ant = ""
     batch_hist = []
-    try:
-        perto = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[2]/table/tbody')))
-        linhas = perto.find_elements(By.XPATH, ".//tr[position() >= 2]")
+    try:                                                                                    
+        
+        titulo1_elem = driver.find_element(
+            By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[1]'
+        )
+        titulo2_elem = driver.find_element(
+            By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[1]'
+        )
+
+        titulo1 = titulo1_elem.text.strip()
+        titulo2 = titulo2_elem.text.strip()
+
+        if "Disciplinas Realizadas" in titulo1:
+            tbody_xpath = '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[2]/table/tbody'
+        else:
+            tbody_xpath = '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[2]/table/tbody'
+
+        tbody = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, tbody_xpath))
+        )
+
+        linhas = tbody.find_elements(By.XPATH, ".//tr[position() >= 2]")
 
         for tr in linhas:
             try:
                 tds = tr.find_elements(By.TAG_NAME, "td")
                 if len(tds) < 8: continue
                 codigo = tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[0]
+                nome = " ".join(tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[1:])
+                cred = tds[2].text
+                ch = tds[3].text
+                tipo = tds[4].text
                 freq = tds[5].text.replace("%", "").strip() or "0"
                 nota = tds[6].text.replace(",", ".").strip() or "0"
                 situacao = tds[7].text.strip()
@@ -249,6 +271,24 @@ def coletaMateriasRealizadas(driver, login):
                 
                 ano_realizado = ar if ar != "" else ant
                 ant = ano_realizado
+                sql_disc = f"""
+                INSERT INTO public.disciplina (
+                    codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso
+                )
+                SELECT
+                    {format_val(codigo)},
+                    {format_val(nome)},
+                    CAST({cred} AS smallint),
+                    CAST({ch} AS smallint),
+                    {format_val(tipo)},
+                    NULL,
+                    a.id_curso
+                FROM public.aluno a
+                WHERE a.matricula = CAST({login} AS bigint)
+                ON CONFLICT (codigo) DO NOTHING;
+                """.replace('\n', ' ').strip()
+
+                imprimir_bloco_sql(sql_disc)
                 batch_hist.append(f"({format_val(codigo)}, {format_val(nota)}, {format_val(freq)}, {format_val(situacao)}, {format_val(ano_realizado)})")
 
                 if len(batch_hist) == 10:

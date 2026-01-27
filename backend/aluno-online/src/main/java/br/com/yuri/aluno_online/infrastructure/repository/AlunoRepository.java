@@ -22,16 +22,40 @@ public interface AlunoRepository extends JpaRepository<Aluno, UUID> {
 
     @Query(value = """
             SELECT 
-        ROUND(CAST(SUM(d.creditos * h.nota_final) / CAST(SUM(d.creditos) AS NUMERIC) AS NUMERIC), 2) AS cr,
-        SUM(d.creditos) AS somaCreditos,
-        c.total_creditos AS totalCreditos,
-        (SELECT COUNT(*) FROM em_andamento e WHERE e.id_aluno = a.id) AS disciplinasAndamento
+            COALESCE(
+                ROUND(
+                    CAST(
+                        COALESCE(SUM(d.creditos * h.nota_final), 0)
+                        /
+                        NULLIF(COALESCE(SUM(d.creditos), 0), 0)
+                    AS NUMERIC),
+                2),
+            0) AS cr,
+
+            COALESCE(SUM(d.creditos), 0) AS somaCreditos,
+
+            c.total_creditos AS totalCreditos,
+
+            (
+                SELECT COUNT(*) 
+                FROM em_andamento e 
+                WHERE e.id_aluno = a.id
+            ) AS disciplinasAndamento
+
         FROM aluno a
-        JOIN curso c ON a.id_curso = c.id
-        LEFT JOIN historico h ON a.id = h.id_aluno AND h.status != 'Cancelado'
-        LEFT JOIN disciplina d ON h.codigo_disciplina = d.codigo
+        JOIN curso c 
+            ON a.id_curso = c.id
+
+        LEFT JOIN historico h 
+            ON a.id = h.id_aluno 
+        AND h.status != 'Cancelado'
+
+        LEFT JOIN disciplina d 
+            ON h.codigo_disciplina = d.codigo
+
         WHERE a.id = :id_aluno
-        GROUP BY a.id, c.total_creditos
+
+        GROUP BY a.id, c.total_creditos;
             """, nativeQuery = true)
     ResumoAluno geStatsAluno(@Param("id_aluno") UUID id_aluno);
 

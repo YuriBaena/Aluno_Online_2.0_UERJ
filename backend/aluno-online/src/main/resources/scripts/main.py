@@ -46,6 +46,6 @@ if __name__ == "__main__":
         if len(sys.argv) >= 4:
             full = sys.argv[3].lower() in ("true", "1", "yes", "full")
 
-        funcaoPrincipal(login, senha, full)
+        funcaoPrincipal(sys.argv[1], sys.argv[2], full)
     else:
         print("LOG: Argumentos insuficientes.", flush=True)
