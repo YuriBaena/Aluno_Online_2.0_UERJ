@@ -74,35 +74,47 @@ public class MyCronogramaRepository {
                 'codigo', d.codigo,
                 'periodo', d.periodo,
                 'turmas', COALESCE((
-                    SELECT jsonb_agg(jsonb_build_object(
-                        'id', t.numero,
-                        'nome', 'Turma ' || t.numero,
-                        'professor', p.nome,
-                        'vagas', t.vagas,
-                        'horario', COALESCE((
-                            SELECT jsonb_agg(jsonb_build_object(
-                                'dia', h.dia,
-                                'hora_codigo', h.codigo_hora
-                            ))
-                            FROM horario_aula h
-                            WHERE h.id_turma = t.id_turma
-                        ), '[]'::jsonb)
-                    ))
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'id', t.numero,
+                            'nome', 'Turma ' || t.numero,
+                            'professor', COALESCE(p.nome, 'A definir'),
+                            'vagas', t.vagas,
+                            'horario', COALESCE((
+                                SELECT jsonb_agg(
+                                    jsonb_build_object(
+                                        'dia', h.dia,
+                                        'hora_codigo', h.codigo_hora
+                                    )
+                                )
+                                FROM horario_aula h
+                                WHERE h.id_turma = t.id_turma
+                            ), '[]'::jsonb)
+                        )
+                    )
                     FROM turma t
-                    LEFT JOIN professor p ON t.id_professor = p.id
+                    LEFT JOIN professor p ON p.id = t.id_professor
                     WHERE t.codigo_disciplina = d.codigo
                     AND EXISTS (
                         SELECT 1
                         FROM horario_aula h2
                         WHERE h2.id_turma = t.id_turma
-                            AND h2.dia::text = :dia
-                            AND h2.codigo_hora = :hora
+                        AND h2.dia::text = :dia
+                        AND h2.codigo_hora = :hora
                     )
                 ), '[]'::jsonb)
             ) AS json_data
             FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
-            WHERE a.id = :id_aluno
+            INNER JOIN curso c ON c.id = d.id_curso
+            WHERE (
+                EXISTS (
+                    SELECT 1
+                    FROM aluno a
+                    WHERE a.id = :id_aluno
+                    AND a.id_curso = d.id_curso
+                )
+                OR c.nome_curso = 'Eletivas Universais'
+            )
             AND EXISTS (
                 SELECT 1
                 FROM turma t2
@@ -112,10 +124,10 @@ public class MyCronogramaRepository {
                 AND h.codigo_hora = :hora
             )
             AND NOT EXISTS (
-                SELECT 1 
-                FROM historico h 
-                WHERE h.id_aluno = a.id 
-                AND h.codigo_disciplina = d.codigo 
+                SELECT 1
+                FROM historico h
+                WHERE h.id_aluno = :id_aluno
+                AND h.codigo_disciplina = d.codigo
                 AND h.status = 'Aprov. Nota'
             )
             ORDER BY d.periodo, d.nome;
