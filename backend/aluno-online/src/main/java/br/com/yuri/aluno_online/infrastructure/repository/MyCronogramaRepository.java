@@ -53,8 +53,9 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
-            WHERE a.id = :id_aluno
+            INNER JOIN aluno a ON a.id = :id_aluno
+            INNER JOIN curso c ON c.id = d.id_curso
+            WHERE (d.id_curso = a.id_curso OR c.nome_curso = 'Eletivas Universais')
             AND (d.nome ILIKE '%' || :busca || '%' OR d.codigo ILIKE '%' || :busca || '%')
             ORDER BY d.periodo, d.nome
             """;
@@ -155,8 +156,8 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
-            WHERE a.id = :id_aluno
+            INNER JOIN aluno a ON a.id = :id_aluno
+            WHERE (d.id_curso = a.id_curso)
             AND d.periodo = :per
             AND NOT EXISTS (
                 SELECT 1 
@@ -208,16 +209,16 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
-            WHERE a.id = :id_aluno
-           AND NOT EXISTS (
-                SELECT 1 
-                FROM historico h 
-                WHERE h.id_aluno = a.id 
-                AND h.codigo_disciplina = d.codigo 
-                AND h.status = 'Aprov. Nota'
-            )
-            ORDER BY d.periodo, d.nome
+            INNER JOIN aluno a ON a.id = :id_aluno
+            WHERE (d.id_curso = a.id_curso)
+            AND NOT EXISTS (
+                    SELECT 1 
+                    FROM historico h 
+                    WHERE h.id_aluno = a.id 
+                    AND h.codigo_disciplina = d.codigo 
+                    AND h.status = 'Aprov. Nota'
+                )
+                ORDER BY d.periodo, d.nome
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -276,8 +277,8 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
-            WHERE a.id = :id_aluno
+            INNER JOIN aluno a ON a.id = :id_aluno
+            WHERE (d.id_curso = a.id_curso)
             -- Filtra Disciplinas que possuem pelo menos uma turma válida para o aluno
             AND EXISTS (
                 SELECT 1 FROM turma t2

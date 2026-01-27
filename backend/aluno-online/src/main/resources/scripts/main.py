@@ -1,7 +1,7 @@
 import sys
 import funcoes
 
-def funcaoPrincipal(login, senha):
+def funcaoPrincipal(login, senha, full=False):
     print("LOG: Iniciando processo de sincronização...", flush=True)
     driver = None
     try:
@@ -11,6 +11,10 @@ def funcaoPrincipal(login, senha):
         # 1. Aluno (Imprime imediato)
         nome, curso, total_creditos = funcoes.coletaDadosPessoais(driver)
         funcoes.gerar_sql_aluno(login, nome, curso, total_creditos)
+
+        # 1.1 Eletivas Universais
+        if (full):
+            funcoes.coletaEletivasUniversais(driver)
 
         # 2. Grade (Imprime de 10 em 10 durante a execução)
         funcoes.coletaMateriasCurriculo(driver, curso)
@@ -38,6 +42,10 @@ def funcaoPrincipal(login, senha):
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
-        funcaoPrincipal(sys.argv[1], sys.argv[2])
+        full = False
+        if len(sys.argv) >= 4:
+            full = sys.argv[3].lower() in ("true", "1", "yes", "full")
+
+        funcaoPrincipal(login, senha, full)
     else:
         print("LOG: Argumentos insuficientes.", flush=True)

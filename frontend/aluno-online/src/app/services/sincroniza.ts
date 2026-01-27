@@ -6,6 +6,7 @@ import { map, Observable } from 'rxjs';
 export interface SincronizaDTO {
   login: string;
   senha: string;
+  full: boolean;
 }
 
 // Interface para tipar a resposta da nossa VIEW do banco

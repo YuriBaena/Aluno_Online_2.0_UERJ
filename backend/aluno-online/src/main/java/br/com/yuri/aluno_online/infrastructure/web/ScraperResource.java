@@ -33,7 +33,7 @@ public class ScraperResource {
             UUID idAluno = usuarioLogado.getId();
 
             // Dispara o processo @Async passando o ID para rastreamento no banco
-            scraperService.executarSincronizacao(idAluno, request.login(), request.senha());
+            scraperService.executarSincronizacao(idAluno, request.login(), request.senha(), request.full);
             
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(Map.of(
@@ -75,5 +75,5 @@ public class ScraperResource {
         return ResponseEntity.ok(Map.of("ultima_sinc", data != null ? data : ""));
     }
     
-    public record SyncRequest(String login, String senha) {}
+    public record SyncRequest(String login, String senha, boolean full) {}
 }

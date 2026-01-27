@@ -38,14 +38,15 @@ public class ScraperService {
      * O idAluno é necessário para vincular os logs ao registro correto na tabela.
      */
     @Async
-    public void executarSincronizacao(UUID idAluno, String login, String senha) {
+    public void executarSincronizacao(UUID idAluno, String login, String senha, boolean full) {
         // 1. Cria o registro inicial no banco de dados para rastreamento
         scraperRepository.criarSincronizacao(idAluno);
         logConsole("SISTEMA", "Iniciando thread de sincronização para o aluno ID: " + idAluno);
 
         try {
+            String full_etl = (full) ? "1" : "0";
             // Preparação do comando para o processo Python
-            List<String> command = Arrays.asList(pythonExecutable, scriptPath, login, senha);
+            List<String> command = Arrays.asList(pythonExecutable, scriptPath, login, senha, full_etl);
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
 

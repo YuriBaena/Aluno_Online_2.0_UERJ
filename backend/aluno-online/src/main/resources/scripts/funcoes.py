@@ -129,10 +129,6 @@ def pegaDadosPessoaisSinteseFormacao(driver, wait):
 # -- TODAS MATERIAS DO CURRICULO 
 
 def coletaMateriasCurriculo(driver, curso):
-    print(f"LOG: Limpando dados existentes: {curso}...", flush=True)
-
-    imprimir_bloco_sql("TRUNCATE TABLE public.professor, public.turma, public.horario_aula RESTART IDENTITY CASCADE;")
-
     print(f"LOG: Iniciando extração sequencial para: {curso}...", flush=True)
     
     mapa_dias = {"SEG": "Segunda", "TER": "Terca", "QUA": "Quarta", "QUI": "Quinta", "SEX": "Sexta", "SAB": "Sabado"}
@@ -370,3 +366,121 @@ def salvaDisciplinasEmAndamento(lista_dados):
     """.replace('\n', ' ').strip()
     
     imprimir_bloco_sql(sql_bulk)
+
+# --- DISCIPLINAS UNIVERSAIS ---
+
+def coletaEletivasUniversais(driver):
+    print("Log: Pegando eletivas universais")
+
+    mapa_dias = {"SEG": "Segunda", "TER": "Terca", "QUA": "Quarta", "QUI": "Quinta", "SEX": "Sexta", "SAB": "Sabado"}
+    mapa_horarios = {"M1": "07:00", "M2": "07:50", "M3": "08:50", "M4": "09:40", "M5": "10:40", "M6": "11:30", "T1": "12:30", "T2": "13:20", "T3": "14:20", "T4": "15:10", "T5": "16:10", "T6": "17:00", "N1": "18:00", "N2": "18:50", "N3": "19:40", "N4": "20:30", "N5": "21:20"}
+
+    try:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[5]/a').click()
+    except:
+        driver.find_element(By.XPATH, '//a[contains(@href, "universair")]').click()
+
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//table')))
+    
+    linhas_xpath = '/html/body/table/tbody/tr[3]/td/form/div[1]/div[2]/table/tbody/tr[position() >= 2]'
+    num_linhas = len(driver.find_elements(By.XPATH, linhas_xpath))
+    
+    for i in range(num_linhas):
+        if i % 5 == 0 or i == num_linhas-1:
+            print(f"LOG: Extração de eletivas em {100*(i/(num_linhas-1)):.2f}%", flush=True)
+        try:
+            # 'i' é o índice da linha na tabela (começando em 0 para a lista de elementos encontrados)
+            tr = driver.find_elements(By.XPATH, linhas_xpath)[i]
+            tds = tr.find_elements(By.TAG_NAME, "td")
+
+            # Verificação de segurança para garantir que a linha tem colunas suficientes
+            if len(tds) < 4: continue 
+
+            val_creditos = "".join(filter(str.isdigit, tds[1].text)) or "0"
+            val_ch = "".join(filter(str.isdigit, tds[2].text)) or "0"
+
+            link_element = tds[0].find_element(By.TAG_NAME, "a")
+            texto_completo = link_element.text # Ex: "MAT001 - CÁLCULO I"
+
+            # Lógica para separar Código de Nome
+            partes = texto_completo.split(" - ")[0]
+            cod = partes.split(" ")[0].strip()
+            nom = " ".join(partes.split(" ")[1:])
+            
+            # Mantendo suas variáveis de controle
+            tipo = tds[3].text if len(tds) > 3 else "N/A"
+
+            # Gerar o SQL (agora muito mais rápido sem o .click())
+            sql_disc = f"""
+            WITH curso_data AS (
+                INSERT INTO public.curso (nome_curso) 
+                VALUES ('Eletivas Universais') 
+                ON CONFLICT (nome_curso) DO UPDATE SET nome_curso = EXCLUDED.nome_curso 
+                RETURNING id
+            )
+            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso) 
+            SELECT 
+                {format_val(cod)}, 
+                {format_val(nom)}, 
+                CAST({val_creditos} AS smallint), 
+                CAST({val_ch} AS smallint), 
+                'E. Universal', 
+                NULL, 
+                id
+            FROM curso_data 
+            ON CONFLICT (codigo) DO UPDATE SET 
+                nome = EXCLUDED.nome, 
+                id_curso = EXCLUDED.id_curso,
+                creditos = EXCLUDED.creditos, 
+                carga_horaria = EXCLUDED.carga_horaria;
+            """.replace('\n', ' ').strip()
+
+            imprimir_bloco_sql(sql_disc)
+
+            tds[0].find_element(By.TAG_NAME, "a").click()
+
+            trs_t = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[3]/div[2]/table/tbody/tr')
+            for idx, tr_t in enumerate(trs_t, 1):
+                # Pega somente o primeiro professor
+                prof = tr_t.find_element(By.XPATH, './/div[1]/div[5]/div[2]').text.strip().split("\n")[0] or "A DEFINIR"
+                num_t = "".join(filter(str.isdigit, tr_t.find_element(By.XPATH, './/div[1]/div[1]/div').text)) or "0"
+                vagas_txt = tr_t.find_element(By.XPATH, './/td/div/div[2]/table[1]/tbody/tr[2]/td[2]').text.strip()
+                vagas = int(vagas_txt) if vagas_txt.isdigit() else 0
+
+                imprimir_bloco_sql(f"INSERT INTO professor (nome) VALUES ({format_val(prof)}) ON CONFLICT (nome) DO NOTHING;".strip())
+
+                sql_turma = f"INSERT INTO public.turma (codigo_disciplina, id_professor, numero, vagas) VALUES ({format_val(cod)}, (SELECT id FROM professor WHERE nome={format_val(prof)} LIMIT 1), {num_t}, {vagas}) ON CONFLICT (codigo_disciplina, numero) DO UPDATE SET id_professor=EXCLUDED.id_professor, vagas=EXCLUDED.vagas;".strip()
+                imprimir_bloco_sql(sql_turma)
+
+                divs_h = tr_t.find_elements(By.XPATH, './/div[1]/div[3]/div[2]/div')
+                for h in range(0, len(divs_h), 2):
+                    dia_site = divs_h[h].text.strip().upper()
+                    tempos = divs_h[h+1].text.strip().split(" ")
+                    for t in tempos:
+                        if dia_site in mapa_dias and t in mapa_horarios:
+                            sql_horario = f"""
+                            INSERT INTO public.horario_aula (id_turma, dia, hora, codigo_hora) 
+                            VALUES (
+                                (SELECT id_turma FROM public.turma WHERE codigo_disciplina={format_val(cod)} AND numero={num_t} LIMIT 1), 
+                                CAST({format_val(mapa_dias[dia_site])} AS dia_semana_enum), 
+                                CAST({format_val(mapa_horarios[t])} AS TIME), 
+                                {format_val(t)} 
+                            ) ON CONFLICT (id_turma, dia, hora) DO UPDATE SET codigo_hora=EXCLUDED.codigo_hora;
+                            """.replace('\n', ' ').strip()
+                            imprimir_bloco_sql(sql_horario)
+
+            try:
+                driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+            except:
+                driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[2]/button').click()
+            
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, linhas_xpath)))
+        except Exception as e:
+            print(f"ERRO na linha {i}: {e}")
+            continue
+
+    # Volta para tela inicial
+    try:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+    except Exception as e:
+        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[2]/button').click()
