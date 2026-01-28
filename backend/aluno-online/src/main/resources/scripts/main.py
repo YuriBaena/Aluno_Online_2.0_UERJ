@@ -17,10 +17,10 @@ def funcaoPrincipal(login, senha, full=False):
             funcoes.coletaEletivasUniversais(driver)
 
         # 2. Grade (Imprime de 10 em 10 durante a execução)
-        #funcoes.coletaMateriasCurriculo(driver, curso)
+        funcoes.coletaMateriasCurriculo(driver, curso)
 
         # 3. Em Andamento (Imprime de 10 em 10 durante a execução)
-        #funcoes.coletaMateriasEmAndamento(driver, login)
+        funcoes.coletaMateriasEmAndamento(driver, login)
 
         # 4. Histórico (Imprime de 10 em 10 durante a execução)
         funcoes.coletaMateriasRealizadas(driver, login)

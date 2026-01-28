@@ -242,13 +242,11 @@ def coletaMateriasRealizadas(driver, login):
         driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[4]/td[3]/div[2]/div[13]/a').click()
 
     try:
-        print("1")
         # Captura títulos
         titulo1_elem = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[1]')
         titulo1 = titulo1_elem.text.strip()
         titulo2_elems = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[1]')
         titulo2 = titulo2_elems[0].text.strip() if titulo2_elems else ""
-        print("2")
         # Inicializa variáveis
         tbody_disciplinas = None
         tbody_atividades = None
@@ -267,12 +265,10 @@ def coletaMateriasRealizadas(driver, login):
             if tbodies2:
                 tbody_disciplinas = tbodies2[0]
 
-        print("3")
         # Extrai linhas
         linhas_disciplinas = tbody_disciplinas.find_elements(By.XPATH, ".//tr[position() >= 2]") if tbody_disciplinas else []
         linhas_atividades = tbody_atividades.find_elements(By.XPATH, ".//tr[position() >= 2]") if tbody_atividades else []
 
-        print("4")
         # Chama funções de processamento
         if linhas_disciplinas:
             pegaDisciplinasRealizadas(login, linhas_disciplinas)
