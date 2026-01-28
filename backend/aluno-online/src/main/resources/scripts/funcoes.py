@@ -6,6 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
+import traceback
 import sys
 
 # --- FUNÇÕES AUXILIARES PARA SQL ---
@@ -24,17 +25,20 @@ def imprimir_bloco_sql(sql):
     print(sql.strip(), flush=True)
     print("SQL_END", flush=True)
 
-def gerar_sql_aluno(matricula, nome, curso, creditos):
+def gerar_sql_aluno(matricula, nome, curso, creditos, horas):
     val_matricula = format_val(matricula)
     val_nome = format_val(nome)
     val_curso = format_val(curso)
     val_creditos = format_val(creditos)
+    val_horas = format_val(horas)
 
     sql = f"""
     WITH curso_data AS (
-        INSERT INTO public.curso (nome_curso, total_creditos)
-        VALUES ({val_curso}, {val_creditos})
-        ON CONFLICT (nome_curso) DO UPDATE SET total_creditos = EXCLUDED.total_creditos
+        INSERT INTO public.curso (nome_curso, total_creditos, total_horas)
+        VALUES ({val_curso}, {val_creditos}, {val_horas})
+        ON CONFLICT (nome_curso) DO UPDATE SET 
+            total_creditos = EXCLUDED.total_creditos,
+            total_horas = EXCLUDED.total_horas
         RETURNING id
     ),
     aluno_target AS (
@@ -60,7 +64,7 @@ def abrir():
     print("LOG: Abrindo navegador...", flush=True)
     try:
         options = Options()
-        options.add_argument("--headless=new")
+        #options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.page_load_strategy = 'eager'
@@ -70,7 +74,7 @@ def abrir():
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         driver.get("https://www.alunoonline.uerj.br/")
-        driver.implicitly_wait(5)
+        driver.implicitly_wait(2)
         return driver
     except:
         raise Exception("Falha na conexão para scrapping")
@@ -100,7 +104,7 @@ def coletaDadosPessoais(driver):
     # Entra Síntese da Formação
     wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[15]/a'))).click()
 
-    curso, total_creditos = pegaDadosPessoaisSinteseFormacao(driver, wait)
+    curso, total_creditos, total_horas = pegaDadosPessoaisSinteseFormacao(driver, wait)
 
     # Volta para pagina inicial
     try:
@@ -109,22 +113,27 @@ def coletaDadosPessoais(driver):
         driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/div[4]/button').click()
 
     print("LOG: Nome e Curso coletados", flush=True)
-    return nome, curso, total_creditos
+    return nome, curso, total_creditos, total_horas
 
 def pegaDadosPessoaisSinteseFormacao(driver, wait):
     curso = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/div/div[2]/div[1]/div[3]'))).text.split(": ", 1)[1].strip()
 
     total_creditos = 0
+    total_horas = 0
     tabela = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/div[2]/div/div[2]/div[4]/div[2]/table/tbody')))
     linhas = tabela.find_elements(By.XPATH, './tr')
 
     for linha in linhas[1:]:
         try:
-            total_creditos += int(linha.find_element(By.XPATH, './td[3]').text.strip())
+            texto = linha.find_element(By.XPATH, './td[1]').text.strip().lower()
+            if not any(x in texto for x in ["atividade", "carga horária"]):
+                total_creditos += int(linha.find_element(By.XPATH, './td[3]').text.strip())
+            else:
+                total_horas += int(linha.find_element(By.XPATH, './td[3]').text.strip())
         except ValueError:
             continue
     
-    return curso, total_creditos
+    return curso, total_creditos, total_horas
 
 # -- TODAS MATERIAS DO CURRICULO 
 
@@ -225,103 +234,180 @@ def coletaMateriasCurriculo(driver, curso):
 
 def coletaMateriasRealizadas(driver, login):
     print("LOG: Coletando Histórico acadêmico...", flush=True)
+    
+    # Abre a página de histórico
     try:
         driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[2]/td[3]/div[2]/div[13]/a').click()
     except:
         driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/table/tbody/tr[4]/td[3]/div[2]/div[13]/a').click()
 
+    try:
+        print("1")
+        # Captura títulos
+        titulo1_elem = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[1]')
+        titulo1 = titulo1_elem.text.strip()
+        titulo2_elems = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[1]')
+        titulo2 = titulo2_elems[0].text.strip() if titulo2_elems else ""
+        print("2")
+        # Inicializa variáveis
+        tbody_disciplinas = None
+        tbody_atividades = None
+
+        # Procura tabela de Disciplinas Realizadas
+        # Tem que ser a escrita errada mesmo, no aluno online ta errado
+        if "Discipinas Realizadas" in titulo1:
+            tbodies = titulo1_elem.find_elements(By.XPATH, "following-sibling::div/table/tbody")
+            if tbodies:
+                tbody_disciplinas = tbodies[0]
+        elif titulo2:
+            tbodies1 = titulo1_elem.find_elements(By.XPATH, "following-sibling::div/table/tbody")
+            tbodies2 = titulo2_elems[0].find_elements(By.XPATH, "following-sibling::div/table/tbody")
+            if tbodies1:
+                tbody_atividades = tbodies1[0]
+            if tbodies2:
+                tbody_disciplinas = tbodies2[0]
+
+        print("3")
+        # Extrai linhas
+        linhas_disciplinas = tbody_disciplinas.find_elements(By.XPATH, ".//tr[position() >= 2]") if tbody_disciplinas else []
+        linhas_atividades = tbody_atividades.find_elements(By.XPATH, ".//tr[position() >= 2]") if tbody_atividades else []
+
+        print("4")
+        # Chama funções de processamento
+        if linhas_disciplinas:
+            pegaDisciplinasRealizadas(login, linhas_disciplinas)
+        if linhas_atividades:
+            pegaAtividadesRealizadas(login, linhas_atividades)
+    except Exception as e:
+        print(e)
+
+    # Volta para a página anterior
+    driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+
+def pegaDisciplinasRealizadas(login, linhas):
     ant = ""
     batch_hist = []
-    try:                                                                                    
-        
-        titulo1_elem = driver.find_element(
-            By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[1]'
-        )
-        titulo2_elem = driver.find_element(
-            By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[1]'
-        )
-
-        titulo1 = titulo1_elem.text.strip()
-        titulo2 = titulo2_elem.text.strip()
-
-        if "Disciplinas Realizadas" in titulo1:
-            tbody_xpath = '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[2]/table/tbody'
-        else:
-            tbody_xpath = '/html/body/table/tbody/tr[3]/td/form/div/div[2]/div[2]/table/tbody'
-
-        tbody = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, tbody_xpath))
-        )
-
-        linhas = tbody.find_elements(By.XPATH, ".//tr[position() >= 2]")
-
-        for tr in linhas:
-            try:
-                tds = tr.find_elements(By.TAG_NAME, "td")
-                if len(tds) < 8: continue
-                codigo = tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[0]
-                nome = " ".join(tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[1:])
-                cred = tds[2].text
-                ch = tds[3].text
-                tipo = tds[4].text
-                freq = tds[5].text.replace("%", "").strip() or "0"
-                nota = tds[6].text.replace(",", ".").strip() or "0"
-                situacao = tds[7].text.strip()
-                ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
-                
-                ano_realizado = ar if ar != "" else ant
-                ant = ano_realizado
-                sql_disc = f"""
-                INSERT INTO public.disciplina (
-                    codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso
-                )
-                SELECT
-                    {format_val(codigo)},
-                    {format_val(nome)},
-                    CAST({cred} AS smallint),
-                    CAST({ch} AS smallint),
-                    {format_val(tipo)},
-                    NULL,
-                    a.id_curso
-                FROM public.aluno a
-                WHERE a.matricula = CAST({login} AS bigint)
-                ON CONFLICT (codigo) DO NOTHING;
-                """.replace('\n', ' ').strip()
-
-                imprimir_bloco_sql(sql_disc)
-                batch_hist.append(f"({format_val(codigo)}, {format_val(nota)}, {format_val(freq)}, {format_val(situacao)}, {format_val(ano_realizado)})")
-
-                if len(batch_hist) == 10:
-                    valores = ", ".join(batch_hist)
-                    sql = f"""
-                    INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
-                    SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
-                    FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
-                    JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-                    ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
-                        nota_final = EXCLUDED.nota_final,
-                        frequencia = EXCLUDED.frequencia,
-                        status = EXCLUDED.status;
-                    """.replace('\n', ' ').strip()
-                    imprimir_bloco_sql(sql)
-                    batch_hist = []
-            except: continue
+    for tr in linhas:
+        try:
+            tds = tr.find_elements(By.TAG_NAME, "td")
+            if len(tds) < 8: continue
+            codigo = tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[0]
+            nome = " ".join(tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[1:])
+            cred = tds[2].text
+            ch = tds[3].text
+            tipo = tds[4].text
+            freq = tds[5].text.replace("%", "").strip() or "0"
+            nota = tds[6].text.replace(",", ".").strip() or "0"
+            situacao = tds[7].text.strip()
+            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
             
-        if batch_hist:
-            valores = ", ".join(batch_hist)
-            sql = f"""
-            INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
-            SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
-            FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
-            JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-            ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
-                nota_final = EXCLUDED.nota_final,
-                frequencia = EXCLUDED.frequencia,
-                status = EXCLUDED.status;
+            ano_realizado = ar if ar != "" else ant
+            ant = ano_realizado
+            sql_disc = f"""
+            INSERT INTO public.disciplina (
+                codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso
+            )
+            SELECT
+                {format_val(codigo)},
+                {format_val(nome)},
+                CAST({cred} AS smallint),
+                CAST({ch} AS smallint),
+                {format_val(tipo)},
+                NULL,
+                a.id_curso
+            FROM public.aluno a
+            WHERE a.matricula = CAST({login} AS bigint)
+            ON CONFLICT (codigo) DO NOTHING;
             """.replace('\n', ' ').strip()
-            imprimir_bloco_sql(sql)
-    except: pass
-    driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
+
+            imprimir_bloco_sql(sql_disc)
+            batch_hist.append(f"({format_val(codigo)}, {format_val(nota)}, {format_val(freq)}, {format_val(situacao)}, {format_val(ano_realizado)})")
+
+            if len(batch_hist) == 10:
+                valores = ", ".join(batch_hist)
+                sql = f"""
+                INSERT INTO public.historico_disciplina (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
+                SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
+                FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
+                JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+                ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
+                    nota_final = EXCLUDED.nota_final,
+                    frequencia = EXCLUDED.frequencia,
+                    status = EXCLUDED.status;
+                """.replace('\n', ' ').strip()
+                imprimir_bloco_sql(sql)
+                batch_hist = []
+        except: continue
+            
+    if batch_hist:
+        valores = ", ".join(batch_hist)
+        sql = f"""
+        INSERT INTO public.historico_disciplina (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
+        SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
+        FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
+        JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+        ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
+            nota_final = EXCLUDED.nota_final,
+            frequencia = EXCLUDED.frequencia,
+            status = EXCLUDED.status;
+        """.replace('\n', ' ').strip()
+        imprimir_bloco_sql(sql)
+
+def pegaAtividadesRealizadas(login, linhas):
+    ant = ""
+    batch_hist = []
+    for tr in linhas:
+        try:
+            tds = tr.find_elements(By.TAG_NAME, "td")
+            if len(tds) < 3: continue
+            nome = tds[1].text
+            ch = tds[2].text
+            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
+            
+            ano_realizado = ar if ar != "" else ant
+            ant = ano_realizado
+            sql_disc = f"""
+            INSERT INTO public.atividade (
+                nome, max_horas
+            )
+            SELECT
+                {format_val(nome)},
+                {format_val(ch)}
+            ON CONFLICT (nome) DO NOTHING;
+            """.replace('\n', ' ').strip()
+
+            imprimir_bloco_sql(sql_disc)
+            batch_hist.append(f"({format_val(nome)},{format_val(ano_realizado)}, {format_val(ch)})")
+
+            if len(batch_hist) == 10:
+                valores = ", ".join(batch_hist)
+                sql = f"""
+                INSERT INTO public.historico_atividade (id_aluno, id_atividade, periodo_realizado, horas_realizadas)
+                SELECT a.id, at.id_atividade, v.ano, CAST(v.ch AS smallint)
+                FROM (VALUES {valores}) AS v(nome, ano, ch)
+                JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+                JOIN public.atividade at ON at.nome = v.nome
+                ON CONFLICT (id_aluno, id_atividade) DO UPDATE SET
+                    periodo_realizado = EXCLUDED.periodo_realizado,
+                    horas_realizadas = EXCLUDED.horas_realizadas;
+                """.replace('\n', ' ').strip()
+                imprimir_bloco_sql(sql)
+                batch_hist = []
+        except: continue
+            
+    if batch_hist:
+        valores = ", ".join(batch_hist)
+        sql = f"""
+        INSERT INTO public.historico_atividade (id_aluno, id_atividade, periodo_realizado, horas_realizadas)
+        SELECT a.id, at.id_atividade, v.ano, CAST(v.ch AS smallint)
+        FROM (VALUES {valores}) AS v(nome, ano, ch)
+        JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+        JOIN public.atividade at ON at.nome = v.nome
+        ON CONFLICT (id_aluno, id_atividade) DO UPDATE SET
+            periodo_realizado = EXCLUDED.periodo_realizado,
+            horas_realizadas = EXCLUDED.horas_realizadas;
+        """.replace('\n', ' ').strip()
+        imprimir_bloco_sql(sql)
 
 # --- DISCIPLINAS EM ANDAMENTO ---
 

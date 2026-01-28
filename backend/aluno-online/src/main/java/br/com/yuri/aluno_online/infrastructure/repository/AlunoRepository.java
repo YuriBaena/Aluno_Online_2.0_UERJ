@@ -46,7 +46,7 @@ public interface AlunoRepository extends JpaRepository<Aluno, UUID> {
         JOIN curso c 
             ON a.id_curso = c.id
 
-        LEFT JOIN historico h 
+        LEFT JOIN historico_disciplina h 
             ON a.id = h.id_aluno 
         AND h.status != 'Cancelado'
 

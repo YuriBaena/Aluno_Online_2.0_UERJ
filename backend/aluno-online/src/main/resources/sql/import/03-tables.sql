@@ -5,11 +5,12 @@
 CREATE TABLE IF NOT EXISTS curso (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome_curso VARCHAR(255) NOT NULL UNIQUE,
-    total_creditos SMALLINT NOT NULL DEFAULT 0
+    total_creditos SMALLINT NOT NULL DEFAULT 0,
+    total_horas SMALLINT NOT NULL DEFAULT 0
 );
 
-INSERT INTO public.curso (nome_curso, total_creditos) 
-VALUES ('Eletivas Universais', 0)
+INSERT INTO public.curso (nome_curso, total_creditos, total_horas) 
+VALUES ('Eletivas Universais', 0, 0)
 ON CONFLICT (nome_curso) DO NOTHING;
 
 -- ======================================================
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS horario_aula (
 -- 9. TABELA HISTÓRICO
 -- ======================================================
 
-CREATE TABLE IF NOT EXISTS historico (
+CREATE TABLE IF NOT EXISTS historico_disciplina (
     id_aluno UUID NOT NULL,
     codigo_disciplina VARCHAR(50) NOT NULL,
     nota_final DECIMAL(4,2),
@@ -169,7 +170,7 @@ CREATE TABLE IF NOT EXISTS historico (
         REFERENCES aluno(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT fk_historico_disciplina
+    CONSTRAINT fk_historico_disciplina 
         FOREIGN KEY (codigo_disciplina)
         REFERENCES disciplina(codigo)
 );
@@ -208,4 +209,36 @@ CREATE TABLE IF NOT EXISTS sincronizacao (
     detalhes TEXT,
     
     CONSTRAINT fk_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE
+);
+
+
+-- ======================================================
+-- 12. TABELA ATIVIDADE
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS atividade (
+    id_atividade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    max_horas SMALLINT NOT NULL DEFAULT 0
+);
+
+-- ======================================================
+-- 13. TABELA HISTÓRICO ATIVIDADE
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS historico_atividade (
+    id_aluno UUID NOT NULL,
+    id_atividade BIGINT NOT NULL,
+    periodo_realizado VARCHAR(50),
+    horas_realizadas SMALLINT,
+
+    CONSTRAINT fk_historico_atividade_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno(id)
+        ON DELETE CASCADE
+    
+    CONSTRAINT fk_historico_atividade_atividade
+        FOREIGN KEY (id_atividade)
+        REFERENCES atividade(id_atividade)
+        ON DELETE CASCADE
 );
