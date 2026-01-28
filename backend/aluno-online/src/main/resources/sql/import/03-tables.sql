@@ -220,6 +220,8 @@ CREATE TABLE IF NOT EXISTS atividade (
     id_atividade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     max_horas SMALLINT NOT NULL DEFAULT 0
+
+    CONSTRAINT atividade_nome_unique UNIQUE (nome)
 );
 
 -- ======================================================
@@ -235,7 +237,7 @@ CREATE TABLE IF NOT EXISTS historico_atividade (
     CONSTRAINT fk_historico_atividade_aluno
         FOREIGN KEY (id_aluno)
         REFERENCES aluno(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
     
     CONSTRAINT fk_historico_atividade_atividade
         FOREIGN KEY (id_atividade)

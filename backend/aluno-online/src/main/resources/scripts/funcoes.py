@@ -64,7 +64,7 @@ def abrir():
     print("LOG: Abrindo navegador...", flush=True)
     try:
         options = Options()
-        #options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.page_load_strategy = 'eager'
@@ -350,6 +350,16 @@ def pegaDisciplinasRealizadas(login, linhas):
         imprimir_bloco_sql(sql)
 
 def pegaAtividadesRealizadas(login, linhas):
+    print("LOG: Limpando histórico do aluno para não existir duplicidade", flush=True)
+
+    sql = f"""
+    DELETE FROM public.historico_atividade ha
+    USING public.aluno a
+    WHERE ha.id_aluno = a.id
+    AND a.matricula = CAST({login} AS bigint);
+    """.replace('\n', ' ').strip()
+    imprimir_bloco_sql(sql)
+
     ant = ""
     batch_hist = []
     for tr in linhas:
@@ -383,9 +393,6 @@ def pegaAtividadesRealizadas(login, linhas):
                 FROM (VALUES {valores}) AS v(nome, ano, ch)
                 JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
                 JOIN public.atividade at ON at.nome = v.nome
-                ON CONFLICT (id_aluno, id_atividade) DO UPDATE SET
-                    periodo_realizado = EXCLUDED.periodo_realizado,
-                    horas_realizadas = EXCLUDED.horas_realizadas;
                 """.replace('\n', ' ').strip()
                 imprimir_bloco_sql(sql)
                 batch_hist = []
@@ -399,9 +406,6 @@ def pegaAtividadesRealizadas(login, linhas):
         FROM (VALUES {valores}) AS v(nome, ano, ch)
         JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
         JOIN public.atividade at ON at.nome = v.nome
-        ON CONFLICT (id_aluno, id_atividade) DO UPDATE SET
-            periodo_realizado = EXCLUDED.periodo_realizado,
-            horas_realizadas = EXCLUDED.horas_realizadas;
         """.replace('\n', ' ').strip()
         imprimir_bloco_sql(sql)
 
