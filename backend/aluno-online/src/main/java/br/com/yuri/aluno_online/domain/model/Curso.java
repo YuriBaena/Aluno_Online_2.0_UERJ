@@ -18,5 +18,11 @@ public class Curso {
 
     @Column(name = "nome_curso", nullable = false, unique = true)
     private String nomeCurso;
+
+    @Column(name = "total_creditos", nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
+    private int totalCreditos;
+
+    @Column(name = "total_horas", nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
+    private int totalHoras;
 }
 
