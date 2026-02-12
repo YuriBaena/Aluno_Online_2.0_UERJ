@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +29,11 @@ public class SaveCronResource{
     public ResponseEntity<Void> saveCron(@AuthenticationPrincipal Aluno aluno, @RequestBody CronRequest req){
         servico.save(aluno.getId(), req);
         return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<String>> listCron(@AuthenticationPrincipal Aluno aluno){
+        return ResponseEntity.ok(servico.listCronAluno(aluno.getId()));
     }
 
     public record CronRequest(
