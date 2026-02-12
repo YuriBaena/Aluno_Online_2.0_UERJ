@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.yuri.aluno_online.application.myCronograma.MyCronogramaService;
 import br.com.yuri.aluno_online.domain.model.Aluno;
-import br.com.yuri.aluno_online.domain.model.Disciplina;
 
 @RestController
 @RequestMapping("/my-cron")

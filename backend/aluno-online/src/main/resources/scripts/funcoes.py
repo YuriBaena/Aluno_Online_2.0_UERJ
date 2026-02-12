@@ -322,7 +322,7 @@ def pegaDisciplinasRealizadas(login, linhas):
             if len(batch_hist) == 10:
                 valores = ", ".join(batch_hist)
                 sql = f"""
-                INSERT INTO public.historico_disciplina (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
+                INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
                 SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
                 FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
                 JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
@@ -338,7 +338,7 @@ def pegaDisciplinasRealizadas(login, linhas):
     if batch_hist:
         valores = ", ".join(batch_hist)
         sql = f"""
-        INSERT INTO public.historico_disciplina (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
+        INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
         SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
         FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
         JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)

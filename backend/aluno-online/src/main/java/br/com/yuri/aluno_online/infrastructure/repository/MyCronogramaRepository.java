@@ -125,7 +125,7 @@ public class MyCronogramaRepository {
             )
             AND NOT EXISTS (
                 SELECT 1
-                FROM historico_disciplina h
+                FROM historico h
                 WHERE h.id_aluno = :id_aluno
                 AND h.codigo_disciplina = d.codigo
                 AND h.status = 'Aprov. Nota'
@@ -173,7 +173,7 @@ public class MyCronogramaRepository {
             AND d.periodo = :per
             AND NOT EXISTS (
                 SELECT 1 
-                FROM historico_disciplina h 
+                FROM historico h 
                 WHERE h.id_aluno = a.id 
                 AND h.codigo_disciplina = d.codigo 
                 AND h.status = 'Aprov. Nota'
@@ -225,7 +225,7 @@ public class MyCronogramaRepository {
             WHERE (d.id_curso = a.id_curso)
             AND NOT EXISTS (
                     SELECT 1 
-                    FROM historico_disciplina h 
+                    FROM historico h 
                     WHERE h.id_aluno = a.id 
                     AND h.codigo_disciplina = d.codigo 
                     AND h.status = 'Aprov. Nota'
@@ -307,7 +307,7 @@ public class MyCronogramaRepository {
                 )
             )
             AND NOT EXISTS (
-                SELECT 1 FROM historico_disciplina hist 
+                SELECT 1 FROM historico hist 
                 WHERE hist.id_aluno = a.id 
                 AND hist.codigo_disciplina = d.codigo 
                 AND hist.status = 'Aprov. Nota'
