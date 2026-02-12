@@ -24,4 +24,6 @@ public interface CronRepository extends JpaRepository<Cronograma, Long> {
     @Query("SELECT c FROM Cronograma c WHERE c.idAluno = :id_aluno AND c.nome = :nome")
     Optional<Cronograma> findByAlunoAndNome(@Param("id_aluno") UUID id_aluno, @Param("nome") String nome);
 
+    void deleteByIdAlunoAndNome(UUID idAluno, String nome);
+
 }

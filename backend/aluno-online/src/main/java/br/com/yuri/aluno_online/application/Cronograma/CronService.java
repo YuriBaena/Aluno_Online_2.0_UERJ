@@ -62,4 +62,9 @@ public class CronService {
 
         return new CronRequest(cron.getNome(), disciplinasDto);
     }
+
+    @Transactional
+    public void delete(UUID id_aluno, String nome){
+        repository.deleteByIdAlunoAndNome(id_aluno, nome);
+    }
 }

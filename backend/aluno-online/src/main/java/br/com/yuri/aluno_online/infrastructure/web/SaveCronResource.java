@@ -5,16 +5,17 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.yuri.aluno_online.application.Cronograma.CronService;
 import br.com.yuri.aluno_online.domain.model.Aluno;
-import br.com.yuri.aluno_online.domain.model.Cronograma;
 
 @RestController
 @RequestMapping("/cronograma")
@@ -30,6 +31,12 @@ public class SaveCronResource{
     @PostMapping("/save")
     public ResponseEntity<Void> saveCron(@AuthenticationPrincipal Aluno aluno, @RequestBody CronRequest req){
         servico.save(aluno.getId(), req);
+        return ResponseEntity.accepted().build();
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteCron(@AuthenticationPrincipal Aluno aluno, @RequestParam String nome){
+        servico.delete(aluno.getId(), nome);
         return ResponseEntity.accepted().build();
     }
 
