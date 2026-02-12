@@ -213,7 +213,11 @@
   <div class="resume-bar" *ngIf="selecionadas.length > 0">
     <button class="resume-btn" (click)="abrirModalResumo()">
       <i class="fa-solid fa-list-check"></i>
-      Ver Resumo das Seleções
+      Ver Resumo
+    </button>
+    <button class="resume-btn" (click)="abrirModalSalvar()">
+      <i class="fa-solid fa-floppy-disk"></i>
+      Salvar Cronograma
     </button>
   </div>
 
@@ -405,6 +409,51 @@
       <button class="btn-cancel" (click)="fecharModalResumo()">Fechar</button>
     </footer>
 
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="modalSalvarAberto" (click)="modalSalvarAberto = false">
+  <div class="save-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="title-group">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <h3>Salvar Cronograma</h3>
+      </div>
+      <button class="close-btn" (click)="modalSalvarAberto = false">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome do Cronograma</label>
+        <input 
+          type="text" 
+          [(ngModel)]="nomeCronograma" 
+          placeholder="Ex: Semestre 2026.1 - Versão Oficial"
+          class="save-input"
+        />
+        <small>Dica: Use nomes que ajudem a identificar o período ou objetivo.</small>
+      </div>
+
+      <div class="summary-preview">
+        <h4>Resumo do Envio ({{ selecionadas.length }} disciplinas)</h4>
+        <div class="summary-list">
+          <div class="summary-item" *ngFor="let disc of selecionadas">
+            <span class="disc-name">{{ disc.nome }}</span>
+            <span class="disc-turma">Turma: {{ disc.selectedTurmaId }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="modalSalvarAberto = false">Cancelar</button>
+      <button 
+        class="btn-confirm-save" 
+        [disabled]="!nomeCronograma || nomeCronograma.length < 3"
+        (click)="confirmarSalvamento()">
+        <i class="fa-solid fa-check"></i> Finalizar e Salvar
+      </button>
+    </div>
   </div>
 </div>
 

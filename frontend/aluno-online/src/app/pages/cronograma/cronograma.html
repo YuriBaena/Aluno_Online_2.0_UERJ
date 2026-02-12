@@ -1,0 +1,118 @@
+<div class="dashboard-container">
+  <header class="main-header">
+    <div class="header-content">
+      <div class="title-area">
+        <h1>Meus Cronogramas</h1>
+        <p class="subtitle">Gerencie suas grades salvas e visualize seus horários</p>
+      </div>
+      <a routerLink="/home/my-cronograma">
+        <button class="btn-novo">
+          <i class="fa-solid fa-plus"></i> Novo Cronograma
+        </button>
+      </a>
+    </div>
+
+    <div class="cronogramas-list">
+      <div *ngFor="let nome of nomesCronogramas" 
+           class="cron-card" 
+           [class.active]="cronogramaAtivo?.nome_cronograma === nome"
+           (click)="selecionarCronograma(nome)">
+        <div class="cron-info">
+          <span class="label-status">Salvo</span>
+          <h3>{{ nome }}</h3>
+        </div>
+        <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === nome"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="schedule-view" *ngIf="cronogramaAtivo; else noSelection">
+    
+    <aside class="side-panel">
+      <div class="panel-header">
+        <h2>Disciplinas ({{ cronogramaAtivo.disciplinas.length }})</h2>
+      </div>
+      
+      <div class="widgets-container">
+        <div *ngFor="let disc of cronogramaAtivo.disciplinas" 
+             class="class-widget" 
+             (click)="abrirDetalhes(disc)"
+             [ngStyle]="getEstiloDisciplina(disc)"
+             [title]="'Ver detalhes de ' + disc.nome_disc">
+          
+          <div class="widget-top">
+            <span class="codigo">{{ disc.codigo_disc }}</span>
+          </div>
+          
+          <h4>{{ disc.nome_disc }}</h4>
+        </div>
+      </div>
+    </aside>
+
+    <section class="timetable-container">
+      <div class="timetable-grid">
+        <div class="grid-header-corner"></div>
+        <div *ngFor="let dia of diasSemana" class="day-header">
+          {{ dia === 'Terca' ? 'TER' : dia.substring(0,3).toUpperCase() }}
+        </div>
+
+        <ng-container *ngFor="let hora of horariosLabels">
+          <div class="time-label">{{ hora }}</div>
+          
+          <div *ngFor="let dia of diasSemana" class="grid-cell">
+            <div *ngIf="getDisciplinaNoHorario(dia, hora) as disc" 
+                  class="filled-cell" 
+                  (click)="abrirDetalhes(disc)"
+                  [ngStyle]="getEstiloDisciplina(disc)"
+                  [title]="disc.nome_disc">
+              <span class="cell-code">{{ disc.codigo_disc }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+  </main>
+
+  <ng-template #noSelection>
+    <div class="empty-state">
+      <i class="fa-regular fa-calendar-check"></i>
+      <p>Nenhum cronograma selecionado.</p>
+      <span>Clique em um dos cards acima para visualizar sua grade horária completa.</span>
+    </div>
+  </ng-template>
+</div>
+
+<div class="modal-overlay" *ngIf="exibirModalDetalhes" (click)="fecharModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header" [ngStyle]="getEstiloDisciplina(disciplinaSelecionada!)">
+      <div class="header-info">
+        <span class="disc-codigo">{{ disciplinaSelecionada?.codigo_disc }}</span>
+        <h2>{{ disciplinaSelecionada?.nome_disc }}</h2>
+      </div>
+      <button class="btn-close" (click)="fecharModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="info-group">
+        <label><i class="fa-solid fa-user-tie"></i> Professor</label>
+        <p>{{ disciplinaSelecionada?.nome_prof }}</p>
+      </div>
+
+      <div class="info-group">
+        <label><i class="fa-solid fa-clock"></i> Horários Confirmados</label>
+        <div class="horarios-grid-modal">
+          <div *ngFor="let h of disciplinaSelecionada?.horarios" class="dia-coluna">
+            <div class="dia-header-mini">{{ h.dia.substring(0,3).toUpperCase() }}</div>
+            <div class="codigos-stack">
+              <div *ngFor="let cod of h.codigo_horario" class="cod-tag-animated">
+                <span class="codigo-texto">{{ cod }}</span>
+                <span class="intervalo-texto">{{ getIntervaloPorCodigo(cod) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

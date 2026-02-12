@@ -9,6 +9,7 @@ import { MyCronograma } from './pages/my-cronograma/my-cronograma';
 // Importação dos Guardiões de Rota
 import { authGuard } from './guards/auth-guard';
 import { adminGuard } from './guards/admin-guard';
+import { Cronograma } from './pages/cronograma/cronograma';
 
 export const routes: Routes = [
   /**
@@ -60,6 +61,12 @@ export const routes: Routes = [
            * URL: /home/my-cronograma
            */
           { path: 'my-cronograma', component: MyCronograma },
+
+          /**
+           * COMPONENTE DASHBOARD
+           * URL: /home/cronogramas
+           */
+          { path: 'cronogramas', component: Cronograma },
 
           /**
            * FUTURAS ROTAS FILHAS

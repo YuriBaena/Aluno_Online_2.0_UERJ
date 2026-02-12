@@ -9,8 +9,8 @@ def funcaoPrincipal(login, senha, full=False):
         funcoes.entrar(driver, login, senha)
         
         # 1. Aluno (Imprime imediato)
-        nome, curso, total_creditos = funcoes.coletaDadosPessoais(driver)
-        funcoes.gerar_sql_aluno(login, nome, curso, total_creditos)
+        nome, curso, total_creditos, total_horas = funcoes.coletaDadosPessoais(driver)
+        funcoes.gerar_sql_aluno(login, nome, curso, total_creditos, total_horas)
 
         # 1.1 Eletivas Universais
         if (full):

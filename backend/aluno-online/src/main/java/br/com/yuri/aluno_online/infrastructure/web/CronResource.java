@@ -1,0 +1,70 @@
+package br.com.yuri.aluno_online.infrastructure.web;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.com.yuri.aluno_online.application.Cronograma.CronService;
+import br.com.yuri.aluno_online.domain.model.Aluno;
+
+@RestController
+@RequestMapping("/cronograma")
+@CrossOrigin(origins = "*")
+public class CronResource{
+
+    private final CronService servico;
+
+    public CronResource(CronService servico){
+        this.servico = servico;
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<Void> saveCron(@AuthenticationPrincipal Aluno aluno, @RequestBody CronRequest req){
+        servico.save(aluno.getId(), req);
+        return ResponseEntity.accepted().build();
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteCron(@AuthenticationPrincipal Aluno aluno, @RequestParam String nome){
+        servico.delete(aluno.getId(), nome);
+        return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/nome/{nome}")
+    public ResponseEntity<CronRequest> getCronNome(@AuthenticationPrincipal Aluno aluno, @PathVariable String nome){
+        return ResponseEntity.ok(servico.getCronNome(aluno.getId(), nome));
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<String>> listCron(@AuthenticationPrincipal Aluno aluno){
+        return ResponseEntity.ok(servico.listCronAluno(aluno.getId()));
+    }
+
+    public record CronRequest(
+        String nome_cronograma,
+        List<CronPart> disciplinas
+    ) {}
+
+    public record CronPart(
+        String codigo_disc,
+        String nome_disc,
+        String nome_prof,
+        List<Horarios> horarios
+    ){}
+
+    public record Horarios(
+        String dia,
+        List<String> codigo_horario
+    ){}
+
+}
