@@ -75,6 +75,7 @@ $radius-md: 10px;
     }
 
     .widgets-container { 
+      cursor: pointer;
       display: flex; flex-direction: column; gap: 0.6rem; 
       overflow-y: auto; padding-right: 0.5rem;
       &::-webkit-scrollbar { width: 4px; }

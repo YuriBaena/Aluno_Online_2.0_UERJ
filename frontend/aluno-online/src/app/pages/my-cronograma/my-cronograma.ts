@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MyCronogramaService } from '../../services/my-cronograma'; // Ajuste o caminho conforme seu projeto
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { CronogramaService } from '../../services/cronograma';
@@ -38,6 +39,7 @@ export interface Disciplina {
 export class MyCronograma implements OnInit, OnDestroy {
   private cronogramaService = inject(MyCronogramaService);
   private cronService = inject(CronogramaService);
+  private router = inject(Router);
 
   listaHorariosDefinidos = [
     { codigo: 'M1', intervalo: '07:00 - 07:50' },
@@ -515,7 +517,7 @@ export class MyCronograma implements OnInit, OnDestroy {
     this.cronService.saveCron(request).subscribe({
       next: () => {
         this.modalSalvarAberto = false;
-        alert('Cronograma salvo com sucesso!');
+        this.router.navigate(['/home/cronogramas']);
       },
       error: (err) => alert('Erro ao salvar: ' + err.message)
     });
