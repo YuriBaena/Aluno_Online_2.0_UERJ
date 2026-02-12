@@ -3,8 +3,8 @@ package br.com.yuri.aluno_online.application.Cronograma;
 import br.com.yuri.aluno_online.domain.model.Cronograma;
 import br.com.yuri.aluno_online.domain.model.DisciplinaCronograma;
 import br.com.yuri.aluno_online.infrastructure.repository.CronRepository;
-import br.com.yuri.aluno_online.infrastructure.web.SaveCronResource.CronPart;
-import br.com.yuri.aluno_online.infrastructure.web.SaveCronResource.CronRequest;
+import br.com.yuri.aluno_online.infrastructure.web.CronResource.CronPart;
+import br.com.yuri.aluno_online.infrastructure.web.CronResource.CronRequest;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

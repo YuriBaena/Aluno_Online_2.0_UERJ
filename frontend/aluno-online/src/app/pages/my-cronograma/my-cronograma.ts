@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MyCronogramaService } from '../../services/my-cronograma'; // Ajuste o caminho conforme seu projeto
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
+import { CronogramaService } from '../../services/cronograma';
+import { CronPart, CronRequest } from '../cronograma/cronograma';
 
 // --- Interfaces ---
 export interface Horario {
@@ -35,6 +37,7 @@ export interface Disciplina {
 })
 export class MyCronograma implements OnInit, OnDestroy {
   private cronogramaService = inject(MyCronogramaService);
+  private cronService = inject(CronogramaService);
 
   listaHorariosDefinidos = [
     { codigo: 'M1', intervalo: '07:00 - 07:50' },
@@ -73,6 +76,9 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   exibirModalConflito = false;
   conflitoInfo: any = null;
+
+  modalSalvarAberto = false;
+  nomeCronograma = '';
 
   exibirModalOtimizar = false;
   abaAtiva: 'turnos' | 'personalizado' = 'turnos';
@@ -157,7 +163,9 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   abrirModal(disc: Disciplina, t: Turma) { this.disiplinaSelecionada = disc; this.turmaSelecionadaDetalhe = t; this.exibirModal = true; }
+  
   fecharModal() { this.exibirModal = false; }
+
   selecionarTurmaModal(){ 
     this.disiplinaSelecionada.selectedTurmaId =  (this.disiplinaSelecionada.selectedTurmaId === this.turmaSelecionadaDetalhe.id ? undefined : this.turmaSelecionadaDetalhe.id);
     this.fecharModal();
@@ -476,7 +484,42 @@ export class MyCronograma implements OnInit, OnDestroy {
     this.exibirModalResumo = false;
   }
 
+  abrirModalSalvar() {
+    this.modalSalvarAberto = true;
+  }
 
+  confirmarSalvamento() {
+    const disciplinasParaSalvar: CronPart[] = this.selecionadas.map(s => {
+      const turma = s.turmas.find((t: any) => t.id === s.selectedTurmaId);
+      
+      // Usamos o seu método getHorariosAgrupados aqui
+      const agrupados = this.getHorariosAgrupados(turma?.horario);
+
+      return {
+        codigo_disc: s.codigo || 'S/C',
+        nome_disc: s.nome,
+        nome_prof: turma?.professor || 'A Definir',
+        // Mapeamos o seu "codigos" para "codigo_horario" que o Java exige
+        horarios: agrupados.map(item => ({
+          dia: item.dia,
+          codigo_horario: item.codigos // Transforma 'codigos' em 'codigo_horario'
+        }))
+      };
+    });
+
+    const request: CronRequest = {
+      nome_cronograma: this.nomeCronograma,
+      disciplinas: disciplinasParaSalvar
+    };
+
+    this.cronService.saveCron(request).subscribe({
+      next: () => {
+        this.modalSalvarAberto = false;
+        alert('Cronograma salvo com sucesso!');
+      },
+      error: (err) => alert('Erro ao salvar: ' + err.message)
+    });
+  }
 
   // Método auxiliar para dar cores automáticas às matérias
   private gerarCorHex(str: string) {

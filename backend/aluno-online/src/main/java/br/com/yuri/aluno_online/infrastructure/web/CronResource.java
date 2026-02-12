@@ -20,11 +20,11 @@ import br.com.yuri.aluno_online.domain.model.Aluno;
 @RestController
 @RequestMapping("/cronograma")
 @CrossOrigin(origins = "*")
-public class SaveCronResource{
+public class CronResource{
 
     private final CronService servico;
 
-    public SaveCronResource(CronService servico){
+    public CronResource(CronService servico){
         this.servico = servico;
     }
 

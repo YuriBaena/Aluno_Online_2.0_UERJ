@@ -5,7 +5,7 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import br.com.yuri.aluno_online.infrastructure.web.SaveCronResource.Horarios;
+import br.com.yuri.aluno_online.infrastructure.web.CronResource.Horarios;
 
 @Entity
 @Table(name = "disciplina_cronograma")
