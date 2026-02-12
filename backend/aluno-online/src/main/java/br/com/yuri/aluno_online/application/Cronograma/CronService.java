@@ -3,6 +3,7 @@ package br.com.yuri.aluno_online.application.Cronograma;
 import br.com.yuri.aluno_online.domain.model.Cronograma;
 import br.com.yuri.aluno_online.domain.model.DisciplinaCronograma;
 import br.com.yuri.aluno_online.infrastructure.repository.CronRepository;
+import br.com.yuri.aluno_online.infrastructure.web.SaveCronResource.CronPart;
 import br.com.yuri.aluno_online.infrastructure.web.SaveCronResource.CronRequest;
 
 import org.springframework.stereotype.Service;
@@ -45,5 +46,20 @@ public class CronService {
 
     public List<String> listCronAluno(UUID id_aluno){
         return repository.getCronAluno(id_aluno);
+    }
+
+    public CronRequest getCronNome(UUID id_aluno, String nome) {
+        Cronograma cron = repository.findByAlunoAndNome(id_aluno, nome)
+                .orElseThrow(() -> new RuntimeException("Não encontrado"));
+
+        List<CronPart> disciplinasDto = cron.getDisciplinas().stream()
+            .map(d -> new CronPart(
+                d.getCodigoDisciplina(),
+                d.getNomeDisciplina(),
+                d.getNomeProfessor(),
+                d.getHorarios() 
+            )).toList();
+
+        return new CronRequest(cron.getNome(), disciplinasDto);
     }
 }
