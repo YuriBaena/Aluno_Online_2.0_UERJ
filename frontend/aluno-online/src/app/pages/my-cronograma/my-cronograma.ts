@@ -63,6 +63,10 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   periodos:number[] = [];
 
+  info: boolean = false;
+  infoMessage: string = '';
+  infoType: 'success' | 'warning' | 'info' = 'info';
+
   // Estados
   menu1Aberto = false;
   menu2Aberto = false;
@@ -367,7 +371,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   preencherPorPeriodo(periodo: number) {
-    this.cronogramaService.pegaPorPeriodo(periodo).subscribe((res:any) => {
+    this.cronogramaService.pegaPorPeriodo(periodo).subscribe((res:Disciplina[]) => {
 
       for (const disc of res) {
 
@@ -404,6 +408,10 @@ export class MyCronograma implements OnInit, OnDestroy {
           expandida: false,
           cor: this.gerarCorHex(disc.nome)
         });
+      }
+
+      if(res.length == 0){
+        this.mostrarMensagem("Todas matérias do " + periodo + "° já foram realizadas", "info");
       }
 
       // UX
@@ -531,5 +539,16 @@ export class MyCronograma implements OnInit, OnDestroy {
     }
     const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
     return '#' + '00000'.substring(0, 6 - c.length) + c;
+  }
+
+  private mostrarMensagem(msg: string, tipo: 'success' | 'warning' | 'info' = 'info') {
+    this.infoMessage = msg;
+    this.infoType = tipo;
+    this.info = true;
+
+    // Auto-hide após 10 segundos
+    setTimeout(() => {
+      this.info = false;
+    }, 10000);
   }
 }

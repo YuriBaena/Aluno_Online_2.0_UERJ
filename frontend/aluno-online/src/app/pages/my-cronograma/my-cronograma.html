@@ -159,6 +159,17 @@
   </div>
 
   <main class="calendar-area">
+    <div class="info-toast" [class.show]="info" [ngClass]="infoType" *ngIf="info">
+      <div class="info-content">
+        <i class="fa-solid" [ngClass]="{
+          'fa-circle-check': infoType === 'success',
+          'fa-circle-exclamation': infoType === 'warning',
+          'fa-circle-info': infoType === 'info'
+        }"></i>
+        <span>{{ infoMessage }}</span>
+      </div>
+      <button class="close-info" (click)="info = false">&times;</button>
+    </div>
     <div class="schedule-container" *ngIf="selecionadas.length > 0; else emptyState">
       <div class="table-responsive">
         <table class="schedule-table">
