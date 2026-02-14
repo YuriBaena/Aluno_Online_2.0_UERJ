@@ -14,13 +14,21 @@
 
     <div class="cronogramas-list">
       <div *ngFor="let nome of nomesCronogramas" 
-           class="cron-card" 
-           [class.active]="cronogramaAtivo?.nome_cronograma === nome"
-           (click)="selecionarCronograma(nome)">
+          class="cron-card" 
+          [class.active]="cronogramaAtivo?.nome_cronograma === nome"
+          (click)="selecionarCronograma(nome)">
+        
+        <button class="cron-exclude" 
+                title="Excluir cronograma"
+                (click)="excluirCronograma(nome); $event.stopPropagation()">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+
         <div class="cron-info">
           <span class="label-status">Salvo</span>
           <h3>{{ nome }}</h3>
         </div>
+        
         <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === nome"></div>
       </div>
     </div>

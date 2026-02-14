@@ -99,6 +99,15 @@ export class Cronograma implements OnInit {
     this.exibirModalDetalhes = true;
   }
 
+  excluirCronograma(nome: string){
+    this.cronService.deleteCron(nome).subscribe(
+      (resp: any) => {
+        this.nomesCronogramas = [];
+        this.carregarListaNomes();
+      }
+    );
+  }
+
   fecharModal() {
     this.exibirModalDetalhes = false;
     this.disciplinaSelecionada = null;

@@ -34,8 +34,62 @@ $radius-md: 10px;
   }
 
   .cronogramas-list {
-    display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 0.2rem 1.2rem;
-    &::-webkit-scrollbar { height: 5px; }
+    display: flex; 
+    gap: 1rem; 
+    overflow-x: auto; 
+    padding: 0.5rem 0.2rem 1.2rem;
+    
+    .cron-card {
+      position: relative; // Para posicionar o botão de excluir
+      min-width: 200px;
+      padding: 1.5rem 1rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #cbd5e1;
+        // Mostra o botão de excluir apenas no hover (opcional, mas elegante)
+        .cron-exclude { opacity: 1; transform: scale(1); }
+      }
+
+      &.active {
+        background: #eff6ff;
+        border-color: #3b82f6;
+      }
+    }
+
+    .cron-exclude {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      opacity: 0.6; // Começa um pouco transparente
+      z-index: 10;
+
+      &:hover {
+        background: #fee2e2; // Fundo vermelho clarinho
+        color: #ef4444;       // Ícone vermelho
+        opacity: 1;
+        transform: scale(1.1);
+      }
+
+      i { font-size: 0.9rem; }
+    }
+
+    // Estilização da barra de rolagem que você já tinha
+    &::-webkit-scrollbar { height: 6px; }
     &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   }
 

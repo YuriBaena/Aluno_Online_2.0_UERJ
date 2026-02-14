@@ -411,7 +411,7 @@ export class MyCronograma implements OnInit, OnDestroy {
       }
 
       if(res.length == 0){
-        this.mostrarMensagem("Todas matérias do " + periodo + "° já foram realizadas", "info");
+        this.mostrarMensagem("Todas matérias do " + periodo + "° já foram realizadas.", "info");
       }
 
       // UX
