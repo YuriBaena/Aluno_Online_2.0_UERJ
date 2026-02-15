@@ -1,4 +1,4 @@
-// Variáveis de Cores
+// Variáveis Base
 $primary: #2563eb;
 $primary-hover: #1d4ed8;
 $bg-body: #f1f5f9;
@@ -6,6 +6,7 @@ $text-main: #1e293b;
 $text-muted: #64748b;
 $white: #ffffff;
 $border: #e2e8f0;
+$error-red: #ef4444;
 
 .login-screen {
   display: flex;
@@ -21,26 +22,63 @@ $border: #e2e8f0;
   width: 100%;
   max-width: 400px;
   padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s;
 
-  .login-header {
-    text-align: center;
-    margin-bottom: 2rem;
+  &.shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+}
 
-    h1 {
-      color: $text-main;
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      margin-top: 0; // Garante que não haja espaço extra no topo
-    }
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
 
-    p {
-      color: $text-muted;
-      font-size: 0.875rem;
-      margin: 0;
-    }
+  h1 {
+    color: $text-main;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    color: $text-muted;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+}
+
+// Estilo do Alerta de Erro
+.error-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  animation: slideDown 0.3s ease-out;
+
+  .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    i { font-size: 1rem; }
+  }
+
+  .close-error {
+    background: none;
+    border: none;
+    color: #b91c1c;
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.6;
+    &:hover { opacity: 1; }
   }
 }
 
@@ -60,7 +98,7 @@ $border: #e2e8f0;
       width: 100%;
       padding: 0.75rem 1rem;
       border: 1px solid $border;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 1rem;
       transition: all 0.2s;
       box-sizing: border-box;
@@ -71,41 +109,32 @@ $border: #e2e8f0;
         box-shadow: 0 0 0 3px rgba($primary, 0.1);
       }
     }
+
+    &.invalid {
+      label { color: $error-red; }
+      input {
+        border-color: $error-red;
+        &:focus { box-shadow: 0 0 0 3px rgba($error-red, 0.1); }
+      }
+    }
   }
 
-  // --- AJUSTE DO CONTAINER DE SENHA ---
   .password-container {
     position: relative;
-    display: flex;
-    align-items: center;
-
-    input {
-      padding-right: 3rem; // Espaço para o ícone
-    }
+    input { padding-right: 3rem; }
 
     .toggle-password {
       position: absolute;
       right: 0.75rem;
-      top: 50%;                 // Posiciona no meio da altura
-      transform: translateY(-50%); // Alinhamento vertical perfeito
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
-      color: $text-muted;       // Cor neutra para o ícone
-      font-size: 1.1rem;        // Tamanho ideal para ícones de olho
+      color: $text-muted;
       cursor: pointer;
-      padding: 0.25rem;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s;
-      
-      &:hover {
-        color: $primary;        // Muda para azul no hover
-      }
-
-      &:focus {
-        outline: none;
-      }
+      padding: 0.25rem;
+      &:hover { color: $primary; }
     }
   }
 
@@ -113,37 +142,55 @@ $border: #e2e8f0;
     width: 100%;
     background-color: $primary;
     color: $white;
-    padding: 0.75rem;
+    padding: 0.85rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     margin-top: 1rem;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: $primary-hover;
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .loader-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
   }
 
   .form-footer {
     text-align: center;
     margin-top: 1.5rem;
-
-    p {
-      margin: 0;
-      font-size: 0.875rem;
-    }
-
+    p { font-size: 0.875rem; color: $text-muted; }
     a {
       color: $primary;
       font-weight: 600;
       text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
+      &:hover { text-decoration: underline; }
     }
   }
+}
+
+// Animações
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

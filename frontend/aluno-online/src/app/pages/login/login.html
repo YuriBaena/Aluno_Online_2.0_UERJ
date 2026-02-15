@@ -1,23 +1,35 @@
 <div class="login-screen">
-  <div class="login-card">
+  <div class="login-card" [class.shake]="erroMensagem">
+    
     <header class="login-header">
       <h1>Acesso ao Sistema</h1>
       <p>Insira suas credenciais para continuar</p>
     </header>
 
+    <div class="error-alert" *ngIf="erroMensagem">
+      <div class="alert-content">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ erroMensagem }}</span>
+      </div>
+      <button class="close-error" (click)="erroMensagem = ''" aria-label="Fechar alerta">
+        &times;
+      </button>
+    </div>
+
     <form class="login-form" (submit)="$event.preventDefault(); fazerLogin(matriculaInput.value, senhaInput.value)">
       
-      <div class="input-group">
+      <div class="input-group" [class.invalid]="erroMensagem">
         <label for="matricula">Matrícula</label>
         <input 
           #matriculaInput
           id="matricula" 
           type="text" 
           placeholder="Digite sua matrícula" 
+          (input)="limparErro()"
           autocomplete="username">
       </div>
 
-      <div class="input-group">
+      <div class="input-group" [class.invalid]="erroMensagem">
         <label for="senha">Senha</label>
         <div class="password-container">
           <input 
@@ -25,6 +37,7 @@
             id="senha" 
             [type]="exibirSenha ? 'text' : 'password'" 
             placeholder="Digite sua senha"
+            (input)="limparErro()"
             autocomplete="current-password">
           
           <button 
@@ -32,23 +45,25 @@
             class="toggle-password" 
             (click)="toggleSenha()"
             [attr.aria-label]="exibirSenha ? 'Esconder senha' : 'Mostrar senha'">
-            
-            <i *ngIf="!exibirSenha" class="fa-solid fa-eye"></i>
-            <i *ngIf="exibirSenha" class="fa-solid fa-eye-slash"></i>
+            <i class="fa-solid" [ngClass]="exibirSenha ? 'fa-eye-slash' : 'fa-eye'"></i>
           </button>
         </div>
       </div>
 
-      <button type="submit" class="btn-primary">
-        Entrar
+      <button type="submit" class="btn-primary" [disabled]="carregando">
+        <span *ngIf="!carregando">Entrar</span>
+        <div class="loader-container" *ngIf="carregando">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <span>Autenticando...</span>
+        </div>
       </button>
 
-      <div class="form-footer" style="text-align: center; margin-top: 15px;">
-        <p style="font-size: 0.9rem; color: #666;">
+      <footer class="form-footer">
+        <p>
           Ainda não tem acesso? 
-          <a routerLink="/registrar" style="color: #2563eb; font-weight: bold; text-decoration: none;">Cadastre-se aqui</a>
+          <a routerLink="/registrar">Cadastre-se aqui</a>
         </p>
-      </div>
+      </footer>
     </form>
   </div>
 </div>
