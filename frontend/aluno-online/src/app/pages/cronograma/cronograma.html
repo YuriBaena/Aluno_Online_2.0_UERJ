@@ -63,7 +63,7 @@
           {{ dia === 'Terca' ? 'TER' : dia.substring(0,3).toUpperCase() }}
         </div>
 
-        <ng-container *ngFor="let hora of horariosLabels">
+        <ng-container *ngFor="let hora of labelsFiltradas">
           <div class="time-label">{{ hora }}</div>
           
           <div *ngFor="let dia of diasSemana" class="grid-cell">
