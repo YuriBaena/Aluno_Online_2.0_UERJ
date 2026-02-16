@@ -13,22 +13,31 @@
     </div>
 
     <div class="cronogramas-list">
-      <div *ngFor="let nome of nomesCronogramas" 
+      <div *ngFor="let info of nomesCronogramas" 
           class="cron-card" 
-          [class.active]="cronogramaAtivo?.nome_cronograma === nome"
-          (click)="selecionarCronograma(nome)">
+          [class.active]="cronogramaAtivo?.nome_cronograma === info.nome"
+          [class.locked]="info.criado_em !== periodoAtual"
+          (click)="selecionarCronograma(info.nome)">
         
         <button class="cron-exclude" 
                 title="Excluir cronograma"
-                (click)="excluirCronograma(nome); $event.stopPropagation()">
+                (click)="excluirCronograma(info.nome); $event.stopPropagation()">
           <i class="fa-regular fa-trash-can"></i>
         </button>
 
+        <button class="cron-edit" 
+                [title]="info.criado_em === periodoAtual ? 'Editar cronograma' : 'Bloqueado para edição (Semestre anterior)'"
+                (click)="info.criado_em === periodoAtual ? editarCronograma(info.nome) : null; $event.stopPropagation()">
+          <i [class]="info.criado_em === periodoAtual ? 'fa-regular fa-pen-to-square' : 'fa-solid fa-lock'"></i>
+        </button>
+
         <div class="cron-info">
-          <h3>{{ nome }}</h3>
+          <span *ngIf="info.criado_em !== periodoAtual" class="label-lock">Somente Leitura</span>
+          <h3>{{ info.nome }}</h3>
+          <h4>{{ info.criado_em }}</h4>
         </div>
         
-        <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === nome"></div>
+        <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === info.nome"></div>
       </div>
     </div>
   </header>

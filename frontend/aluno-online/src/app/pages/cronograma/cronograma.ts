@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterModule } from '@angular/router';
-import { CronogramaService } from '../../services/cronograma';
+import { Router, RouterLink, RouterModule } from '@angular/router';
+import { CronInfo, CronogramaService } from '../../services/cronograma';
 
 // Interfaces sincronizadas com os Records do Java
 export interface Horario {
@@ -30,8 +30,11 @@ export interface CronRequest {
 })
 export class Cronograma implements OnInit {
   private cronService = inject(CronogramaService);
+  private router = inject(Router);
 
-  nomesCronogramas: string[] = []; 
+  periodoAtual: string = '';
+
+  nomesCronogramas: CronInfo[] = []; 
   exibirModalDetalhes = false;
   disciplinaSelecionada: CronPart | null = null;
   cronogramaAtivo: CronRequest | null = null;
@@ -61,14 +64,13 @@ export class Cronograma implements OnInit {
   ];
 
   ngOnInit() {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const semestre = agora.getMonth() <= 5 ? '1' : '2'; //
+    this.periodoAtual = `${ano}/${semestre}`;
     this.carregarListaNomes();
   }
 
-  // --- FILTROS DE INTERFACE ---
-
-  /**
-   * Retorna apenas as labels (M1, T1...) que possuem disciplina no cronograma atual
-   */
   get labelsFiltradas() {
     if (!this.cronogramaAtivo) return [];
     return this.horariosLabels.filter(label => 
@@ -81,7 +83,7 @@ export class Cronograma implements OnInit {
       next: (nomes) => {
         this.nomesCronogramas = nomes;
         if (nomes.length > 0 && !this.cronogramaAtivo) {
-          this.selecionarCronograma(nomes[0]);
+          this.selecionarCronograma(nomes[0]?.nome);
         }
       },
       error: (err) => console.error('Erro ao listar cronogramas', err)
@@ -112,6 +114,14 @@ export class Cronograma implements OnInit {
         this.carregarListaNomes();
       });
     }
+  }
+
+  podeEditar(criadoEm: string): boolean {
+    return criadoEm === this.periodoAtual;
+  }
+
+  editarCronograma(nome: string) {
+    this.router.navigate(['/home/my-cronograma', nome]);
   }
 
   abrirDetalhes(disc: CronPart) {

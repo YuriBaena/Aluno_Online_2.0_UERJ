@@ -46,9 +46,14 @@ public class CronResource{
     }
 
     @GetMapping("")
-    public ResponseEntity<List<String>> listCron(@AuthenticationPrincipal Aluno aluno){
+    public ResponseEntity<List<CronogramaDTO>> listCron(@AuthenticationPrincipal Aluno aluno){
         return ResponseEntity.ok(servico.listCronAluno(aluno.getId()));
     }
+
+    public record CronogramaDTO(
+        String nome,
+        String criado_em
+    ) {}
 
     public record CronRequest(
         String nome_cronograma,

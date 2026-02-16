@@ -226,6 +226,10 @@
       <i class="fa-solid fa-list-check"></i>
       Ver Resumo
     </button>
+    <button class="resume-btn" (click)="pararEdicao()" *ngIf="editing">
+      <i class="fa-solid fa-ban"></i>
+      Cancelar Edição
+    </button>
     <button class="resume-btn" (click)="abrirModalSalvar()">
       <i class="fa-solid fa-floppy-disk"></i>
       Salvar Cronograma
@@ -423,14 +427,14 @@
   </div>
 </div>
 
-<div class="modal-overlay" *ngIf="modalSalvarAberto" (click)="modalSalvarAberto = false">
+<div class="modal-overlay" *ngIf="modalSalvarAberto" (click)="fecharSalvar()">
   <div class="save-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="title-group">
         <i class="fa-solid fa-floppy-disk"></i>
         <h3>Salvar Cronograma</h3>
       </div>
-      <button class="close-btn" (click)="modalSalvarAberto = false">&times;</button>
+      <button class="close-btn" (click)="fecharSalvar()">&times;</button>
     </div>
 
     <div class="modal-body">
@@ -457,7 +461,7 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn-cancel" (click)="modalSalvarAberto = false">Cancelar</button>
+      <button class="btn-cancel" (click)="fecharSalvar()">Cancelar</button>
       <button 
         class="btn-confirm-save" 
         [disabled]="!nomeCronograma || nomeCronograma.length < 3"

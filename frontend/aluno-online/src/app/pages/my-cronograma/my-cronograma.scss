@@ -354,8 +354,8 @@ $tab-height: 42px;
     display: flex; justify-content: center; align-items: flex-start; 
     
     .info-toast {
-      position: absolute;
-      top: 20px;
+      position: fixed;
+      top: 80px;
       left: 50%;
       transform: translateX(-50%) translateY(-20px);
       z-index: 1000;

@@ -39,77 +39,107 @@ $radius-md: 10px;
     overflow-x: auto; 
     padding: 0.5rem 0.2rem 1.2rem;
     
+    // Custom Scrollbar para a lista
+    &::-webkit-scrollbar { height: 6px; }
+    &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
     .cron-card {
-      position: relative; // Para posicionar o botão de excluir
-      min-width: 200px;
-      padding: 1.5rem 1rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
+      position: relative;
+      min-width: 220px;
+      padding: 1.25rem;
+      background: $bg-card;
+      border: 1px solid transparent;
+      border-radius: $radius-lg;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       cursor: pointer;
       transition: all 0.2s ease;
 
       &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         border-color: #cbd5e1;
-        // Mostra o botão de excluir apenas no hover (opcional, mas elegante)
-        .cron-exclude { opacity: 1; transform: scale(1); }
+        .cron-exclude, .cron-edit { opacity: 1; transform: scale(1); }
       }
 
       &.active {
         background: #eff6ff;
-        border-color: #3b82f6;
+        border-color: $primary;
+        .active-indicator { opacity: 1; }
+      }
+
+      // NOVO: Estilo para Cronograma Bloqueado (Semestre Anterior)
+      &.locked {
+        background: #f8fafc;
+        cursor: default;
+        
+        &:hover {
+          transform: none; // Sem elevação
+          border-color: $border-color;
+        }
+
+        .cron-edit {
+          color: #94a3b8;
+          cursor: not-allowed;
+          opacity: 0.4;
+          &:hover { background: transparent; transform: none; }
+        }
+      }
+
+      .label-lock {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        background: #fee2e2;
+        color: #b91c1c;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 800;
+        display: inline-block;
+        margin-bottom: 6px;
+      }
+
+      h3 { margin: 0.5rem 0 0; font-size: 1rem; color: $text-main; font-weight: 700; }
+      h4 { margin: 2px 0 0; font-size: 0.8rem; color: $text-muted; }
+
+      .active-indicator { 
+        position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); 
+        width: 40px; height: 3px; background: $primary; border-radius: 3px 3px 0 0; 
+        opacity: 0; transition: 0.2s;
       }
     }
 
-    .cron-exclude {
+    .cron-exclude, .cron-edit {
       position: absolute;
       top: 10px;
-      right: 10px;
       width: 32px;
       height: 32px;
       border-radius: 8px;
       border: none;
       background: transparent;
-      color: #94a3b8;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      opacity: 0.6; // Começa um pouco transparente
+      opacity: 0.4;
       z-index: 10;
-
-      &:hover {
-        background: #fee2e2; // Fundo vermelho clarinho
-        color: #ef4444;       // Ícone vermelho
-        opacity: 1;
-        transform: scale(1.1);
-      }
-
       i { font-size: 0.9rem; }
     }
 
-    // Estilização da barra de rolagem que você já tinha
-    &::-webkit-scrollbar { height: 6px; }
-    &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-  }
+    .cron-exclude {
+      right: 10px;
+      color: #94a3b8;
+      &:hover { background: #fee2e2; color: #ef4444; opacity: 1; }
+    }
 
-  .cron-card {
-    background: $bg-card; min-width: 220px; padding: 1.25rem;
-    border-radius: $radius-lg; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    cursor: pointer; position: relative; transition: all 0.2s;
-    border: 1px solid transparent;
-
-    &:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    &.active { border-color: $primary; background: #fff; }
-    
-    .label-status { font-size: 0.65rem; text-transform: uppercase; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 20px; font-weight: 700; }
-    h3 { margin: 0.75rem 0 0; font-size: 1rem; color: $text-main; }
-    .active-indicator { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 3px; background: $primary; border-radius: 3px 3px 0 0; }
+    .cron-edit {
+      right: 46px; // Espaçado do botão excluir
+      color: $primary;
+      &:hover { background: #e2e4fe; opacity: 1; }
+    }
   }
 
   .schedule-view {
     display: grid; 
-    grid-template-columns: 260px 1fr; // Painel mais estreito
+    grid-template-columns: 260px 1fr;
     gap: 1.5rem;
     background: $bg-card; padding: 1.5rem; border-radius: $radius-lg;
     box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
@@ -121,7 +151,7 @@ $radius-md: 10px;
     padding-right: 1.2rem;
     display: flex;
     flex-direction: column;
-    max-height: 700px; // Altura fixa para scroll interno
+    max-height: 700px;
 
     .panel-header h2 { 
       font-size: 0.85rem; text-transform: uppercase; 
@@ -138,7 +168,7 @@ $radius-md: 10px;
 
     .class-widget {
       padding: 0.7rem; border-radius: 10px;
-      border-left: 4px solid rgba(0,0,0,0.1); // Destaque lateral
+      border-left: 4px solid rgba(0,0,0,0.1);
 
       .widget-top .codigo { font-size: 0.6rem; font-weight: 800; opacity: 0.7; }
       h4 { margin: 2px 0; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -200,11 +230,11 @@ $radius-md: 10px;
   }
 }
 
-/* Estilos para o Modal */
+// --- MODAL STYLES ---
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.6); // Backdrop escuro
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000;
@@ -252,12 +282,12 @@ $radius-md: 10px;
 .horarios-grid-modal {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap; // Caso tenha muitos dias (ex: Sábado), ele quebra para a linha de baixo
+  flex-wrap: wrap;
   margin-top: 10px;
 
   .dia-coluna {
-    flex: 1; // Distribui os dias igualmente
-    min-width: 70px; // Garante que não fique apertado demais
+    flex: 1;
+    min-width: 70px;
     background: #f8fafc;
     border: 1px solid $border-color;
     border-radius: 12px;
@@ -269,7 +299,7 @@ $radius-md: 10px;
 
   .dia-header-mini {
     width: 100%;
-    background: #e2e8f0; // Um tom cinza leve para o topo do mini-card
+    background: #e2e8f0;
     color: $text-main;
     font-size: 0.65rem;
     font-weight: 800;
@@ -279,60 +309,21 @@ $radius-md: 10px;
   }
 
   .codigos-stack {
-    display: flex;
-    flex-direction: column; // Empilha as horas
-    gap: 4px;
-    padding: 8px;
-    width: 100%;
-    align-items: center;
+    display: flex; flex-direction: column; gap: 4px; padding: 8px; width: 100%; align-items: center;
 
     .cod-tag-animated {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      background: white;
-      border: 1px solid #e2e8f0;
-      padding: 6px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow: hidden; // Esconde o que transbordar
-      white-space: nowrap;
+      display: flex; align-items: center; justify-content: center; width: 100%;
+      background: white; border: 1px solid #e2e8f0; padding: 6px 8px;
+      border-radius: 8px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden; white-space: nowrap;
 
-      .codigo-texto {
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: $primary;
-        transition: transform 0.3s ease;
-      }
+      .codigo-texto { font-size: 0.75rem; font-weight: 800; color: $primary; transition: transform 0.3s ease; }
+      .intervalo-texto { max-width: 0; opacity: 0; font-size: 0.7rem; font-weight: 600; color: $text-muted; transition: all 0.3s ease; margin-left: 0; }
 
-      .intervalo-texto {
-        max-width: 0;
-        opacity: 0;
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: $text-muted;
-        transition: all 0.3s ease;
-        margin-left: 0;
-      }
-
-      // EFEITO AO PASSAR O MOUSE
       &:hover {
-        background: #f1f5f9;
-        border-color: $primary;
-        padding-left: 12px;
-        padding-right: 12px;
-
-        .codigo-texto {
-          transform: translateX(-5px); // Move levemente para a esquerda
-        }
-
-        .intervalo-texto {
-          max-width: 100px; // Permite que o texto apareça
-          opacity: 1;
-          margin-left: 8px; // Cria o espaçamento entre código e hora
-        }
+        background: #f1f5f9; border-color: $primary; padding-left: 12px; padding-right: 12px;
+        .codigo-texto { transform: translateX(-5px); }
+        .intervalo-texto { max-width: 100px; opacity: 1; margin-left: 8px; }
       }
     }
   }

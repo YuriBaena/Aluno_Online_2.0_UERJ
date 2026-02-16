@@ -57,14 +57,16 @@ export const routes: Routes = [
           { path: 'dashboard', component: Dashboard },
 
           /**
-           * COMPONENTE DASHBOARD
-           * URL: /home/my-cronograma
+           * PARA CRIAR
            */
           { path: 'my-cronograma', component: MyCronograma },
+          /**
+           * PARA EDITAR
+           */
+          { path: 'my-cronograma/:nome', component: MyCronograma },
 
           /**
-           * COMPONENTE DASHBOARD
-           * URL: /home/cronogramas
+           * PARA VER
            */
           { path: 'cronogramas', component: Cronograma },
 
