@@ -128,6 +128,7 @@ export class MyCronograma implements OnInit, OnDestroy {
         this.periodos.push(i);
       }
     });
+    this.executarBusca("");
   }
 
   ngOnDestroy() { this.searchSub?.unsubscribe(); }
@@ -135,7 +136,6 @@ export class MyCronograma implements OnInit, OnDestroy {
   onSearchChange(v: string) { this.searchSubject.next(v); }
 
   executarBusca(termo: string) {
-    if (termo.length < 3) { this.listaDisciplinasDisponiveis = []; return; }
     this.cronogramaService.buscar(termo).subscribe((res:any) => this.listaDisciplinasDisponiveis = res);
   }
 
