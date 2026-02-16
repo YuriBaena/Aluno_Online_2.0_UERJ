@@ -141,16 +141,12 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   selecionarDisciplina(disc: any) {
     if (!this.selecionadas.find(d => d.nome === disc.nome)) {
-      // Adiciona cores para o card e expande
       this.selecionadas.push({ 
         ...disc, 
         expandida: true,
         cor: this.gerarCorHex(disc.nome) 
       });
       
-      // UX: Fecha a busca e abre as turmas para o próximo passo
-      this.termoBusca = '';
-      this.listaDisciplinasDisponiveis = [];
       this.menu1Aberto = false;
       this.menu2Aberto = true;
     }
