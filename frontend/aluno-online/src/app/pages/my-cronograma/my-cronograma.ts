@@ -88,6 +88,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   nomeCronograma = '';
 
   editing = false;
+  editingName = '';
 
   exibirModalOtimizar = false;
   abaAtiva: 'turnos' | 'personalizado' = 'turnos';
@@ -134,6 +135,7 @@ export class MyCronograma implements OnInit, OnDestroy {
     const nomeUrl = this.route.snapshot.paramMap.get('nome');
     if (nomeUrl) {
       this.nomeCronograma = nomeUrl;
+      this.editingName = nomeUrl;
       this.editing = true;
       this.carregarDadosParaEdicao(nomeUrl);
     }
@@ -501,12 +503,6 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   abrirModalSalvar() {
     if(this.selecionadas.length >= 3){
-      if(this.nomeCronograma){
-        this.cronService.deleteCron(this.nomeCronograma).subscribe({
-          next: () => this.modalSalvarAberto = true,
-          error: () => this.mostrarMensagem("Erro ao excluir cronograma (" + this.nomeCronograma + ").", "warning")
-        });
-      }
       this.modalSalvarAberto = true;
     }
     else this.mostrarMensagem("Para salvar é preciso escolher no minímo 3 turmas.", "warning")
@@ -523,6 +519,13 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   confirmarSalvamento() {
+    if(this.editingName && this.editing){
+      this.cronService.deleteCron(this.editingName).subscribe({
+        next: () => this.modalSalvarAberto = true,
+        error: () => this.mostrarMensagem("Erro ao excluir cronograma (" + this.editingName + ").", "warning")
+      });
+    }
+
     const disciplinasParaSalvar: CronPart[] = this.selecionadas.map(s => {
       const turma = s.turmas.find((t: any) => t.id === s.selectedTurmaId);
       
@@ -546,22 +549,14 @@ export class MyCronograma implements OnInit, OnDestroy {
       disciplinas: disciplinasParaSalvar
     };
 
-    // Primeiro exclui se existir e depois salva
-    this.cronService.deleteCron(this.nomeCronograma).subscribe({
-      next: () => {
-        this.cronService.saveCron(request).subscribe({
-          next: () => {
-            this.modalSalvarAberto = false;
-            this.router.navigate(['/home/cronogramas']);
-          },
-          error: () => this.mostrarMensagem("Erro ao salvar cronograma (" + this.nomeCronograma + ").", "warning")
-        })
-      },
-      error: () => this.mostrarMensagem("Erro ao excluir cronograma (" + this.nomeCronograma + ").", "warning")
-    }
-    );
-
-    
+    this.cronService.saveCron(request).subscribe({
+        next: () => {
+          this.mostrarMensagem("Cronograma (" + this.nomeCronograma + ") salvo com sucesso.",'success');
+          this.modalSalvarAberto = false;
+          this.editing = false;
+        },
+        error: () => this.mostrarMensagem("Erro ao salvar cronograma (" + this.nomeCronograma + ").", "warning")
+      });  
   }
 
   carregarDadosParaEdicao(nome: string) {
@@ -625,6 +620,8 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   pararEdicao(){
     this.nomeCronograma = '';
+    this.editing = false;
+    this.editingName = '';
     this.router.navigate(['/home/my-cronograma']);
   }
 
