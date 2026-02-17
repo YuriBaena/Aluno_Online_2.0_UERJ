@@ -26,10 +26,6 @@ describe('Cronograma Component', () => {
     }).compileComponents();
 
     cronServiceSpy = TestBed.inject(CronogramaService) as jasmine.SpyObj<CronogramaService>;
-    
-    // Configuramos retornos padrão para os métodos do serviço
-    cronServiceSpy.listNomesCronogramas.and.returnValue(of(['Cronograma 1']));
-    cronServiceSpy.getCronByNome.and.returnValue(of({ nome_cronograma: 'Cronograma 1', disciplinas: [] }));
 
     fixture = TestBed.createComponent(Cronograma);
     component = fixture.componentInstance;
