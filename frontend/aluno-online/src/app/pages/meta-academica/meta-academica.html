@@ -50,26 +50,17 @@
           <thead>
             <tr>
               <th>Ações</th>
-              <th>
-                Disciplina
-              </th> 
-              <th (click)="ordenar('nome')" class="sortable">
-                Nome da Avaliação
-              </th>
+              <th>Disciplina</th> 
+              <th (click)="ordenar('nome')" class="sortable">Nome da Avaliação</th>
               <th (click)="ordenar('tipo')" class="sortable">Tipo</th>
               <th (click)="ordenar('peso')" class="sortable">Peso</th>
-              <th (click)="ordenar('nota')" class="sortable">
-                Nota
-              </th>
-              <th (click)="ordenar('data')" class="sortable">
-                Data
-              </th> 
+              <th (click)="ordenar('nota')" class="sortable">Nota</th>
+              <th (click)="ordenar('data')" class="sortable">Data</th> 
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of assessments">
-
-              <td>
+              <td data-label="Ações">
                 <div class="actions-cell">
                   <button class="btn-icon edit" (click)="editAssessment(item)" title="Editar">
                     <i class="fa-solid fa-pen-to-square"></i>
@@ -80,28 +71,28 @@
                 </div>
               </td>
 
-              <td class="primary-text" style="font-weight: 600;">
+              <td data-label="Disciplina" class="primary-text" style="font-weight: 600;">
                 {{ pegaIniciais(item.codigo_disciplina) || 'N/A' }}
               </td>
 
-              <td>
+              <td data-label="Avaliação">
                 <div class="name-wrapper">
                   <span class="primary-text">{{ item.nome }}</span>
                   <small class="warning-text" *ngIf="item.nota === null">
-                    Pendete de realização ou correção
+                    Pendente de realização ou correção
                   </small>
                 </div>
               </td>
               
-              <td><span class="type-pill">{{ item.tipo }}</span></td>
-              <td>{{ item.peso }}%</td>
+              <td data-label="Tipo"><span class="type-pill">{{ item.tipo }}</span></td>
+              <td data-label="Peso">{{ item.peso }}%</td>
               
-              <td>
-                <span *ngIf="item.nota !== null">{{ item.nota | number:'1.1-1' }}</span>
+              <td data-label="Nota">
+                <span *ngIf="item.nota !== null" class="font-weight-bold">{{ item.nota | number:'1.1-1' }}</span>
                 <span *ngIf="item.nota === null" class="placeholder-text">—</span>
               </td>
 
-              <td>
+              <td data-label="Data">
                 <span class="date-text" [ngClass]="getDateUrgencyClass(item.data)">
                   <i class="fa-regular fa-calendar-days" style="margin-right: 4px;" *ngIf="item.data"></i>
                   {{ item.data ? (item.data | date:'dd/MM/yyyy') : '--/--/----' }}
@@ -110,7 +101,7 @@
             </tr>
 
             <tr *ngIf="assessments.length === 0">
-              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
                 Nenhuma avaliação encontrada.
               </td>
             </tr>

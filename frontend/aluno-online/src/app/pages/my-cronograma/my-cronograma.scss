@@ -22,11 +22,35 @@ $tab-height: 42px;
   animation: fadeIn 0.4s ease-out;
 
   .menu-overlay { 
-    position: absolute; 
+    position: fixed;
     inset: 0; 
-    background: rgba(15, 23, 42, 0.05); 
-    backdrop-filter: blur(2px); 
-    z-index: 999; 
+    background: rgba(15, 23, 42, 0.5); 
+    backdrop-filter: blur(3px); 
+    z-index: 998; 
+    animation: fadeIn 0.3s ease;
+  }
+
+  @media (max-width: 768px) {
+    // Quando o overlay estiver ativo, as abas do wrapper vizinho somem
+    .menu-overlay + .top-menus-wrapper {
+      .tab-trigger {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+      }
+    }
+
+    // Exceção importante: A aba do menu que está ABERTO continua visível para o usuário fechar
+    .top-menus-wrapper aside.open {
+      .tab-trigger {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: translateY(0) !important;
+      }
+    }
   }
 
   .top-menus-wrapper {

@@ -121,9 +121,16 @@
           <div *ngFor="let h of disciplinaSelecionada?.horarios" class="dia-coluna">
             <div class="dia-header-mini">{{ h.dia.substring(0,3).toUpperCase() }}</div>
             <div class="codigos-stack">
-              <div *ngFor="let cod of h.codigo_horario" class="cod-tag-animated">
+              <div *ngFor="let cod of h.codigo_horario" 
+                  class="cod-tag-animated"
+                  #tag
+                  (click)="tag.classList.toggle('is-active')"
+                  (blur)="tag.classList.remove('is-active')"
+                  tabindex="0">
+                
                 <span class="codigo-texto">{{ cod }}</span>
                 <span class="intervalo-texto">{{ getIntervaloPorCodigo(cod) }}</span>
+                
               </div>
             </div>
           </div>

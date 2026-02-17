@@ -228,6 +228,53 @@ $radius-md: 10px;
     p { font-size: 1.1rem; font-weight: 600; color: $text-main; margin-bottom: 0.5rem; }
     span { font-size: 0.9rem; }
   }
+
+  @media (max-width: 1024px) {
+    padding: 1rem;
+
+    .schedule-view {
+      grid-template-columns: 1fr; // Empilha Sidebar e Grid
+      gap: 2rem;
+    }
+
+    .side-panel {
+      border-right: none;
+      border-bottom: 1px solid $border-color;
+      padding-right: 0;
+      padding-bottom: 1.5rem;
+      max-height: none; // Permite expandir no mobile
+
+      .widgets-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.8rem;
+        max-height: 300px; // Altura fixa com scroll para não empurrar a grade muito pra baixo
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-header {
+      .header-content {
+        flex-direction: column;
+        align-items: stretch;
+        
+        .btn-novo {
+          margin-top: 1rem;
+          width: 100%;
+          text-align: center;
+        }
+      }
+    }
+
+    .timetable-container {
+      margin: 0 -1.5rem; // Expande a área de scroll até a borda do card pai
+      
+      .timetable-grid {
+        min-width: 650px; // Força o scroll horizontal para manter a grade legível
+      }
+    }
+  }
 }
 
 // --- MODAL STYLES ---
@@ -308,23 +355,68 @@ $radius-md: 10px;
     border-bottom: 1px solid $border-color;
   }
 
-  .codigos-stack {
-    display: flex; flex-direction: column; gap: 4px; padding: 8px; width: 100%; align-items: center;
+  .cod-tag-animated {
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    width: 100%;
+    background: white; 
+    border: 1px solid #e2e8f0; 
+    padding: 6px 8px;
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; 
+    white-space: nowrap;
+    outline: none; // Remove a borda padrão do browser no focus
 
-    .cod-tag-animated {
-      display: flex; align-items: center; justify-content: center; width: 100%;
-      background: white; border: 1px solid #e2e8f0; padding: 6px 8px;
-      border-radius: 8px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow: hidden; white-space: nowrap;
+    .codigo-texto { 
+      font-size: 0.75rem; 
+      font-weight: 800; 
+      color: $primary; 
+      transition: transform 0.3s ease; 
+    }
 
-      .codigo-texto { font-size: 0.75rem; font-weight: 800; color: $primary; transition: transform 0.3s ease; }
-      .intervalo-texto { max-width: 0; opacity: 0; font-size: 0.7rem; font-weight: 600; color: $text-muted; transition: all 0.3s ease; margin-left: 0; }
+    .intervalo-texto { 
+      max-width: 0; 
+      opacity: 0; 
+      font-size: 0.7rem; 
+      font-weight: 600; 
+      color: $text-muted; 
+      transition: all 0.3s ease; 
+      margin-left: 0; 
+    }
 
-      &:hover {
-        background: #f1f5f9; border-color: $primary; padding-left: 12px; padding-right: 12px;
-        .codigo-texto { transform: translateX(-5px); }
-        .intervalo-texto { max-width: 100px; opacity: 1; margin-left: 8px; }
+    // Agrupamos o Hover e a Classe Ativa
+    &:hover, 
+    &.is-active {
+      background: #f1f5f9; 
+      border-color: $primary; 
+      padding-left: 12px; 
+      padding-right: 12px;
+
+      .codigo-texto { 
+        transform: translateX(-5px); 
       }
+
+      .intervalo-texto { 
+        max-width: 150px; // Aumentei um pouco para garantir que o horário caiba
+        opacity: 1; 
+        margin-left: 8px; 
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .horarios-grid-modal {
+    .dia-coluna {
+      flex: 1 1 calc(50% - 10px); // Dois cards por linha no mobile
     }
   }
 }
