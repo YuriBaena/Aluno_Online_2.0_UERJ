@@ -1,5 +1,5 @@
 -- ======================================================
--- 2. TABELA CURSO
+-- 1. TABELA CURSO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS curso (
@@ -14,7 +14,7 @@ VALUES ('Eletivas Universais', 0, 0)
 ON CONFLICT (nome_curso) DO NOTHING;
 
 -- ======================================================
--- 3. TABELA PROFESSOR
+-- 2. TABELA PROFESSOR
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS professor (
@@ -26,7 +26,7 @@ ALTER TABLE professor DROP CONSTRAINT IF EXISTS professor_nome_unique;
 ALTER TABLE professor ADD CONSTRAINT professor_nome_unique UNIQUE (nome);
 
 -- ======================================================
--- 4. TABELA DISCIPLINA
+-- 3. TABELA DISCIPLINA
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS disciplina (
@@ -43,7 +43,7 @@ ALTER TABLE disciplina DROP CONSTRAINT IF EXISTS fk_disciplina_curso;
 ALTER TABLE disciplina ADD CONSTRAINT fk_disciplina_curso FOREIGN KEY (id_curso) REFERENCES curso(id) ON DELETE CASCADE;
 
 -- ======================================================
--- 5. TABELA ALUNO
+-- 4. TABELA ALUNO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS aluno (
@@ -62,7 +62,7 @@ ALTER TABLE aluno DROP CONSTRAINT IF EXISTS fk_aluno_curso;
 ALTER TABLE aluno ADD CONSTRAINT fk_aluno_curso FOREIGN KEY (id_curso) REFERENCES curso(id) ON DELETE SET NULL;
 
 -- ======================================================
--- 6. TABELAS 1:1 — DADOS DO ALUNO
+-- 5. TABELAS 1:1 — DADOS DO ALUNO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS dados_pessoais (
@@ -99,7 +99,7 @@ ALTER TABLE dados_bancarios DROP CONSTRAINT IF EXISTS fk_dados_bancarios_aluno;
 ALTER TABLE dados_bancarios ADD CONSTRAINT fk_dados_bancarios_aluno FOREIGN KEY (id) REFERENCES aluno(id) ON DELETE CASCADE;
 
 -- ======================================================
--- 7. TABELA TURMA
+-- 6. TABELA TURMA
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS turma (
@@ -120,7 +120,7 @@ ALTER TABLE turma DROP CONSTRAINT IF EXISTS fk_turma_professor;
 ALTER TABLE turma ADD CONSTRAINT fk_turma_professor FOREIGN KEY (id_professor) REFERENCES professor(id) ON DELETE CASCADE;
 
 -- ======================================================
--- 8. TABELA HORÁRIO DE AULA
+-- 7. TABELA HORÁRIO DE AULA
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS horario_aula (
@@ -138,7 +138,7 @@ ALTER TABLE horario_aula DROP CONSTRAINT IF EXISTS fk_horario_turma;
 ALTER TABLE horario_aula ADD CONSTRAINT fk_horario_turma FOREIGN KEY (id_turma) REFERENCES turma(id_turma) ON DELETE CASCADE;
 
 -- ======================================================
--- 9. TABELA HISTÓRICO
+-- 8. TABELA HISTÓRICO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS historico (
@@ -160,7 +160,7 @@ ALTER TABLE historico DROP CONSTRAINT IF EXISTS fk_historico_disciplina;
 ALTER TABLE historico ADD CONSTRAINT fk_historico_disciplina FOREIGN KEY (codigo_disciplina) REFERENCES disciplina(codigo);
 
 -- ======================================================
--- 10. TABELA EM ANDAMENTO
+-- 9. TABELA EM ANDAMENTO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS em_andamento (
@@ -177,7 +177,7 @@ ALTER TABLE em_andamento DROP CONSTRAINT IF EXISTS fk_disciplina_em_andamento;
 ALTER TABLE em_andamento ADD CONSTRAINT fk_disciplina_em_andamento FOREIGN KEY (codigo_disciplina) REFERENCES disciplina(codigo) ON DELETE CASCADE;
 
 -- ======================================================
--- 11. TABELA SINCRONIZAÇÃO
+-- 10. TABELA SINCRONIZAÇÃO
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS sincronizacao (
@@ -193,7 +193,7 @@ ALTER TABLE sincronizacao DROP CONSTRAINT IF EXISTS fk_aluno;
 ALTER TABLE sincronizacao ADD CONSTRAINT fk_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE;
 
 -- ======================================================
--- 12. TABELA DE CRONOGRAMAS
+-- 11. TABELA DE CRONOGRAMAS
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS cronograma (
@@ -207,7 +207,7 @@ ALTER TABLE cronograma DROP CONSTRAINT IF EXISTS fk_cronograma_aluno;
 ALTER TABLE cronograma ADD CONSTRAINT fk_cronograma_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE;
 
 -- ======================================================
--- 13. TABELA DADOS DOS CRONOGRAMAS
+-- 12. TABELA DADOS DOS CRONOGRAMAS
 -- ======================================================
 
 CREATE TABLE IF NOT EXISTS disciplina_cronograma (
@@ -221,3 +221,21 @@ CREATE TABLE IF NOT EXISTS disciplina_cronograma (
 
 ALTER TABLE disciplina_cronograma DROP CONSTRAINT IF EXISTS fk_disc_cronograma_pai;
 ALTER TABLE disciplina_cronograma ADD CONSTRAINT fk_disc_cronograma_pai FOREIGN KEY (id_cronograma) REFERENCES cronograma(id) ON DELETE CASCADE;
+
+-- ======================================================
+-- 13. TABELA DE AVALIAÇÕES
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS avaliacao (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_aluno UUID NOT NULL,
+    codigo_disciplina VARCHAR(50) NOT NULL,
+    nome VARCHAR NOT NULL,
+    tipo VARCHAR NOT NULL,
+    peso SMALLINT NOT NULL DEFAULT 1,
+    nota NUMERIC(4,2), 
+    data_agendada DATE
+);
+
+ALTER TABLE avaliacao DROP CONSTRAINT IF EXISTS check_nota_range;
+ALTER TABLE avaliacao ADD CONSTRAINT check_nota_range CHECK (nota >= 0 AND nota <= 10);

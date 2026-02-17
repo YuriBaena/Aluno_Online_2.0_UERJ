@@ -10,6 +10,7 @@ import { MyCronograma } from './pages/my-cronograma/my-cronograma';
 import { authGuard } from './guards/auth-guard';
 import { adminGuard } from './guards/admin-guard';
 import { Cronograma } from './pages/cronograma/cronograma';
+import { MetaAcademica } from './pages/meta-academica/meta-academica';
 
 export const routes: Routes = [
   /**
@@ -69,6 +70,11 @@ export const routes: Routes = [
            * PARA VER
            */
           { path: 'cronogramas', component: Cronograma },
+
+          /**
+           * PARA PLANEJAR
+           */
+          { path: 'meta-academica', component: MetaAcademica },
 
           /**
            * FUTURAS ROTAS FILHAS

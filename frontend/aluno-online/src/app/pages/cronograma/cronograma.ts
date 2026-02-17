@@ -105,15 +105,13 @@ export class Cronograma implements OnInit {
   }
 
   excluirCronograma(nome: string) {
-    if (confirm(`Deseja realmente excluir o cronograma "${nome}"?`)) {
-      this.cronService.deleteCron(nome).subscribe(() => {
-        // Se o excluído for o ativo, limpamos a visualização
-        if (this.cronogramaAtivo?.nome_cronograma === nome) {
-          this.cronogramaAtivo = null;
-        }
-        this.carregarListaNomes();
-      });
-    }
+    this.cronService.deleteCron(nome).subscribe(() => {
+      // Se o excluído for o ativo, limpamos a visualização
+      if (this.cronogramaAtivo?.nome_cronograma === nome) {
+        this.cronogramaAtivo = null;
+      }
+      this.carregarListaNomes();
+    });
   }
 
   podeEditar(criadoEm: string): boolean {

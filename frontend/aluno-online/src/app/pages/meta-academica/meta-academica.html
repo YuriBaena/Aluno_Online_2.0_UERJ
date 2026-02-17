@@ -1,0 +1,190 @@
+<div class="dashboard-wrapper">
+  <header class="top-header">
+    <div class="title-group">
+      <h1>Minhas Avaliações</h1>
+      <span class="badge-semester">{{ currentSemester }}</span>
+    </div>
+    <div class="actions-group">
+      <div class="gpa-card">CR Atual: <strong>{{ currentGPA | number:'1.1-2' }}</strong></div>
+      <button class="btn-add" (click)="toggleModal()">+ Nova Avaliação</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <aside class="sidebar">
+      <section class="section-box">
+        <h3>Disciplinas Atuais</h3>
+        <div class="course-list">
+          <div class="course-card all-courses" 
+              (click)="viewAll()" 
+              [class.active]="isViewingAll"
+              [ngStyle]="isViewingAll ? {'background-color': '#f1f5f9', 'border-left-color': '#64748b', 'color': '#1e293b'} : {}">
+            <span class="course-name">📚 Ver Todas</span>
+          </div>
+
+          <div *ngFor="let course of courses" 
+              (click)="selectCourse(course)"
+              class="course-card"
+              [class.active]="course.active && !isViewingAll"
+              [ngStyle]="course.active && !isViewingAll ? getCourseStyle(course.nome) : {}">
+            <span class="course-name">{{ course.nome }}</span>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="content">
+      <div class="table-container">
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Disciplina</th> 
+              <th>Nome da Avaliação</th>
+              <th>Tipo</th>
+              <th>Peso</th>
+              <th>Nota</th>
+              <th>Data</th> 
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of assessments">
+              <td class="primary-text" style="font-weight: 600;">
+                {{ pegaIniciais(item.codigo_disciplina) || 'N/A' }}
+              </td>
+
+              <td>
+                <div class="name-wrapper">
+                  <span class="primary-text">{{ item.nome }}</span>
+                  <small class="warning-text" *ngIf="!item.nota">
+                    Pendete de realização ou correção
+                  </small>
+                </div>
+              </td>
+              
+              <td><span class="type-pill">{{ item.tipo }}</span></td>
+              <td>{{ item.peso }}%</td>
+              
+              <td>
+                <span *ngIf="item.nota !== null">{{ item.nota | number:'1.1-1' }} / 10</span>
+                <span *ngIf="item.nota === null" class="placeholder-text">—</span>
+              </td>
+
+              <td>
+                <span class="date-text">
+                  {{ item.data ? (item.data | date:'dd/MM/yyyy') : '--/--/----' }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="assessments.length === 0">
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                Nenhuma avaliação encontrada.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <aside class="analytics">
+      <div class="insight-card">
+        <h4>{{ isViewingAll ? 'Resumo do Semestre' : 'Resumo Acadêmico' }}</h4>
+        
+        <div class="metric">
+          <label>{{ isViewingAll ? 'CR Global Estimado' : 'Média na Disciplina' }}</label>
+          
+          <div class="value" [style.color]="isViewingAll ? 'var(--text-main)' : 'var(--primary)'">
+            {{ getMainDisplayAverage() | number:'1.1-1' }}
+          </div>
+        </div>
+
+        <div class="metric">
+          <label>{{ isViewingAll ? 'Total de Créditos' : 'Progresso de Notas' }}</label>
+          
+          <ng-container *ngIf="!isViewingAll; else creditosInfo">
+            <div class="progress-bar">
+              <div class="fill" [style.width.%]="calculateProgress()"></div>
+            </div>
+            <div class="indicator safe">● {{ getStatusMessage() }}</div>
+          </ng-container>
+
+          <ng-template #creditosInfo>
+            <div class="value-sub" style="font-size: 1.2rem; font-weight: 600; margin-top: 5px;">
+              {{ getTotalCredits() }} <small style="font-size: 0.8rem; color: var(--text-muted)">Créditos em andamento</small>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="metric-footer">
+          <div class="sub-metric" *ngIf="!isViewingAll">
+            <small>Faltam (Peso)</small>
+            <span>{{ 100 - calculateProgress() }}%</span>
+          </div>
+          <div class="sub-metric">
+            <small>Meta do Semestre</small>
+            <span class="highlight">7.0</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showModal" (click)="toggleModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Nova Avaliação</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+        Preencha os dados da avaliação para o acompanhamento.
+      </p>
+
+      <form class="modal-form">
+        <div class="form-group">
+          <label>Disciplina</label>
+          <select [(ngModel)]="newAssessment.codigo_disciplina" name="disciplina">
+            <option value="" disabled selected>Selecione a disciplina</option>
+            <option *ngFor="let course of courses" [value]="course.codigo">
+              {{ course.nome }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Nome da Avaliação</label>
+          <input type="text" [(ngModel)]="newAssessment.nome" name="nome" placeholder="Ex: Prova 1">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select [(ngModel)]="newAssessment.tipo" name="tipo">
+              <option value="Prova">Prova</option>
+              <option value="Trabalho">Trabalho</option>
+              <option value="Projeto">Projeto</option>
+              <option value="Projeto">Atividade</option>
+              <option value="Projeto">Extra</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Peso (%)</label>
+            <input type="number" [(ngModel)]="newAssessment.peso" name="peso">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nota (opcional)</label>
+            <input type="number" [(ngModel)]="newAssessment.nota" name="nota" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" [(ngModel)]="newAssessment.data" name="data">
+          </div>
+        </div>
+      </form>
+      
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="toggleModal()">Cancelar</button>
+        <button class="btn-add" (click)="saveAssessment()">Salvar Avaliação</button>
+      </div>
+    </div>
+  </div>
+</div>

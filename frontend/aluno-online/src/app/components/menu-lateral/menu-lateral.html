@@ -8,6 +8,11 @@
             <span><i class="fa-solid fa-chart-line"></i></span> Dashboard
           </li>
         </a>
+        <a routerLink="/home/meta-academica" routerLinkActive="active" (click)="fechar()">
+          <li [class.active]="aba_aberta == 'meta-academica'">
+            <span><i class="fa-solid fa-book"></i></span> Meta Acadêmica
+          </li>
+        </a>
         <a routerLink="/home/disciplinas-curso" routerLinkActive="active" (click)="fechar()">
           <li [class.active]="aba_aberta == 'disciplinas-curso'">
             <span><i class="fa-solid fa-book"></i></span> Disciplinas do Curso

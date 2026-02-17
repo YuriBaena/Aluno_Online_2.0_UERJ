@@ -1,6 +1,7 @@
 package br.com.yuri.aluno_online.infrastructure.repository;
 
 import br.com.yuri.aluno_online.domain.model.Aluno;
+import br.com.yuri.aluno_online.infrastructure.web.ObjetivoResource.ResumoDisciplina;
 import br.com.yuri.aluno_online.domain.interfaces.ResumoAluno;
 import br.com.yuri.aluno_online.domain.interfaces.ResumoAulaDia;
 
@@ -83,6 +84,17 @@ public interface AlunoRepository extends JpaRepository<Aluno, UUID> {
         """, nativeQuery = true)
     List<ResumoAulaDia> getAulasHoje(@Param("id_aluno") UUID id_aluno,
                                     @Param("diaSemana") String diaSemana);
+    
+    @Query(value="""
+        SELECT 
+            d.nome AS nome,
+            d.codigo AS codigo,
+            d.creditos AS creditos
+        FROM em_andamento e
+        INNER JOIN disciplina d ON e.codigo_disciplina = d.codigo
+        WHERE e.id_aluno = :id_aluno;
+        """, nativeQuery = true)
+    List<ResumoDisciplina> getDisciplinasAndamento(@Param("id_aluno") UUID id_aluno);
     
 
 }

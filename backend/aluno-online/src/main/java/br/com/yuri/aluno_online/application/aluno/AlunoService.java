@@ -13,6 +13,7 @@ import br.com.yuri.aluno_online.domain.interfaces.ResumoAulaDia;
 import br.com.yuri.aluno_online.infrastructure.repository.AlunoRepository;
 import br.com.yuri.aluno_online.infrastructure.web.AlunoResource.Aula;
 import br.com.yuri.aluno_online.infrastructure.web.AlunoResource.StatsAluno;
+import br.com.yuri.aluno_online.infrastructure.web.ObjetivoResource.ResumoDisciplina;
 
 @Service
 public class AlunoService {
@@ -47,7 +48,6 @@ public class AlunoService {
         );
     }
 
-    
     public List<Aula> getAulasHoje(UUID id_aluno, String diaSemana) {
         // 1. Busca a lista de projeções do banco
         List<ResumoAulaDia> dados = repository.getAulasHoje(id_aluno, diaSemana);
@@ -78,7 +78,11 @@ public class AlunoService {
             );
         }).collect(Collectors.toList());
     }
-    
+  
+    public List<ResumoDisciplina> getDisciplinasEmAndamento(UUID id_aluno){
+        return repository.getDisciplinasAndamento(id_aluno);
+    }
+
     public String capitalize(String str) {
         if (str == null || str.isEmpty()) {
             return str;
