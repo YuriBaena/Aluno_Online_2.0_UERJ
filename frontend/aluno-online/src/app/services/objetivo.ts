@@ -22,6 +22,7 @@ export interface ResumoDisciplina {
 export interface DadosAluno {
   disciplinas: ResumoDisciplina[];
   cr: number;
+  creditosFeitos: number;
 }
 
 @Injectable({

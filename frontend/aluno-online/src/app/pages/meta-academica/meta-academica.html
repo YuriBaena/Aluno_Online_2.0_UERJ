@@ -35,19 +35,51 @@
 
     <main class="content">
       <div class="table-container">
+        <div class="info-toast" [class.show]="info" [ngClass]="infoType" *ngIf="info">
+          <div class="info-content">
+            <i class="fa-solid" [ngClass]="{
+              'fa-circle-check': infoType === 'success',
+              'fa-circle-exclamation': infoType === 'warning',
+              'fa-circle-info': infoType === 'info'
+            }"></i>
+            <span>{{ infoMessage }}</span>
+          </div>
+          <button class="close-info" (click)="info = false">&times;</button>
+        </div>
         <table class="modern-table">
           <thead>
             <tr>
-              <th>Disciplina</th> 
-              <th>Nome da Avaliação</th>
-              <th>Tipo</th>
-              <th>Peso</th>
-              <th>Nota</th>
-              <th>Data</th> 
+              <th>Ações</th>
+              <th>
+                Disciplina
+              </th> 
+              <th (click)="ordenar('nome')" class="sortable">
+                Nome da Avaliação
+              </th>
+              <th (click)="ordenar('tipo')" class="sortable">Tipo</th>
+              <th (click)="ordenar('peso')" class="sortable">Peso</th>
+              <th (click)="ordenar('nota')" class="sortable">
+                Nota
+              </th>
+              <th (click)="ordenar('data')" class="sortable">
+                Data
+              </th> 
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of assessments">
+
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-icon edit" (click)="editAssessment(item)" title="Editar">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button class="btn-icon delete" (click)="deleteAssessment(item.id!)" title="Excluir">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </td>
+
               <td class="primary-text" style="font-weight: 600;">
                 {{ pegaIniciais(item.codigo_disciplina) || 'N/A' }}
               </td>
@@ -55,7 +87,7 @@
               <td>
                 <div class="name-wrapper">
                   <span class="primary-text">{{ item.nome }}</span>
-                  <small class="warning-text" *ngIf="!item.nota">
+                  <small class="warning-text" *ngIf="item.nota === null">
                     Pendete de realização ou correção
                   </small>
                 </div>
@@ -65,12 +97,13 @@
               <td>{{ item.peso }}%</td>
               
               <td>
-                <span *ngIf="item.nota !== null">{{ item.nota | number:'1.1-1' }} / 10</span>
+                <span *ngIf="item.nota !== null">{{ item.nota | number:'1.1-1' }}</span>
                 <span *ngIf="item.nota === null" class="placeholder-text">—</span>
               </td>
 
               <td>
-                <span class="date-text">
+                <span class="date-text" [ngClass]="getDateUrgencyClass(item.data)">
+                  <i class="fa-regular fa-calendar-days" style="margin-right: 4px;" *ngIf="item.data"></i>
                   {{ item.data ? (item.data | date:'dd/MM/yyyy') : '--/--/----' }}
                 </span>
               </td>
@@ -88,42 +121,75 @@
 
     <aside class="analytics">
       <div class="insight-card">
-        <h4>{{ isViewingAll ? 'Resumo do Semestre' : 'Resumo Acadêmico' }}</h4>
-        
-        <div class="metric">
-          <label>{{ isViewingAll ? 'CR Global Estimado' : 'Média na Disciplina' }}</label>
-          
-          <div class="value" [style.color]="isViewingAll ? 'var(--text-main)' : 'var(--primary)'">
-            {{ getMainDisplayAverage() | number:'1.1-1' }}
+        <header class="card-header">
+          <h4>{{ isViewingAll ? 'Resumo do Semestre' : 'Resumo Acadêmico' }}</h4>
+          <div class="badge-status" *ngIf="!isViewingAll" [ngClass]="getStatusMessage()">
+            {{ getStatusMessage() }}
+          </div>
+        </header>
+
+        <div class="metrics-grid">
+          <div class="mini-metric">
+            <label>{{ isViewingAll ? 'Média Geral' : 'Média Atual' }}</label>
+            <div class="value-compact" [style.color]="isViewingAll ? 'var(--text-main)' : 'var(--primary)'">
+              {{ getMainDisplayAverage() | number:'1.1-1' }}
+            </div>
+          </div>
+
+          <div class="mini-metric">
+            <label>Impacto no CR</label>
+            <div class="impact-badge" [ngClass]="calculateCRImpact() >= 0 ? 'positive' : 'negative'">
+              {{ calculateCRImpact() >= 0 ? '▲' : '▼' }} {{ calculateCRImpact() | number:'1.3-3' }}
+            </div>
           </div>
         </div>
 
-        <div class="metric">
-          <label>{{ isViewingAll ? 'Total de Créditos' : 'Progresso de Notas' }}</label>
-          
+        <div class="progress-section">
           <ng-container *ngIf="!isViewingAll; else creditosInfo">
-            <div class="progress-bar">
+            <div class="progress-bar-container">
               <div class="fill" [style.width.%]="calculateProgress()"></div>
             </div>
-            <div class="indicator safe">● {{ getStatusMessage() }}</div>
+            <div class="progress-labels">
+              <small>Progresso Notas</small>
+              <small>{{ calculateProgress() }}%</small>
+            </div>
           </ng-container>
-
+          
           <ng-template #creditosInfo>
-            <div class="value-sub" style="font-size: 1.2rem; font-weight: 600; margin-top: 5px;">
-              {{ getTotalCredits() }} <small style="font-size: 0.8rem; color: var(--text-muted)">Créditos em andamento</small>
+            <div class="credits-inline">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <span><strong>{{ getTotalCredits() }}</strong> Créditos ativos</span>
             </div>
           </ng-template>
         </div>
 
-        <div class="metric-footer">
-          <div class="sub-metric" *ngIf="!isViewingAll">
-            <small>Faltam (Peso)</small>
-            <span>{{ 100 - calculateProgress() }}%</span>
+        <div class="goals-calculator" *ngIf="!isViewingAll && selectedCourse">
+          <h5><i class="fa-solid fa-calculator"></i> Notas Mínimas Necessárias</h5>
+          <div class="goal-list">
+            <div class="goal-item" *ngIf="getGoalCalculations() as goals">
+              <span>Para Passar (7.0)</span>
+              <strong [class.danger]="goals.toPass > 10">
+                {{ (goals.toPass | number:'1.1-1') }}
+              </strong>
+            </div>
+            <div class="goal-item" *ngIf="getGoalCalculations() as goals">
+              <span>Manter CR ({{currentGPA}})</span>
+              <strong [class.danger]="goals.toCR > 10">
+                {{ (goals.toCR | number:'1.1-1') }}
+              </strong>
+            </div>
+            <div class="goal-item" *ngIf="getGoalCalculations() as goals">
+              <span>Recuperação (4.0)</span>
+              <strong [class.danger]="goals.toRecuperacao > 10">
+                {{ (goals.toRecuperacao | number:'1.1-1') }}
+              </strong>
+            </div>
           </div>
-          <div class="sub-metric">
-            <small>Meta do Semestre</small>
-            <span class="highlight">7.0</span>
-          </div>
+        </div>
+
+        <div class="estimated-box" *ngIf="isViewingAll">
+          <small>Novo CR Estimado</small>
+          <span class="gpa-projected">{{ (currentGPA + calculateCRImpact()) | number:'1.3-3' }}</span>
         </div>
       </div>
     </aside>
@@ -131,20 +197,27 @@
 
   <div class="modal-backdrop" *ngIf="showModal" (click)="toggleModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <h2>Nova Avaliação</h2>
+      <h2>
+        <i class="fa-solid" [ngClass]="isEditing ? 'fa-pen-to-square' : 'fa-circle-plus'" style="margin-right: 10px; color: var(--primary);"></i>
+        {{ isEditing ? 'Editar Avaliação' : 'Nova Avaliação' }}
+      </h2>
+      
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
-        Preencha os dados da avaliação para o acompanhamento.
+        {{ isEditing ? 'Altere os campos abaixo para atualizar os dados.' : 'Preencha os dados da avaliação para o acompanhamento.' }}
       </p>
 
       <form class="modal-form">
         <div class="form-group">
           <label>Disciplina</label>
-          <select [(ngModel)]="newAssessment.codigo_disciplina" name="disciplina">
+          <select [(ngModel)]="newAssessment.codigo_disciplina" name="disciplina" [disabled]="isEditing">
             <option value="" disabled selected>Selecione a disciplina</option>
             <option *ngFor="let course of courses" [value]="course.codigo">
               {{ course.nome }}
             </option>
           </select>
+          <small *ngIf="isEditing" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">
+            <i class="fa-solid fa-lock"></i> A disciplina não pode ser alterada na edição.
+          </small>
         </div>
 
         <div class="form-group">
@@ -159,8 +232,8 @@
               <option value="Prova">Prova</option>
               <option value="Trabalho">Trabalho</option>
               <option value="Projeto">Projeto</option>
-              <option value="Projeto">Atividade</option>
-              <option value="Projeto">Extra</option>
+              <option value="Atividade">Atividade</option>
+              <option value="Extra">Extra</option>
             </select>
           </div>
           <div class="form-group">
@@ -182,8 +255,13 @@
       </form>
       
       <div class="modal-footer">
-        <button class="btn-ghost" (click)="toggleModal()">Cancelar</button>
-        <button class="btn-add" (click)="saveAssessment()">Salvar Avaliação</button>
+        <button class="btn-ghost" (click)="toggleModal()">
+          <i class="fa-solid fa-xmark" style="margin-right: 6px;"></i> Cancelar
+        </button>
+        <button class="btn-add" (click)="saveAssessment()">
+          <i class="fa-solid fa-floppy-disk" style="margin-right: 6px;"></i> 
+          {{ isEditing ? 'Atualizar' : 'Salvar' }}
+        </button>
       </div>
     </div>
   </div>

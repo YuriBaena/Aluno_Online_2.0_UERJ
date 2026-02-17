@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import br.com.yuri.aluno_online.application.Objetivo.ObjetivoService;
 import br.com.yuri.aluno_online.application.aluno.AlunoService;
 import br.com.yuri.aluno_online.domain.model.Aluno;
+import br.com.yuri.aluno_online.infrastructure.web.AlunoResource.StatsAluno;
 
 @RestController
 @RequestMapping("/objetivo")
@@ -42,7 +43,9 @@ public class ObjetivoResource {
     public ResponseEntity<DadosAluno> listDados(
         @AuthenticationPrincipal Aluno aluno
     ){
-        DadosAluno info = new DadosAluno(alunoService.getDisciplinasEmAndamento(aluno.getId()), alunoService.getStats(aluno.getId()).cr());
+        List<ResumoDisciplina> andamento = alunoService.getDisciplinasEmAndamento(aluno.getId());
+        StatsAluno status = alunoService.getStats(aluno.getId());
+        DadosAluno info = new DadosAluno(andamento, status.cr(), status.creditosFeitos());
         return ResponseEntity.ok(info);
     }
 
@@ -92,6 +95,7 @@ public class ObjetivoResource {
 
     public record DadosAluno(
         List<ResumoDisciplina> disciplinas,
-        Float cr
+        Float cr,
+        Integer creditosFeitos
     ){}
 }

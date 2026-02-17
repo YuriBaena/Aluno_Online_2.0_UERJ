@@ -3,6 +3,8 @@ package br.com.yuri.aluno_online.application.Objetivo;
 import br.com.yuri.aluno_online.domain.model.Avaliacao;
 import br.com.yuri.aluno_online.infrastructure.repository.ObjetivoRepository;
 import br.com.yuri.aluno_online.infrastructure.web.ObjetivoResource.AvaliacaoDTO;
+
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,24 @@ public class ObjetivoService {
     }
 
     public List<AvaliacaoDTO> buscarPorAluno(UUID alunoId, String disciplina, String sort, String dir) {
-        // Lógica simples: Se vier disciplina filtra, se não, traz tudo do aluno
+
+        String campoOrdenacao = switch (sort) {
+            case "nome"       -> "nome";
+            case "tipo"       -> "tipo";
+            case "peso"       -> "peso";
+            case "nota"       -> "nota";
+            case "data"       -> "dataAgendada";
+            default           -> "dataAgendada";
+        };
+
+        Sort orders = dir.equalsIgnoreCase("desc") 
+            ? Sort.by(campoOrdenacao).descending() 
+            : Sort.by(campoOrdenacao).ascending();
+
+        // 2. Passa o objeto 'orders' para o repositório
         List<Avaliacao> entities = (disciplina != null) 
-            ? repository.findByIdAlunoAndCodigoDisciplina(alunoId, disciplina)
-            : repository.findByIdAluno(alunoId);
+            ? repository.findByIdAlunoAndCodigoDisciplina(alunoId, disciplina, orders)
+            : repository.findByIdAluno(alunoId, orders);
 
         return entities.stream().map(this::toDTO).collect(Collectors.toList());
     }
