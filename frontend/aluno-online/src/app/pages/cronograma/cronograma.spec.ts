@@ -12,8 +12,16 @@ describe('Cronograma Component', () => {
   let cronServiceSpy: jasmine.SpyObj<CronogramaService>;
 
   beforeEach(async () => {
-    // Criamos um "espião" para simular o serviço
-    const spy = jasmine.createSpyObj('CronogramaService', ['listNomesCronogramas', 'getCronByNome']);
+    // 1. Criamos o Spy com os métodos que o componente usa
+    const spy = jasmine.createSpyObj('CronogramaService', [
+      'listNomesCronogramas', 
+      'getCronByNome', 
+      'deleteCron'
+    ]);
+
+    // 2. Simulamos retornos padrão para evitar erros de 'undefined'
+    spy.listNomesCronogramas.and.returnValue(of([{ nome: 'Cronograma Teste', criadoEm: '2026/1' }]));
+    spy.getCronByNome.and.returnValue(of({ nome_cronograma: 'Teste', disciplinas: [] }));
 
     await TestBed.configureTestingModule({
       imports: [Cronograma],
@@ -26,9 +34,10 @@ describe('Cronograma Component', () => {
     }).compileComponents();
 
     cronServiceSpy = TestBed.inject(CronogramaService) as jasmine.SpyObj<CronogramaService>;
-
     fixture = TestBed.createComponent(Cronograma);
     component = fixture.componentInstance;
+    
+    // O detectChanges executa o ngOnInit
     fixture.detectChanges();
   });
 
@@ -36,8 +45,9 @@ describe('Cronograma Component', () => {
     expect(component).toBeTruthy();
   });
 
-  it('deve carregar a lista de nomes ao iniciar', () => {
+  it('deve carregar a lista de nomes ao iniciar e selecionar o primeiro', () => {
     expect(cronServiceSpy.listNomesCronogramas).toHaveBeenCalled();
-    expect(component.nomesCronogramas.length).toBeGreaterThan(0);
+    expect(cronServiceSpy.getCronByNome).toHaveBeenCalledWith('Cronograma Teste');
+    expect(component.nomesCronogramas.length).toBe(1);
   });
 });
