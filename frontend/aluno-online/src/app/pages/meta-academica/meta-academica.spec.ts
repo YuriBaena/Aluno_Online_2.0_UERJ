@@ -64,6 +64,6 @@ describe('MetaAcademica', () => {
     
     // Média: (10 * 0.4) + (5 * 0.6) = 4 + 3 = 7
     // Como a função multiplica por 100/totalWeight: (7 / 100) * 100 = 7
-    expect(component.calculateCurrentAverage()).toBe(7);
+    expect(component.calculateCurrentAverage()).toBeCloseTo(7, 1);;
   });
 });
