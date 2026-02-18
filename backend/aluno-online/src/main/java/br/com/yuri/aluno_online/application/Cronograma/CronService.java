@@ -5,6 +5,7 @@ import br.com.yuri.aluno_online.domain.model.DisciplinaCronograma;
 import br.com.yuri.aluno_online.infrastructure.repository.CronRepository;
 import br.com.yuri.aluno_online.infrastructure.web.CronResource.CronPart;
 import br.com.yuri.aluno_online.infrastructure.web.CronResource.CronRequest;
+import br.com.yuri.aluno_online.infrastructure.web.CronResource.CronogramaDTO;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,7 @@ public class CronService {
         repository.save(cronograma);
     }
 
-    public List<String> listCronAluno(UUID id_aluno){
+    public List<CronogramaDTO> listCronAluno(UUID id_aluno){
         return repository.getCronAluno(id_aluno);
     }
 

@@ -56,7 +56,9 @@ public class MyCronogramaRepository {
             INNER JOIN aluno a ON a.id = :id_aluno
             INNER JOIN curso c ON c.id = d.id_curso
             WHERE (d.id_curso = a.id_curso OR c.nome_curso = 'Eletivas Universais')
-            AND (d.nome ILIKE '%' || :busca || '%' OR d.codigo ILIKE '%' || :busca || '%')
+            AND (:busca = '' 
+            OR d.nome ILIKE '%' || :busca || '%' 
+            OR d.codigo ILIKE '%' || :busca || '%')
             ORDER BY d.periodo, d.nome
             """;
 

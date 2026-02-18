@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { CronogramaService } from '../../services/cronograma';
+import { Router, RouterLink, RouterModule } from '@angular/router';
+import { CronInfo, CronogramaService } from '../../services/cronograma';
 
 // Interfaces sincronizadas com os Records do Java
 export interface Horario {
@@ -24,19 +24,22 @@ export interface CronRequest {
 @Component({
   selector: 'app-cronograma',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterModule],
   templateUrl: './cronograma.html',
   styleUrl: './cronograma.scss',
 })
 export class Cronograma implements OnInit {
-  // No seu Java, listCron retorna List<String> (apenas os nomes)
-  nomesCronogramas: string[] = []; 
+  private cronService = inject(CronogramaService);
+  private router = inject(Router);
 
+  periodoAtual: string = '';
+
+  nomesCronogramas: CronInfo[] = []; 
   exibirModalDetalhes = false;
   disciplinaSelecionada: CronPart | null = null;
-  
   cronogramaAtivo: CronRequest | null = null;
 
+  // Definições fixas
   horariosLabels = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'N1', 'N2', 'N3', 'N4', 'N5'];
   diasSemana = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -60,19 +63,27 @@ export class Cronograma implements OnInit {
     { codigo: 'N5', intervalo: '21:20 - 22:10' }
   ];
 
-  constructor (private cronService: CronogramaService){}
-
   ngOnInit() {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const semestre = agora.getMonth() <= 5 ? '1' : '2'; //
+    this.periodoAtual = `${ano}/${semestre}`;
     this.carregarListaNomes();
+  }
+
+  get labelsFiltradas() {
+    if (!this.cronogramaAtivo) return [];
+    return this.horariosLabels.filter(label => 
+      this.diasSemana.some(dia => !!this.getDisciplinaNoHorario(dia, label))
+    );
   }
 
   carregarListaNomes() {
     this.cronService.listNomesCronogramas().subscribe({
       next: (nomes) => {
         this.nomesCronogramas = nomes;
-        // Se houver algum, carrega o primeiro automaticamente
-        if (nomes.length > 0) {
-          this.selecionarCronograma(nomes[0]);
+        if (nomes.length > 0 && !this.cronogramaAtivo) {
+          this.selecionarCronograma(nomes[0]?.nome);
         }
       },
       error: (err) => console.error('Erro ao listar cronogramas', err)
@@ -81,7 +92,6 @@ export class Cronograma implements OnInit {
 
   selecionarCronograma(nome: string) {
     this.cronService.getCronByNome(nome).subscribe((res: any) => {
-      // Tratamento preventivo: garante que horarios e codigo_horario sempre sejam arrays
       if (res && res.disciplinas) {
         res.disciplinas.forEach((d: any) => {
           d.horarios = d.horarios || [];
@@ -92,6 +102,24 @@ export class Cronograma implements OnInit {
       }
       this.cronogramaAtivo = res;
     });
+  }
+
+  excluirCronograma(nome: string) {
+    this.cronService.deleteCron(nome).subscribe(() => {
+      // Se o excluído for o ativo, limpamos a visualização
+      if (this.cronogramaAtivo?.nome_cronograma === nome) {
+        this.cronogramaAtivo = null;
+      }
+      this.carregarListaNomes();
+    });
+  }
+
+  podeEditar(criadoEm: string): boolean {
+    return criadoEm === this.periodoAtual;
+  }
+
+  editarCronograma(nome: string) {
+    this.router.navigate(['/home/my-cronograma', nome]);
   }
 
   abrirDetalhes(disc: CronPart) {
@@ -107,33 +135,33 @@ export class Cronograma implements OnInit {
   getDisciplinaNoHorario(dia: string, horario: string): CronPart | null {
     if (!this.cronogramaAtivo) return null;
     
-    // Ajustado para refletir a estrutura Record do Java (dia e codigo_horario)
+    // Normalização básica para bater com o banco (Terca/Sábado)
+    const diaBusca = dia === 'Sábado' ? 'Sabado' : dia;
+
     return this.cronogramaAtivo.disciplinas.find(d => 
-      d.horarios.some(h => h.dia === dia && h.codigo_horario.includes(horario))
+      d.horarios.some(h => 
+        (h.dia === diaBusca || h.dia === dia) && 
+        h.codigo_horario.includes(horario)
+      )
     ) || null;
   }
 
   getIntervaloPorCodigo(codigo: string): string {
     const horario = this.listaHorariosDefinidos.find(h => h.codigo === codigo);
-    return horario ? horario.intervalo : 'Horário não definido';
+    return horario ? horario.intervalo : '--:--';
   }
 
   getEstiloDisciplina(disc: CronPart) {
-    if (!this.cronogramaAtivo) return {};
+    if (!this.cronogramaAtivo || !disc) return {};
     
-    const index = this.cronogramaAtivo.disciplinas.indexOf(disc);
+    const index = this.cronogramaAtivo.disciplinas.findIndex(d => d.codigo_disc === disc.codigo_disc);
     const total = this.cronogramaAtivo.disciplinas.length || 1;
-    
-    // O Hue (matiz) continua variando para dar cores diferentes
     const hue = (index * (360 / total)) % 360; 
     
     return { 
-      // Saturação em 60% e Luminosidade em 85% criam o efeito pastel perfeito
-      'background-color': `hsl(${hue}, 60%, 85%)`, 
-      // Texto escuro para contraste em fundos claros
-      'color': '#334155',
-      // Um leve contorno na cor da própria disciplina (mais saturada) ajuda a definir o bloco
-      'border': `1px solid hsl(${hue}, 60%, 75%)`
+      'background-color': `hsl(${hue}, 70%, 88%)`, 
+      'color': '#1e293b',
+      'border-left': `4px solid hsl(${hue}, 70%, 40%)`
     };
   }
 }

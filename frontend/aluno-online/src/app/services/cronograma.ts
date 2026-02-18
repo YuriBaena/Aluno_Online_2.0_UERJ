@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CronRequest } from '../pages/cronograma/cronograma';
 
+export interface CronInfo{
+  nome: string,
+  criado_em: string
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -24,7 +29,7 @@ export class CronogramaService {
     return this.http.get<CronRequest>(`${this.API}/nome/${nome}`);
   }
 
-  listNomesCronogramas(): Observable<string[]> {
-    return this.http.get<string[]>(this.API);
+  listNomesCronogramas(): Observable<CronInfo[]> {
+    return this.http.get<CronInfo[]>(this.API);
   }
 }

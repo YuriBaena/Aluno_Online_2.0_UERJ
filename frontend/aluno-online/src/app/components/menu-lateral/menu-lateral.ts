@@ -31,6 +31,7 @@ export class MenuLateral {
 
   atualizarAbaAtiva(url: string) {
     if (url.includes('dashboard')) this.aba_aberta = 'dashboard';
+    if (url.includes('meta-academica')) this.aba_aberta = 'meta-academica';
     if (url.includes('disciplinas-curso')) this.aba_aberta = 'disciplinas-curso';
     if (url.includes('estatisticas')) this.aba_aberta = 'estatisticas';
     if (url.includes('historico')) this.aba_aberta = 'hitorico';

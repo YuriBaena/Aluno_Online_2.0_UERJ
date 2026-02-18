@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router'; // 1. Importe o provideRouter
 import { MyCronograma } from './my-cronograma';
 
 describe('MyCronograma', () => {
@@ -12,7 +13,8 @@ describe('MyCronograma', () => {
       imports: [MyCronograma], 
       providers: [
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        provideRouter([]) // 2. Adicione este provedor para resolver o erro do ActivatedRoute
       ]
     })
     .compileComponents();

@@ -1,0 +1,683 @@
+// 1. Variáveis de Design System
+:host {
+  --primary: #6366f1;
+  --primary-light: #eef2ff;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg-main: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-radius: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  --transition: all 0.2s ease-in-out;
+}
+
+.dashboard-wrapper {
+  background-color: var(--bg-main);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+
+  // 2. Header Style
+  .top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; }
+      .badge-semester {
+        background: var(--primary-light);
+        color: var(--primary);
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(99, 102, 241, 0.1);
+      }
+    }
+
+    .actions-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .gpa-card {
+        background: white;
+        padding: 10px 18px;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        font-size: 0.95rem;
+        border: 1px solid #edf2f7;
+        strong { color: var(--primary); font-size: 1.1rem; }
+      }
+
+      .btn-add {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+
+        &:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3); }
+      }
+    }
+  }
+
+  // 3. Grid Layout
+  .main-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 0.2rem;
+    align-items: start;
+  }
+
+  // 4. Sidebar & Course Cards
+  .sidebar {
+    .section-box {
+      margin-bottom: 2.5rem;
+      
+      h3 { 
+        font-size: 0.85rem; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em; 
+        color: var(--text-muted); 
+        margin-bottom: 1.25rem;
+        // Adição visual: uma linha fina ao lado do título para separar seções
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        &::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+      }
+    }
+
+    .course-list {
+      display: grid;
+      // Desktop: 1 coluna | Mobile (via Media Query abaixo): múltiplas colunas
+      grid-template-columns: 1fr; 
+      gap: 0.75rem;
+
+      .course-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        background: white;
+        border: 1px solid #edf2f7;
+        border-left: 4px solid #e2e8f0;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+
+        &:hover { 
+          transform: translateY(-2px); // Mudança para cima combina mais com grid
+          border-color: #cbd5e1;
+        }
+
+        &.active {
+          background: var(--primary-light); // Feedback visual de preenchimento
+          border-left-color: var(--primary);
+          .course-name { font-weight: 700; color: var(--primary); }
+        }
+
+        &.all-courses {
+          // No mobile, este card vai esticar para ocupar a linha inteira
+          grid-column: 1 / -1; 
+          border-left-style: double;
+          margin-bottom: 0.5rem;
+          
+          &.active {
+            background: #f1f5f9;
+            border-color: #64748b;
+            color: #1e293b;
+          }
+        }
+
+        .course-name { 
+          font-size: 0.95rem; 
+          font-weight: 500; 
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+
+  // 5. Main Table Content
+  .content {
+    .table-container {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-md);
+      border: 1px solid #f1f5f9;
+      overflow: hidden;
+
+      .info-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 300px;
+        background: white;
+        border-left: 5px solid #ccc;
+        transform: translateX(120%);
+        transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+        &.show {
+          transform: translateX(0);
+        }
+
+        &.success {
+          border-left-color: #10b981;
+          i { color: #10b981; }
+        }
+
+        &.warning {
+          border-left-color: #f59e0b;
+          i { color: #f59e0b; }
+        }
+
+        &.info {
+          border-left-color: #3b82f6;
+          i { color: #3b82f6; }
+        }
+
+        .info-content {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-weight: 500;
+          color: #1e293b;
+        }
+
+        .close-info {
+          background: none;
+          border: none;
+          font-size: 1.2rem;
+          cursor: pointer;
+          color: #94a3b8;
+          margin-left: 10px;
+          &:hover { color: #1e293b; }
+        }
+      }
+    }
+
+    .modern-table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th {
+        background: #fcfcfd;
+        padding: 8px 10px;
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      td { padding: 10px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+
+      @media (max-width: 768px) {
+        display: block; // Transforma a tabela em bloco
+
+        thead { display: none; } // Esconde o cabeçalho original
+
+        tr {
+          display: block;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          margin-bottom: 1rem;
+          padding: 1rem;
+          position: relative;
+          box-shadow: var(--shadow-sm);
+        }
+
+        td {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+          border-bottom: 1px dashed #f1f5f9;
+          text-align: right;
+          font-size: 0.9rem;
+
+          &:last-child { border-bottom: none; }
+
+          // Cria o rótulo da coluna usando um atributo data-label no HTML
+          &::before {
+            content: attr(data-label);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            flex: 1;
+            text-align: left;
+          }
+        }
+
+        .actions-cell {
+          justify-content: flex-end;
+          padding-top: 12px;
+          margin-top: 4px;
+          border-top: 1px solid #eee;
+        }
+      }
+
+      .actions-cell {
+        display: flex;
+        gap: 4px;
+        
+        .btn-icon {
+          background: none;
+          border: none;
+          padding: 6px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: var(--transition);
+          filter: grayscale(1);
+          opacity: 0.6;
+
+          &:hover {
+            filter: grayscale(0);
+            opacity: 1;
+            background-color: #f1f5f9;
+          }
+
+          &.delete:hover { color: var(--danger); }
+          &.edit:hover { color: var(--primary); }
+        }
+      }
+
+      .date-text {
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+
+        // Se for futuro e tiver as classes:
+        &.urgent-critical {
+          color: #ef4444; // Vermelho
+          background-color: rgba(239, 68, 68, 0.1);
+          font-weight: 700;
+        }
+
+        &.urgent-warning {
+          color: #f59e0b; // Laranja/Amarelo
+          background-color: rgba(245, 158, 11, 0.1);
+        }
+
+        &.urgent-safe {
+          color: #10b981; // Verde
+          background-color: rgba(16, 185, 129, 0.1);
+        }
+      }
+
+      // Estilo para o select desabilitado
+      select:disabled {
+        background-color: #f8fafc;
+        color: var(--text-muted);
+        border-color: #e2e8f0;
+      }
+
+      tr:hover td { background-color: #ececec; }
+
+      .name-wrapper {
+        .primary-text { display: block; font-weight: 600; color: var(--text-main); margin-bottom: 4px; }
+        .warning-text { color: var(--danger); font-size: 0.75rem; font-weight: 500; }
+      }
+
+      .type-pill {
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      .status-pill {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        &.graded { background: #dcfce7; color: #15803d; }
+        &.pending { background: #fef3c7; color: #b45309; }
+      }
+
+      .course-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        border-left: 3px solid transparent;
+        box-shadow: var(--shadow-sm);
+        min-width: 42px;
+      }
+
+      .sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: #f1f5f9 !important;
+          color: var(--primary);
+        }
+
+        .sort-icon {
+          display: inline-block;
+          width: 15px;
+          font-size: 0.7rem;
+          margin-left: 4px;
+          color: var(--primary);
+        }
+      }
+    }
+  }
+
+  // 6. Analytics Card
+  .analytics {
+    .insight-card {
+      background: white;
+      padding: 1.25rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-md);
+      border: 1px solid #f1f5f9;
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        h4 { font-size: 0.95rem; color: var(--text-muted); text-transform: uppercase; margin: 0; }
+        .badge-status { 
+          font-size: 0.8rem; 
+          font-weight: 600;
+          &.Seguro { color: var(--success); } 
+          &.Atenção { color: var(--warning); } 
+          &.Risco { color: var(--danger); } 
+        }
+      }
+
+      // Grid para colocar valores lado a lado e economizar altura
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+
+        .mini-metric {
+          label { display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; }
+          .value-compact { font-size: 1.5rem; font-weight: 800; }
+        }
+      }
+
+      .impact-badge {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        &.positive { background: #dcfce7; color: #15803d; }
+        &.negative { background: #fee2e2; color: #b91c1c; }
+        
+        &.Seguro { color: var(--success); } 
+        &.Atenção { color: var(--warning); } 
+        &.Risco { color: var(--danger); } 
+        
+      }
+
+      .progress-section {
+        margin-bottom: 1.25rem;
+        .progress-bar-container {
+          height: 6px;
+          background: #f1f5f9;
+          border-radius: 10px;
+          overflow: hidden;
+          .fill { background: var(--primary); height: 100%; transition: 0.3s; }
+        }
+        .progress-labels { display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted); }
+        .credits-inline { font-size: 0.85rem; color: var(--text-main); i { margin-right: 6px; color: var(--primary); } }
+      }
+
+      // Estilo da Calculadora de Metas
+      .goals-calculator {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+
+        h5 { font-size: 0.75rem; margin: 0 0 10px 0; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        
+        .goal-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          .goal-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            span { color: var(--text-muted); }
+            strong { color: var(--primary); &.danger { color: var(--danger); } }
+          }
+        }
+      }
+
+      .estimated-box {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px dashed #e2e8f0;
+        text-align: center;
+        small { display: block; color: var(--text-muted); font-size: 0.7rem; }
+        .gpa-projected { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
+      }
+    }
+  }
+
+  // 7. Modal Glassmorphism
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+
+    .modal-content {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      
+      h2 { margin-bottom: 1.5rem; font-weight: 800; }
+
+      .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.1rem;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+
+          label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+          }
+
+          input, select {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            color: var(--text-main);
+
+            &:focus {
+              outline: none;
+              border-color: var(--primary);
+              box-shadow: 0 0 0 3px var(--primary-light);
+            }
+          }
+        }
+      }
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 2rem;
+
+      button {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .btn-ghost { background: #f1f5f9; border: none; color: var(--text-muted); &:hover { background: #e2e8f0; } }
+      .btn-add { background: var(--primary); border: none; color: white; &:hover { opacity: 0.9; } }
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .main-layout {
+      grid-template-columns: 220px 1fr; // Remove a coluna do Analytics da direita
+      gap: 1.5rem;
+    }
+
+    .analytics {
+      grid-column: span 2; // Move o Analytics para baixo da tabela ocupando tudo
+    }
+  }
+
+  // 2. Mobile e Tablets Verticais
+  @media (max-width: 992px) {
+    padding: 1rem;
+
+    .top-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.25rem;
+
+      .actions-group {
+        flex-direction: row;
+        justify-content: space-between;
+        
+        .btn-add { flex-grow: 1; text-align: center; }
+      }
+    }
+
+    .main-layout {
+      grid-template-columns: 1fr; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    // Sidebar: Agora com Grid em vez de Scroll Horizontal
+    .sidebar {
+      order: 2; 
+      margin-bottom: 2rem;
+
+      .course-list {
+        display: grid; // Mudamos de flex para grid
+        // repeat(auto-fill...) faz os cards quebrarem linha sozinhos
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+        gap: 0.75rem;
+        
+        // Removemos o overflow-x e as configurações de scrollbar
+        overflow-x: visible; 
+
+        .course-card {
+          min-width: unset; // Remove a largura mínima fixa do modo scroll
+          margin-bottom: 0;
+          flex-shrink: 1;
+          
+          &:hover { transform: translateY(-2px); } 
+        }
+      }
+    }
+
+    .content {
+      order: 3; 
+      .table-container {
+        margin: 0 -1rem; 
+        border-radius: 0;
+        overflow-x: auto; // Mantemos o scroll apenas na tabela para não quebrar os dados
+
+        .modern-table {
+          min-width: 700px; 
+        }
+      }
+    }
+
+    .analytics {
+      order: 1; 
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  // 3. Smartphones Pequenos
+  @media (max-width: 500px) {
+    .top-header {
+      h1 { font-size: 1.4rem; }
+    }
+
+    .modal-backdrop .modal-content {
+      padding: 1.5rem;
+      width: 95%;
+      
+      .modal-form .form-row {
+        grid-template-columns: 1fr; // Inputs um embaixo do outro no modal
+        gap: 0.6rem;
+      }
+    }
+
+    .analytics .insight-card .metrics-grid {
+      grid-template-columns: 1fr; // Métricas (Média e CR) empilhadas
+    }
+  }
+}

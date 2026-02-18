@@ -13,15 +13,31 @@
     </div>
 
     <div class="cronogramas-list">
-      <div *ngFor="let nome of nomesCronogramas" 
-           class="cron-card" 
-           [class.active]="cronogramaAtivo?.nome_cronograma === nome"
-           (click)="selecionarCronograma(nome)">
+      <div *ngFor="let info of nomesCronogramas" 
+          class="cron-card" 
+          [class.active]="cronogramaAtivo?.nome_cronograma === info.nome"
+          [class.locked]="info.criado_em !== periodoAtual"
+          (click)="selecionarCronograma(info.nome)">
+        
+        <button class="cron-exclude" 
+                title="Excluir cronograma"
+                (click)="excluirCronograma(info.nome); $event.stopPropagation()">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+
+        <button class="cron-edit" 
+                [title]="info.criado_em === periodoAtual ? 'Editar cronograma' : 'Bloqueado para edição (Semestre anterior)'"
+                (click)="info.criado_em === periodoAtual ? editarCronograma(info.nome) : null; $event.stopPropagation()">
+          <i [class]="info.criado_em === periodoAtual ? 'fa-regular fa-pen-to-square' : 'fa-solid fa-lock'"></i>
+        </button>
+
         <div class="cron-info">
-          <span class="label-status">Salvo</span>
-          <h3>{{ nome }}</h3>
+          <span *ngIf="info.criado_em !== periodoAtual" class="label-lock">Somente Leitura</span>
+          <h3>{{ info.nome }}</h3>
+          <h4>{{ info.criado_em }}</h4>
         </div>
-        <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === nome"></div>
+        
+        <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === info.nome"></div>
       </div>
     </div>
   </header>
@@ -56,7 +72,7 @@
           {{ dia === 'Terca' ? 'TER' : dia.substring(0,3).toUpperCase() }}
         </div>
 
-        <ng-container *ngFor="let hora of horariosLabels">
+        <ng-container *ngFor="let hora of labelsFiltradas">
           <div class="time-label">{{ hora }}</div>
           
           <div *ngFor="let dia of diasSemana" class="grid-cell">
@@ -105,9 +121,16 @@
           <div *ngFor="let h of disciplinaSelecionada?.horarios" class="dia-coluna">
             <div class="dia-header-mini">{{ h.dia.substring(0,3).toUpperCase() }}</div>
             <div class="codigos-stack">
-              <div *ngFor="let cod of h.codigo_horario" class="cod-tag-animated">
+              <div *ngFor="let cod of h.codigo_horario" 
+                  class="cod-tag-animated"
+                  #tag
+                  (click)="tag.classList.toggle('is-active')"
+                  (blur)="tag.classList.remove('is-active')"
+                  tabindex="0">
+                
                 <span class="codigo-texto">{{ cod }}</span>
                 <span class="intervalo-texto">{{ getIntervaloPorCodigo(cod) }}</span>
+                
               </div>
             </div>
           </div>

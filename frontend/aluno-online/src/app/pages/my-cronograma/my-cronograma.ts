@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MyCronogramaService } from '../../services/my-cronograma'; // Ajuste o caminho conforme seu projeto
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { CronogramaService } from '../../services/cronograma';
@@ -40,6 +40,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   private cronogramaService = inject(MyCronogramaService);
   private cronService = inject(CronogramaService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   listaHorariosDefinidos = [
     { codigo: 'M1', intervalo: '07:00 - 07:50' },
@@ -63,6 +64,10 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   periodos:number[] = [];
 
+  info: boolean = false;
+  infoMessage: string = '';
+  infoType: 'success' | 'warning' | 'info' = 'info';
+
   // Estados
   menu1Aberto = false;
   menu2Aberto = false;
@@ -81,6 +86,9 @@ export class MyCronograma implements OnInit, OnDestroy {
 
   modalSalvarAberto = false;
   nomeCronograma = '';
+
+  editing = false;
+  editingName = '';
 
   exibirModalOtimizar = false;
   abaAtiva: 'turnos' | 'personalizado' = 'turnos';
@@ -124,6 +132,14 @@ export class MyCronograma implements OnInit, OnDestroy {
         this.periodos.push(i);
       }
     });
+    const nomeUrl = this.route.snapshot.paramMap.get('nome');
+    if (nomeUrl) {
+      this.nomeCronograma = nomeUrl;
+      this.editingName = nomeUrl;
+      this.editing = true;
+      this.carregarDadosParaEdicao(nomeUrl);
+    }
+    else this.executarBusca("");
   }
 
   ngOnDestroy() { this.searchSub?.unsubscribe(); }
@@ -131,22 +147,17 @@ export class MyCronograma implements OnInit, OnDestroy {
   onSearchChange(v: string) { this.searchSubject.next(v); }
 
   executarBusca(termo: string) {
-    if (termo.length < 3) { this.listaDisciplinasDisponiveis = []; return; }
     this.cronogramaService.buscar(termo).subscribe((res:any) => this.listaDisciplinasDisponiveis = res);
   }
 
   selecionarDisciplina(disc: any) {
     if (!this.selecionadas.find(d => d.nome === disc.nome)) {
-      // Adiciona cores para o card e expande
       this.selecionadas.push({ 
         ...disc, 
         expandida: true,
         cor: this.gerarCorHex(disc.nome) 
       });
       
-      // UX: Fecha a busca e abre as turmas para o próximo passo
-      this.termoBusca = '';
-      this.listaDisciplinasDisponiveis = [];
       this.menu1Aberto = false;
       this.menu2Aberto = true;
     }
@@ -367,7 +378,7 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   preencherPorPeriodo(periodo: number) {
-    this.cronogramaService.pegaPorPeriodo(periodo).subscribe((res:any) => {
+    this.cronogramaService.pegaPorPeriodo(periodo).subscribe((res:Disciplina[]) => {
 
       for (const disc of res) {
 
@@ -404,6 +415,10 @@ export class MyCronograma implements OnInit, OnDestroy {
           expandida: false,
           cor: this.gerarCorHex(disc.nome)
         });
+      }
+
+      if(res.length == 0){
+        this.mostrarMensagem("Todas matérias do " + periodo + "° período já foram realizadas.", "info");
       }
 
       // UX
@@ -487,10 +502,30 @@ export class MyCronograma implements OnInit, OnDestroy {
   }
 
   abrirModalSalvar() {
-    this.modalSalvarAberto = true;
+    if(this.selecionadas.length >= 3){
+      this.modalSalvarAberto = true;
+    }
+    else this.mostrarMensagem("Para salvar é preciso escolher no minímo 3 turmas.", "warning")
+  }
+
+  fecharSalvar(){
+    if(this.editing){
+      this.modalSalvarAberto = false;
+    }
+    else{
+      this.modalSalvarAberto = false;
+      this.nomeCronograma = '';
+    }
   }
 
   confirmarSalvamento() {
+    if(this.editingName && this.editing){
+      this.cronService.deleteCron(this.editingName).subscribe({
+        next: () => this.modalSalvarAberto = true,
+        error: () => this.mostrarMensagem("Erro ao excluir cronograma (" + this.editingName + ").", "warning")
+      });
+    }
+
     const disciplinasParaSalvar: CronPart[] = this.selecionadas.map(s => {
       const turma = s.turmas.find((t: any) => t.id === s.selectedTurmaId);
       
@@ -515,12 +550,79 @@ export class MyCronograma implements OnInit, OnDestroy {
     };
 
     this.cronService.saveCron(request).subscribe({
-      next: () => {
-        this.modalSalvarAberto = false;
-        this.router.navigate(['/home/cronogramas']);
-      },
-      error: (err) => alert('Erro ao salvar: ' + err.message)
+        next: () => {
+          this.mostrarMensagem("Cronograma (" + this.nomeCronograma + ") salvo com sucesso.",'success');
+          this.modalSalvarAberto = false;
+          this.editing = false;
+        },
+        error: () => this.mostrarMensagem("Erro ao salvar cronograma (" + this.nomeCronograma + ").", "warning")
+      });  
+  }
+
+  carregarDadosParaEdicao(nome: string) {
+    this.nomeCronograma = nome;
+    this.selecionadas = [];
+
+    this.cronService.getCronByNome(nome).subscribe({
+      next: (cron: CronRequest) => {
+        this.mostrarMensagem(`Editando cronograma: ${cron.nome_cronograma}`, 'info');
+
+        cron.disciplinas.forEach(part => {
+          this.cronogramaService.buscar(part.codigo_disc).subscribe({
+            next: (res: any) => {
+              // Garante que pegamos a disciplina correta da resposta da busca
+              const discCompleta = Array.isArray(res) 
+                ? res.find((d: any) => d.codigo === part.codigo_disc)
+                : res;
+              
+              if (discCompleta) {
+                // --- VALIDAÇÃO TRIPLA: Código, Professor e Assinatura de Horário ---
+                const turmaIdentica = discCompleta.turmas.find((t: any) => {
+                  // 1. Validar Professor (ignorando espaços extras e case sensitive)
+                  const profBate = t.professor.trim().toLowerCase() === part.nome_prof.trim().toLowerCase();
+                  if (!profBate) return false;
+
+                  // 2. Agrupar horários da turma da API para comparar com o formato salvo
+                  const horariosTurmaAPI = this.getHorariosAgrupados(t.horario);
+                  
+                  // 3. Validar Assinatura de Horário (Quantidade de dias)
+                  if (horariosTurmaAPI.length !== part.horarios.length) return false;
+
+                  // 4. Validar cada slot de horário
+                  return part.horarios.every(hSalvo => {
+                    const correspondente = horariosTurmaAPI.find(hAPI => hAPI.dia === hSalvo.dia);
+                    if (!correspondente) return false;
+                    
+                    // Compara os arrays de códigos ordenados (ex: ['M1', 'M2'])
+                    return JSON.stringify(correspondente.codigos.sort()) === 
+                          JSON.stringify(hSalvo.codigo_horario.sort());
+                  });
+                });
+
+                this.selecionadas.push({
+                  ...discCompleta,
+                  // Se a tríade bateu, temos o ID correto da turma deste semestre
+                  selectedTurmaId: turmaIdentica ? turmaIdentica.id : null,
+                  expandida: false,
+                  cor: this.gerarCorHex(discCompleta.nome)
+                });
+
+                if (!turmaIdentica) {
+                  console.warn(`Turma de ${part.nome_disc} não encontrada com a mesma configuração. Pode ter havido troca de professor ou horário no semestre atual.`);
+                }
+              }
+            }
+          });
+        });
+      }
     });
+  }
+
+  pararEdicao(){
+    this.nomeCronograma = '';
+    this.editing = false;
+    this.editingName = '';
+    this.router.navigate(['/home/my-cronograma']);
   }
 
   // Método auxiliar para dar cores automáticas às matérias
@@ -531,5 +633,16 @@ export class MyCronograma implements OnInit, OnDestroy {
     }
     const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
     return '#' + '00000'.substring(0, 6 - c.length) + c;
+  }
+
+  private mostrarMensagem(msg: string, tipo: 'success' | 'warning' | 'info' = 'info') {
+    this.infoMessage = msg;
+    this.infoType = tipo;
+    this.info = true;
+
+    // Auto-hide após 10 segundos
+    setTimeout(() => {
+      this.info = false;
+    }, 10000);
   }
 }
