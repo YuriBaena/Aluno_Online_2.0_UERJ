@@ -18,7 +18,13 @@
           [class.active]="cronogramaAtivo?.nome_cronograma === info.nome"
           [class.locked]="info.criado_em !== periodoAtual"
           (click)="selecionarCronograma(info.nome)">
-        
+
+        <div class="cron-info">
+          <span *ngIf="info.criado_em !== periodoAtual" class="label-lock">Somente Leitura</span>
+          <h3>{{ info.nome }}</h3>
+          <h4>{{ info.criado_em }}</h4>
+        </div>
+
         <button class="cron-exclude" 
                 title="Excluir cronograma"
                 (click)="excluirCronograma(info.nome); $event.stopPropagation()">
@@ -31,11 +37,11 @@
           <i [class]="info.criado_em === periodoAtual ? 'fa-regular fa-pen-to-square' : 'fa-solid fa-lock'"></i>
         </button>
 
-        <div class="cron-info">
-          <span *ngIf="info.criado_em !== periodoAtual" class="label-lock">Somente Leitura</span>
-          <h3>{{ info.nome }}</h3>
-          <h4>{{ info.criado_em }}</h4>
-        </div>
+        <button class="cron-export" 
+                title="Exportar para Excel"
+                (click)="exportarParaExcel(info.nome); $event.stopPropagation()">
+          <i class="fa-regular fa-file-excel"></i>
+        </button>
         
         <div class="active-indicator" *ngIf="cronogramaAtivo?.nome_cronograma === info.nome"></div>
       </div>
