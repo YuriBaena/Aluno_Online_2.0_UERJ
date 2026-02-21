@@ -11,6 +11,7 @@ import { authGuard } from './guards/auth-guard';
 import { adminGuard } from './guards/admin-guard';
 import { Cronograma } from './pages/cronograma/cronograma';
 import { MetaAcademica } from './pages/meta-academica/meta-academica';
+import { Fluxograma } from './pages/fluxograma/fluxograma';
 
 export const routes: Routes = [
   /**
@@ -75,6 +76,11 @@ export const routes: Routes = [
            * PARA PLANEJAR
            */
           { path: 'meta-academica', component: MetaAcademica },
+
+          /**
+           * PARA VISUALIZAR
+           */
+          { path: 'fluxograma', component: Fluxograma },
 
           /**
            * FUTURAS ROTAS FILHAS

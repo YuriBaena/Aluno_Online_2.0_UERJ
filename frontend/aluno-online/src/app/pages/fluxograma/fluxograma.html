@@ -1,0 +1,56 @@
+<div class="fluxograma-container" (click)="limparDestaque()">
+  
+  <div class="fluxograma-content" (click)="$event.stopPropagation()">
+    
+    <svg class="conexoes-layer">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#cbd5e1" />
+        </marker>
+      </defs>
+      
+      @for (path of paths(); track $index) {
+        <path 
+          [attr.d]="path" 
+          fill="none" 
+          stroke="#cbd5e1"
+          stroke-width="1.5"
+          [attr.marker-end]="'url(#arrow)'" />
+      }
+    </svg>
+
+    <div class="grid-layout">
+      @for (p of periodosOrdenados(); track p) {
+        <div class="coluna-periodo">
+          <div class="periodo-label">{{ p === 99 ? 'Eletivas' : p + 'º' }}</div>
+          
+          <div class="cards-stack">
+            @for (d of getDisciplinasPorPeriodo(p); track d.codigo) {
+              
+              <div class="card-disciplina" 
+                   [id]="d.codigo" 
+                   [attr.data-status]="d.status_historico"
+                   [class.dimmed]="isDimmed(d.codigo)"
+                   [class.highlighted]="activeId() === d.codigo"
+                   [class.is-requirement]="highlightedIds().has(d.codigo) && activeId() !== d.codigo"
+                   (click)="onDisciplinaClick(d.codigo); $event.stopPropagation()">
+                
+                <div class="header-card">
+                   <span class="codigo">{{ d.codigo }}</span>
+                   <span class="creditos">{{ d.creditos }} cr</span>
+                </div>
+                
+                <div class="nome">{{ d.nome }}</div>
+                
+                <div class="nota-footer">
+                  {{ d.nota_final || '-' }}
+                </div>
+
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

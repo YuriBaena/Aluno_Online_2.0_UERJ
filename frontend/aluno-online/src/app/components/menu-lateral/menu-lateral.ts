@@ -34,7 +34,7 @@ export class MenuLateral {
     if (url.includes('meta-academica')) this.aba_aberta = 'meta-academica';
     if (url.includes('disciplinas-curso')) this.aba_aberta = 'disciplinas-curso';
     if (url.includes('estatisticas')) this.aba_aberta = 'estatisticas';
-    if (url.includes('historico')) this.aba_aberta = 'hitorico';
+    if (url.includes('fluxograma')) this.aba_aberta = 'fluxograma';
     if (url.includes('cronogramas')) this.aba_aberta = 'cronogramas';
     if (url.includes('my-cronograma')) this.aba_aberta = 'monte seu cronograma';
   }

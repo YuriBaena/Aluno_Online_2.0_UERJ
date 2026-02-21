@@ -31,12 +31,12 @@ public class MyCronogramaRepository {
             SELECT jsonb_build_object(
                 'nome', d.nome,
                 'codigo', d.codigo,
-                'periodo', d.periodo,
+                'periodo', gc.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
                         'id', t.numero,
                         'nome', 'Turma ' || t.numero,
-                        'professor', p.nome,
+                        'professor', COALESCE(p.nome, 'A definir'),
                         'vagas', t.vagas,
                         'horario', COALESCE((
                             SELECT jsonb_agg(jsonb_build_object(
@@ -52,14 +52,24 @@ public class MyCronogramaRepository {
                     WHERE t.codigo_disciplina = d.codigo
                 ), '[]'::jsonb)
             ) as json_data
-            FROM disciplina d
-            INNER JOIN aluno a ON a.id = :id_aluno
-            INNER JOIN curso c ON c.id = d.id_curso
-            WHERE (d.id_curso = a.id_curso OR c.nome_curso = 'Eletivas Universais')
-            AND (:busca = '' 
-            OR d.nome ILIKE '%' || :busca || '%' 
-            OR d.codigo ILIKE '%' || :busca || '%')
-            ORDER BY d.periodo, d.nome
+            FROM aluno a
+            -- Ajuste no JOIN: Busca a grade do curso do aluno OU a grade das Eletivas Universais
+            INNER JOIN grade_curricular gc ON (
+                gc.id_curso = a.id_curso 
+                OR 
+                gc.id_curso = (SELECT id FROM curso WHERE nome_curso = 'Eletivas Universais' LIMIT 1)
+            )
+            INNER JOIN disciplina d ON gc.codigo_disciplina = d.codigo
+            WHERE a.id = :id_aluno
+            AND (
+                :busca = '' 
+                OR d.nome ILIKE '%' || :busca || '%' 
+                OR d.codigo ILIKE '%' || :busca || '%'
+            )
+            ORDER BY 
+                (CASE WHEN gc.periodo = 0 THEN 1 ELSE 0 END), -- Joga periodo 0 para o fim da lista
+                gc.periodo, 
+                d.nome
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -74,7 +84,7 @@ public class MyCronogramaRepository {
             SELECT jsonb_build_object(
                 'nome', d.nome,
                 'codigo', d.codigo,
-                'periodo', d.periodo,
+                'periodo', gc.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(
                         jsonb_build_object(
@@ -107,16 +117,15 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) AS json_data
             FROM disciplina d
-            INNER JOIN curso c ON c.id = d.id_curso
+            -- Ligação com a Grade Curricular ajustada para incluir o curso do aluno OU Universais
+            INNER JOIN grade_curricular gc ON d.codigo = gc.codigo_disciplina
+            INNER JOIN aluno a ON a.id = :id_aluno
             WHERE (
-                EXISTS (
-                    SELECT 1
-                    FROM aluno a
-                    WHERE a.id = :id_aluno
-                    AND a.id_curso = d.id_curso
-                )
-                OR c.nome_curso = 'Eletivas Universais'
+                gc.id_curso = a.id_curso 
+                OR 
+                gc.id_curso = (SELECT id FROM curso WHERE nome_curso = 'Eletivas Universais' LIMIT 1)
             )
+            -- Garante que a disciplina possui pelo menos uma turma no horário selecionado
             AND EXISTS (
                 SELECT 1
                 FROM turma t2
@@ -125,14 +134,15 @@ public class MyCronogramaRepository {
                 AND h.dia::text = :dia
                 AND h.codigo_hora = :hora
             )
+            -- Filtra para não mostrar o que o aluno já passou
             AND NOT EXISTS (
                 SELECT 1
-                FROM historico h
-                WHERE h.id_aluno = :id_aluno
-                AND h.codigo_disciplina = d.codigo
-                AND h.status = 'Aprov. Nota'
+                FROM historico h_hist
+                WHERE h_hist.id_aluno = :id_aluno
+                AND h_hist.codigo_disciplina = d.codigo
+                AND h_hist.status ILIKE 'Aprov%'
             )
-            ORDER BY d.periodo, d.nome;
+            ORDER BY (CASE WHEN gc.periodo = 0 THEN 1 ELSE 0 END), gc.periodo, d.nome;
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -148,12 +158,12 @@ public class MyCronogramaRepository {
             SELECT jsonb_build_object(
                 'nome', d.nome,
                 'codigo', d.codigo,
-                'periodo', d.periodo,
+                'periodo', gc.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
                         'id', t.numero,
                         'nome', 'Turma ' || t.numero,
-                        'professor', p.nome,
+                        'professor', COALESCE(p.nome, 'A definir'),
                         'vagas', t.vagas,
                         'horario', COALESCE((
                             SELECT jsonb_agg(jsonb_build_object(
@@ -170,17 +180,23 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
+            INNER JOIN grade_curricular gc ON d.codigo = gc.codigo_disciplina
             INNER JOIN aluno a ON a.id = :id_aluno
-            WHERE (d.id_curso = a.id_curso)
-            AND d.periodo = :per
+            WHERE (
+                gc.id_curso = a.id_curso 
+                OR 
+                gc.id_curso = (SELECT id FROM curso WHERE nome_curso = 'Eletivas Universais' LIMIT 1)
+            )
+            -- Filtramos pelo período (se num=0 traz as universais, se num>0 traz as do curso)
+            AND gc.periodo = :per
             AND NOT EXISTS (
                 SELECT 1 
                 FROM historico h 
                 WHERE h.id_aluno = a.id 
                 AND h.codigo_disciplina = d.codigo 
-                AND h.status = 'Aprov. Nota'
+                AND h.status ILIKE 'Aprov%'
             )
-            ORDER BY d.periodo, d.nome
+            ORDER BY d.nome
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -195,12 +211,12 @@ public class MyCronogramaRepository {
             SELECT jsonb_build_object(
                 'nome', d.nome,
                 'codigo', d.codigo,
-                'periodo', d.periodo,
+                'periodo', gc.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
                         'id', t.numero,
                         'nome', 'Turma ' || t.numero,
-                        'professor', p.nome,
+                        'professor', COALESCE(p.nome, 'A definir'),
                         'vagas', t.vagas,
                         'horario', COALESCE((
                             SELECT jsonb_agg(jsonb_build_object(
@@ -214,6 +230,7 @@ public class MyCronogramaRepository {
                     FROM turma t
                     LEFT JOIN professor p ON t.id_professor = p.id
                     WHERE t.codigo_disciplina = d.codigo
+                    -- Garante que TODAS as aulas desta turma pertencem ao turno escolhido
                     AND NOT EXISTS (
                         SELECT 1
                         FROM horario_aula h2
@@ -223,16 +240,35 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
+            INNER JOIN grade_curricular gc ON d.codigo = gc.codigo_disciplina
             INNER JOIN aluno a ON a.id = :id_aluno
-            WHERE (d.id_curso = a.id_curso)
+            WHERE (
+                gc.id_curso = a.id_curso 
+                OR 
+                gc.id_curso = (SELECT id FROM curso WHERE nome_curso = 'Eletivas Universais' LIMIT 1)
+            )
+            -- Verifica se o aluno já não foi aprovado
             AND NOT EXISTS (
-                    SELECT 1 
-                    FROM historico h 
-                    WHERE h.id_aluno = a.id 
-                    AND h.codigo_disciplina = d.codigo 
-                    AND h.status = 'Aprov. Nota'
+                SELECT 1 
+                FROM historico h_hist 
+                WHERE h_hist.id_aluno = a.id 
+                AND h_hist.codigo_disciplina = d.codigo 
+                AND h_hist.status ILIKE 'Aprov%'
+            )
+            -- Só retorna a disciplina se ela possuir ao menos uma turma no turno desejado
+            AND EXISTS (
+                SELECT 1 FROM turma t3
+                WHERE t3.codigo_disciplina = d.codigo
+                AND NOT EXISTS (
+                    SELECT 1 FROM horario_aula h3
+                    WHERE h3.id_turma = t3.id_turma
+                    AND h3.codigo_hora NOT LIKE :turno || '%'
                 )
-                ORDER BY d.periodo, d.nome
+            )
+            ORDER BY 
+                (CASE WHEN gc.periodo = 0 THEN 1 ELSE 0 END), 
+                gc.periodo, 
+                d.nome
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -243,8 +279,7 @@ public class MyCronogramaRepository {
     }
 
     public List<DisciplinaDTO> pegaMelhorCombinacaoDisponibilidade(DisponibilidadeDTO dto, UUID id_aluno) {
-        // 1. Transformamos o Map em uma lista de strings: "DIA|00:00|00:00"
-        // Ex: "SEG|07:30|11:00"
+        // 1. Transformamos o Map em uma lista de strings para o PostgreSQL processar
         List<String> filtros = dto.disponibilidade().entrySet().stream()
             .flatMap(entry -> entry.getValue().stream()
                 .map(h -> entry.getKey() + "|" + h.inicio() + "|" + h.fim()))
@@ -252,7 +287,6 @@ public class MyCronogramaRepository {
 
         String sql = """
             WITH disp_aluno AS (
-                -- Explode a lista de strings em uma tabela temporária com tipos corretos
                 SELECT 
                     split_part(val, '|', 1) as d_dia,
                     split_part(val, '|', 2)::time as d_inicio,
@@ -262,12 +296,12 @@ public class MyCronogramaRepository {
             SELECT jsonb_build_object(
                 'nome', d.nome,
                 'codigo', d.codigo,
-                'periodo', d.periodo,
+                'periodo', gc.periodo,
                 'turmas', COALESCE((
                     SELECT jsonb_agg(jsonb_build_object(
                         'id', t.numero,
                         'nome', 'Turma ' || t.numero,
-                        'professor', p.nome,
+                        'professor', COALESCE(p.nome, 'A definir'),
                         'vagas', t.vagas,
                         'horario', (
                             SELECT jsonb_agg(jsonb_build_object('dia', h.dia, 'hora_codigo', h.codigo_hora))
@@ -291,9 +325,15 @@ public class MyCronogramaRepository {
                 ), '[]'::jsonb)
             ) as json_data
             FROM disciplina d
+            INNER JOIN grade_curricular gc ON d.codigo = gc.codigo_disciplina
             INNER JOIN aluno a ON a.id = :id_aluno
-            WHERE (d.id_curso = a.id_curso)
-            -- Filtra Disciplinas que possuem pelo menos uma turma válida para o aluno
+            -- AJUSTE: Permite buscar na grade do curso do aluno OU na grade universal
+            WHERE (
+                gc.id_curso = a.id_curso 
+                OR 
+                gc.id_curso = (SELECT id FROM curso WHERE nome_curso = 'Eletivas Universais' LIMIT 1)
+            )
+            -- Filtra Disciplinas que possuem pelo menos uma turma válida dentro do horário do aluno
             AND EXISTS (
                 SELECT 1 FROM turma t2
                 WHERE t2.codigo_disciplina = d.codigo
@@ -308,13 +348,14 @@ public class MyCronogramaRepository {
                     )
                 )
             )
+            -- Filtra o que o aluno já concluiu (Histórico)
             AND NOT EXISTS (
                 SELECT 1 FROM historico hist 
                 WHERE hist.id_aluno = a.id 
                 AND hist.codigo_disciplina = d.codigo 
-                AND hist.status = 'Aprov. Nota'
+                AND hist.status ILIKE 'Aprov%'
             )
-            ORDER BY d.periodo, d.nome;
+            ORDER BY (CASE WHEN gc.periodo = 0 THEN 1 ELSE 0 END), gc.periodo, d.nome;
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -326,9 +367,9 @@ public class MyCronogramaRepository {
 
     public int getNumPeriodos(UUID id_aluno) {
         String sql = """
-            SELECT COALESCE(MAX(d.periodo), 0)
-            FROM disciplina d
-            INNER JOIN aluno a ON a.id_curso = d.id_curso
+            SELECT COALESCE(MAX(gc.periodo), 0)
+            FROM grade_curricular gc
+            INNER JOIN aluno a ON a.id_curso = gc.id_curso
             WHERE a.id = :id_aluno
             """;
 

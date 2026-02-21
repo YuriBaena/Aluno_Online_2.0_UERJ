@@ -161,9 +161,12 @@ def coletaMateriasCurriculo(driver, curso):
             tds = tr.find_elements(By.TAG_NAME, "td")
             if len(tds) < 9: continue
 
-            tipo, periodo = tds[3].text, tds[1].text
-            tds[0].find_element(By.TAG_NAME, "a").click()
+            # Captura dados que pertencem à GRADE
+            tipo_na_grade, periodo_na_grade = tds[3].text.strip(), tds[1].text.strip()
+            per_val = periodo_na_grade if periodo_na_grade.isdigit() else '0'
 
+            tds[0].find_element(By.TAG_NAME, "a").click()
+            
             WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[1]/div[1]')))
             
             disc_header = driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[1]/div[1]').text
@@ -171,25 +174,64 @@ def coletaMateriasCurriculo(driver, curso):
             cod = texto_disc.split(" ")[0]
             nom = " ".join(texto_disc.split(" ")[1:]).replace(",", "").replace("-", " ")
 
+            # 1. SQL DISCIPLINA (Apenas dados globais)
             val_creditos = "".join(filter(str.isdigit, driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[1]/div[2]/div[1]').text.split(": ")[1])) or "0"
             val_ch = "".join(filter(str.isdigit, driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[1]/div[2]/div[2]').text.split(": ")[1])) or "0"
-            per_val = periodo if periodo.isdigit() else 'NULL'
 
             sql_disc = f"""
-            WITH curso_data AS (
-                INSERT INTO public.curso (nome_curso) VALUES ({format_val(curso)}) 
-                ON CONFLICT (nome_curso) DO UPDATE SET nome_curso = EXCLUDED.nome_curso RETURNING id
-            )
-            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso) 
-            SELECT {format_val(cod)}, {format_val(nom)}, CAST({val_creditos} AS smallint), CAST({val_ch} AS smallint), {format_val(tipo)}, CAST({per_val} AS smallint), id 
-            FROM curso_data 
-            ON CONFLICT (codigo) DO UPDATE SET nome=EXCLUDED.nome, id_curso=EXCLUDED.id_curso, creditos=EXCLUDED.creditos, carga_horaria=EXCLUDED.carga_horaria;
+            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria) 
+            VALUES ({format_val(cod)}, {format_val(nom)}, CAST({val_creditos} AS smallint), CAST({val_ch} AS smallint))
+            ON CONFLICT (codigo) DO UPDATE SET nome=EXCLUDED.nome, creditos=EXCLUDED.creditos, carga_horaria=EXCLUDED.carga_horaria;
             """.replace('\n', ' ').strip()
             imprimir_bloco_sql(sql_disc)
 
+            # 2. SQL GRADE CURRICULAR (Vínculo curso-disciplina)
+            sql_grade = f"""
+            INSERT INTO public.grade_curricular (id_curso, codigo_disciplina, periodo, tipo)
+            SELECT id, {format_val(cod)}, CAST({per_val} AS smallint), {format_val(tipo_na_grade)}
+            FROM public.curso WHERE nome_curso = {format_val(curso)}
+            ON CONFLICT (id_curso, codigo_disciplina) DO UPDATE SET periodo=EXCLUDED.periodo, tipo=EXCLUDED.tipo;
+            """.replace('\n', ' ').strip()
+            imprimir_bloco_sql(sql_grade)
+
+            # 3. Pegar requisitos (Sem alterações na lógica, apenas no SQL de destino)
+            try:
+                container_req_xpath = '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[2]/div[2]/div'
+                divs_requisitos = driver.find_elements(By.XPATH, f'{container_req_xpath}/div')
+                grupo_atual = 1
+
+                for div_req in divs_requisitos:
+                    tipo_texto = div_req.find_element(By.XPATH, './div[1]').text.strip()
+                    if "Pré-Requisito" not in tipo_texto: continue
+
+                    texto_bruto = div_req.find_element(By.XPATH, './div[2]').text.strip()
+                    if not texto_bruto or "não possui requisito" in texto_bruto.lower(): continue
+                    
+                    partes_ou = texto_bruto.replace('\n', ' ou ').replace(' OU ', ' ou ').split(' ou ')
+                    for parte in partes_ou:
+                        parte = parte.strip()
+                        if parte.lower().startswith("ou "): parte = parte[3:].strip()
+                        if not parte or len(parte) < 5: continue
+                        
+                        cod_requisito = parte.split(" ")[0]
+                        
+                        sql_req = f"""
+                        INSERT INTO public.pre_requisito (codigo_disciplina, codigo_requisito, id_grupo)
+                        SELECT {format_val(cod)}, {format_val(cod_requisito)}, {grupo_atual}
+                        WHERE 
+                            EXISTS (SELECT 1 FROM public.disciplina WHERE codigo = {format_val(cod)}) 
+                            AND 
+                            EXISTS (SELECT 1 FROM public.disciplina WHERE codigo = {format_val(cod_requisito)})
+                        ON CONFLICT (codigo_disciplina, codigo_requisito, id_grupo) DO NOTHING;
+                        """.replace('\n', ' ').strip()
+                        imprimir_bloco_sql(sql_req)
+                    grupo_atual += 1
+            except Exception as e:
+                print(f"LOG: Erro requisitos para {cod}: {e}")
+
+            # 4. Turmas e Horários (Lógica mantida, pois já usavam codigo_disciplina)
             trs_t = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[3]/div[2]/table/tbody/tr')
-            for idx, tr_t in enumerate(trs_t, 1):
-                # Pega somente o primeiro professor
+            for tr_t in trs_t:
                 prof = tr_t.find_element(By.XPATH, './/div[1]/div[5]/div[2]').text.strip().split("\n")[0] or "A DEFINIR"
                 num_t = "".join(filter(str.isdigit, tr_t.find_element(By.XPATH, './/div[1]/div[1]/div').text)) or "0"
                 vagas_txt = tr_t.find_element(By.XPATH, './/td/div/div[2]/table[1]/tbody/tr[2]/td[2]').text.strip()
@@ -208,15 +250,12 @@ def coletaMateriasCurriculo(driver, curso):
                         if dia_site in mapa_dias and t in mapa_horarios:
                             sql_horario = f"""
                             INSERT INTO public.horario_aula (id_turma, dia, hora, codigo_hora) 
-                            VALUES (
-                                (SELECT id_turma FROM public.turma WHERE codigo_disciplina={format_val(cod)} AND numero={num_t} LIMIT 1), 
-                                CAST({format_val(mapa_dias[dia_site])} AS dia_semana_enum), 
-                                CAST({format_val(mapa_horarios[t])} AS TIME), 
-                                {format_val(t)} 
-                            ) ON CONFLICT (id_turma, dia, hora) DO UPDATE SET codigo_hora=EXCLUDED.codigo_hora;
+                            VALUES ((SELECT id_turma FROM public.turma WHERE codigo_disciplina={format_val(cod)} AND numero={num_t} LIMIT 1), CAST({format_val(mapa_dias[dia_site])} AS dia_semana_enum), CAST({format_val(mapa_horarios[t])} AS TIME), {format_val(t)}) 
+                            ON CONFLICT (id_turma, dia, hora) DO UPDATE SET codigo_hora=EXCLUDED.codigo_hora;
                             """.replace('\n', ' ').strip()
                             imprimir_bloco_sql(sql_horario)
 
+            # Voltar para a lista
             try:
                 driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
             except:
@@ -227,7 +266,6 @@ def coletaMateriasCurriculo(driver, curso):
             print(f"ERRO na linha {i}: {e}")
             continue
 
-    # Volta para tela inicial
     driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
 
 # -- MATERIAS JA REALIZADAS
@@ -287,67 +325,56 @@ def pegaDisciplinasRealizadas(login, linhas):
         try:
             tds = tr.find_elements(By.TAG_NAME, "td")
             if len(tds) < 8: continue
-            codigo = tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[0]
-            nome = " ".join(tds[1].find_element(By.TAG_NAME, "a").text.split(" ")[1:])
+            
+            # Parsing dos dados
+            texto_link = tds[1].find_element(By.TAG_NAME, "a").text
+            codigo = texto_link.split(" ")[0]
+            nome = " ".join(texto_link.split(" ")[1:])
             cred = tds[2].text
             ch = tds[3].text
-            tipo = tds[4].text
             freq = tds[5].text.replace("%", "").strip() or "0"
             nota = tds[6].text.replace(",", ".").strip() or "0"
             situacao = tds[7].text.strip()
-            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
             
+            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
             ano_realizado = ar if ar != "" else ant
             ant = ano_realizado
+
+            # 1. INSERT na Disciplina (Apenas dados básicos, sem FK de curso aqui)
             sql_disc = f"""
-            INSERT INTO public.disciplina (
-                codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso
-            )
-            SELECT
-                {format_val(codigo)},
-                {format_val(nome)},
-                CAST({cred} AS smallint),
-                CAST({ch} AS smallint),
-                {format_val(tipo)},
-                NULL,
-                a.id_curso
-            FROM public.aluno a
-            WHERE a.matricula = CAST({login} AS bigint)
+            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria)
+            VALUES ({format_val(codigo)}, {format_val(nome)}, 
+                    CAST({cred} AS smallint), CAST({ch} AS smallint))
             ON CONFLICT (codigo) DO NOTHING;
             """.replace('\n', ' ').strip()
-
             imprimir_bloco_sql(sql_disc)
+
             batch_hist.append(f"({format_val(codigo)}, {format_val(nota)}, {format_val(freq)}, {format_val(situacao)}, {format_val(ano_realizado)})")
 
             if len(batch_hist) == 10:
-                valores = ", ".join(batch_hist)
-                sql = f"""
-                INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
-                SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
-                FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
-                JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-                ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
-                    nota_final = EXCLUDED.nota_final,
-                    frequencia = EXCLUDED.frequencia,
-                    status = EXCLUDED.status;
-                """.replace('\n', ' ').strip()
-                imprimir_bloco_sql(sql)
+                # SQL de Histórico permanece igual, pois as FKs de aluno e disciplina continuam
+                executar_batch_historico(login, batch_hist)
                 batch_hist = []
-        except: continue
+        except Exception as e:
+            continue
             
     if batch_hist:
-        valores = ", ".join(batch_hist)
-        sql = f"""
-        INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
-        SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
-        FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
-        JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-        ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
-            nota_final = EXCLUDED.nota_final,
-            frequencia = EXCLUDED.frequencia,
-            status = EXCLUDED.status;
-        """.replace('\n', ' ').strip()
-        imprimir_bloco_sql(sql)
+        executar_batch_historico(login, batch_hist)
+
+# Função auxiliar para não repetir código
+def executar_batch_historico(login, batch):
+    valores = ", ".join(batch)
+    sql = f"""
+    INSERT INTO public.historico (id_aluno, codigo_disciplina, nota_final, frequencia, status, periodo_realizado)
+    SELECT a.id, v.cod, CAST(v.nota AS decimal), CAST(v.frq AS decimal), v.st, v.per
+    FROM (VALUES {valores}) AS v(cod, nota, frq, st, per)
+    JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+    ON CONFLICT (id_aluno, codigo_disciplina) DO UPDATE SET
+        nota_final = EXCLUDED.nota_final,
+        frequencia = EXCLUDED.frequencia,
+        status = EXCLUDED.status;
+    """.replace('\n', ' ').strip()
+    imprimir_bloco_sql(sql)
 
 def pegaAtividadesRealizadas(login, linhas):
     print("LOG: Limpando histórico do aluno para não existir duplicidade", flush=True)
@@ -513,61 +540,47 @@ def coletaEletivasUniversais(driver):
     
     for i in range(num_linhas):
         if i % 5 == 0 or i == num_linhas-1:
-            print(f"LOG: Extração de eletivas em {100*(i/(num_linhas-1)):.2f}%", flush=True)
+            print(f"LOG: Extração de eletivas em {100*(i/(max(1, num_linhas-1))):.2f}%", flush=True)
         try:
-            # 'i' é o índice da linha na tabela (começando em 0 para a lista de elementos encontrados)
             tr = driver.find_elements(By.XPATH, linhas_xpath)[i]
             tds = tr.find_elements(By.TAG_NAME, "td")
 
-            # Verificação de segurança para garantir que a linha tem colunas suficientes
             if len(tds) < 4: continue 
 
             val_creditos = "".join(filter(str.isdigit, tds[1].text)) or "0"
             val_ch = "".join(filter(str.isdigit, tds[2].text)) or "0"
+            tipo_ele_uni = tds[3].text.strip() # "E. Universal" ou similar
 
             link_element = tds[0].find_element(By.TAG_NAME, "a")
-            texto_completo = link_element.text # Ex: "MAT001 - CÁLCULO I"
-
-            # Lógica para separar Código de Nome
-            partes = texto_completo.split(" - ")[0]
-            cod = partes.split(" ")[0].strip()
-            nom = " ".join(partes.split(" ")[1:])
+            texto_completo = link_element.text
             
-            # Mantendo suas variáveis de controle
-            tipo = tds[3].text if len(tds) > 3 else "N/A"
+            # Separação correta de Código e Nome
+            partes = texto_completo.split(" - ")
+            cod = partes[0].split(" ")[0].strip()
+            nom = " ".join(partes[0].split(" ")[1:]).replace(",", "").replace("-", " ")
 
-            # Gerar o SQL (agora muito mais rápido sem o .click())
+            # 1. SQL DISCIPLINA (Apenas dados globais)
             sql_disc = f"""
-            WITH curso_data AS (
-                INSERT INTO public.curso (nome_curso) 
-                VALUES ('Eletivas Universais') 
-                ON CONFLICT (nome_curso) DO UPDATE SET nome_curso = EXCLUDED.nome_curso 
-                RETURNING id
-            )
-            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria, tipo, periodo, id_curso) 
-            SELECT 
-                {format_val(cod)}, 
-                {format_val(nom)}, 
-                CAST({val_creditos} AS smallint), 
-                CAST({val_ch} AS smallint), 
-                'E. Universal', 
-                NULL, 
-                id
-            FROM curso_data 
-            ON CONFLICT (codigo) DO UPDATE SET 
-                nome = EXCLUDED.nome, 
-                id_curso = EXCLUDED.id_curso,
-                creditos = EXCLUDED.creditos, 
-                carga_horaria = EXCLUDED.carga_horaria;
+            INSERT INTO public.disciplina (codigo, nome, creditos, carga_horaria) 
+            VALUES ({format_val(cod)}, {format_val(nom)}, CAST({val_creditos} AS smallint), CAST({val_ch} AS smallint))
+            ON CONFLICT (codigo) DO UPDATE SET nome=EXCLUDED.nome, creditos=EXCLUDED.creditos, carga_horaria=EXCLUDED.carga_horaria;
             """.replace('\n', ' ').strip()
-
             imprimir_bloco_sql(sql_disc)
 
-            tds[0].find_element(By.TAG_NAME, "a").click()
+            # 2. SQL GRADE CURRICULAR (Vínculo com o curso 'Eletivas Universais')
+            sql_grade = f"""
+            INSERT INTO public.grade_curricular (id_curso, codigo_disciplina, periodo, tipo)
+            SELECT id, {format_val(cod)}, 0, {format_val(tipo_ele_uni)}
+            FROM public.curso WHERE nome_curso = 'Eletivas Universais'
+            ON CONFLICT (id_curso, codigo_disciplina) DO UPDATE SET tipo=EXCLUDED.tipo;
+            """.replace('\n', ' ').strip()
+            imprimir_bloco_sql(sql_grade)
+
+            # 3. Entrar na disciplina para pegar turmas/horários
+            link_element.click()
 
             trs_t = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[1]/div/div[2]/div[3]/div[2]/table/tbody/tr')
-            for idx, tr_t in enumerate(trs_t, 1):
-                # Pega somente o primeiro professor
+            for tr_t in trs_t:
                 prof = tr_t.find_element(By.XPATH, './/div[1]/div[5]/div[2]').text.strip().split("\n")[0] or "A DEFINIR"
                 num_t = "".join(filter(str.isdigit, tr_t.find_element(By.XPATH, './/div[1]/div[1]/div').text)) or "0"
                 vagas_txt = tr_t.find_element(By.XPATH, './/td/div/div[2]/table[1]/tbody/tr[2]/td[2]').text.strip()
@@ -586,27 +599,22 @@ def coletaEletivasUniversais(driver):
                         if dia_site in mapa_dias and t in mapa_horarios:
                             sql_horario = f"""
                             INSERT INTO public.horario_aula (id_turma, dia, hora, codigo_hora) 
-                            VALUES (
-                                (SELECT id_turma FROM public.turma WHERE codigo_disciplina={format_val(cod)} AND numero={num_t} LIMIT 1), 
-                                CAST({format_val(mapa_dias[dia_site])} AS dia_semana_enum), 
-                                CAST({format_val(mapa_horarios[t])} AS TIME), 
-                                {format_val(t)} 
-                            ) ON CONFLICT (id_turma, dia, hora) DO UPDATE SET codigo_hora=EXCLUDED.codigo_hora;
+                            VALUES ((SELECT id_turma FROM public.turma WHERE codigo_disciplina={format_val(cod)} AND numero={num_t} LIMIT 1), CAST({format_val(mapa_dias[dia_site])} AS dia_semana_enum), CAST({format_val(mapa_horarios[t])} AS TIME), {format_val(t)}) 
+                            ON CONFLICT (id_turma, dia, hora) DO UPDATE SET codigo_hora=EXCLUDED.codigo_hora;
                             """.replace('\n', ' ').strip()
                             imprimir_bloco_sql(sql_horario)
 
+            # Voltar para a lista
             try:
                 driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
             except:
                 driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[2]/button').click()
             
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, linhas_xpath)))
+
         except Exception as e:
             print(f"ERRO na linha {i}: {e}")
             continue
 
-    # Volta para tela inicial
-    try:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
-    except Exception as e:
-        driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div[2]/button').click()
+    # Finalizar e voltar para a home
+    driver.find_element(By.XPATH, '/html/body/table/tbody/tr[2]/td/table/tbody/tr/td/a[1]').click()
