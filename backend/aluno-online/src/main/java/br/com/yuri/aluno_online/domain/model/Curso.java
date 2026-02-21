@@ -19,10 +19,14 @@ public class Curso {
     @Column(name = "nome_curso", nullable = false, unique = true)
     private String nomeCurso;
 
-    @Column(name = "total_creditos", nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
-    private int totalCreditos;
+    @Builder.Default
+    @Column(name = "total_creditos", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private Short totalCreditos = 0;
 
-    @Column(name = "total_horas", nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
-    private int totalHoras;
+    @Builder.Default
+    @Column(name = "total_horas", nullable = false)
+    @org.hibernate.annotations.ColumnDefault("0")
+    private Short totalHoras = 0;
 }
 
