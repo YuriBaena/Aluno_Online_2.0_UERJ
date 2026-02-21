@@ -15,10 +15,6 @@ public class Disciplina {
     @Column(nullable = false)
     private String nome;
 
-    @Column(name = "id_curso")
-    private Long idCurso;
-
-    private Short periodo;
     private Short creditos;
 
     @OneToMany(mappedBy = "disciplina")
