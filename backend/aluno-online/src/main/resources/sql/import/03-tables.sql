@@ -32,15 +32,9 @@ ALTER TABLE professor ADD CONSTRAINT professor_nome_unique UNIQUE (nome);
 CREATE TABLE IF NOT EXISTS disciplina (
     codigo VARCHAR(50) PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    id_curso BIGINT NOT NULL,
     carga_horaria SMALLINT,
-    creditos SMALLINT,
-    tipo VARCHAR(50),
-    periodo SMALLINT
+    creditos SMALLINT
 );
-
-ALTER TABLE disciplina DROP CONSTRAINT IF EXISTS fk_disciplina_curso;
-ALTER TABLE disciplina ADD CONSTRAINT fk_disciplina_curso FOREIGN KEY (id_curso) REFERENCES curso(id) ON DELETE CASCADE;
 
 -- ======================================================
 -- 4. TABELA ALUNO
@@ -239,3 +233,93 @@ CREATE TABLE IF NOT EXISTS avaliacao (
 
 ALTER TABLE avaliacao DROP CONSTRAINT IF EXISTS check_nota_range;
 ALTER TABLE avaliacao ADD CONSTRAINT check_nota_range CHECK (nota >= 0 AND nota <= 10);
+
+-- ======================================================
+-- 13. TABELA DE PRE-REQUISITOS
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS public.pre_requisito (
+    codigo_disciplina VARCHAR(20) NOT NULL,
+    codigo_requisito VARCHAR(20) NOT NULL,
+    id_grupo INTEGER NOT NULL
+);
+
+-- Constraint de Chave Primária Composta
+-- Garante que não existam linhas idênticas (mesma disciplina, requisito e grupo)
+ALTER TABLE public.pre_requisito DROP CONSTRAINT IF EXISTS pk_pre_requisito;
+ALTER TABLE public.pre_requisito ADD CONSTRAINT pk_pre_requisito PRIMARY KEY (codigo_disciplina, codigo_requisito, id_grupo);
+
+-- Constraint de Chave Estrangeira para a Disciplina "Dona" do requisito
+ALTER TABLE public.pre_requisito DROP CONSTRAINT IF EXISTS fk_disciplina_principal;
+ALTER TABLE public.pre_requisito ADD CONSTRAINT fk_disciplina_principal FOREIGN KEY (codigo_disciplina) REFERENCES public.disciplina(codigo) ON DELETE CASCADE;
+
+-- Constraint de Chave Estrangeira para a Disciplina que É o requisito
+ALTER TABLE public.pre_requisito DROP CONSTRAINT IF EXISTS fk_disciplina_requisito;
+ALTER TABLE public.pre_requisito ADD CONSTRAINT fk_disciplina_requisito FOREIGN KEY (codigo_requisito) REFERENCES public.disciplina(codigo) ON DELETE CASCADE;
+
+-- Constraint para evitar que uma disciplina seja requisito dela mesma
+ALTER TABLE public.pre_requisito DROP CONSTRAINT IF EXISTS check_auto_requisito;
+ALTER TABLE public.pre_requisito ADD CONSTRAINT check_auto_requisito CHECK (codigo_disciplina <> codigo_requisito);
+
+
+-- ======================================================
+-- 14. TABELA DE GRADE DO CURSO
+-- ======================================================
+
+-- Remove colunas da disciplina
+ALTER TABLE disciplina DROP COLUMN IF EXISTS periodo;
+ALTER TABLE disciplina DROP COLUMN IF EXISTS id_curso;
+ALTER TABLE disciplina DROP COLUMN IF EXISTS tipo;
+
+CREATE TABLE IF NOT EXISTS grade_curricular (
+    id_curso BIGINT NOT NULL,
+    codigo_disciplina VARCHAR(50) NOT NULL,
+    periodo SMALLINT NOT NULL,
+    tipo VARCHAR(50) -- Ex: 'OBRIGATÓRIA', 'ELETIVA'
+);
+
+-- Chave Primária Composta
+ALTER TABLE grade_curricular DROP CONSTRAINT IF EXISTS pk_grade_curricular;
+ALTER TABLE grade_curricular ADD CONSTRAINT pk_grade_curricular PRIMARY KEY (id_curso, codigo_disciplina);
+
+-- Constraint de Chave Estrangeira para Curso
+ALTER TABLE grade_curricular DROP CONSTRAINT IF EXISTS fk_grade_curso;
+ALTER TABLE grade_curricular ADD CONSTRAINT fk_grade_curso FOREIGN KEY (id_curso) REFERENCES curso(id) ON DELETE CASCADE;
+
+-- Constraint de Chave Estrangeira para Disciplina
+ALTER TABLE grade_curricular DROP CONSTRAINT IF EXISTS fk_grade_disciplina;
+ALTER TABLE grade_curricular ADD CONSTRAINT fk_grade_disciplina FOREIGN KEY (codigo_disciplina) REFERENCES disciplina(codigo) ON DELETE CASCADE;
+
+-- ======================================================
+-- 15. TABELA ATIVIDADE
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS atividade (
+    id_atividade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    max_horas SMALLINT NOT NULL DEFAULT 0
+);
+
+-- Garantir que o nome da atividade seja único para evitar duplicatas no scraper
+ALTER TABLE atividade DROP CONSTRAINT IF EXISTS atividade_nome_unique;
+ALTER TABLE atividade ADD CONSTRAINT atividade_nome_unique UNIQUE (nome);
+
+-- ======================================================
+-- 16. TABELA HISTÓRICO ATIVIDADE
+-- ======================================================
+
+CREATE TABLE IF NOT EXISTS historico_atividade (
+    id_historico_ativ BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_aluno UUID NOT NULL,
+    id_atividade BIGINT NOT NULL,
+    periodo_realizado VARCHAR(50),
+    horas_realizadas SMALLINT
+);
+
+-- Constraint de Chave Estrangeira para Aluno
+ALTER TABLE historico_atividade DROP CONSTRAINT IF EXISTS fk_historico_atividade_aluno;
+ALTER TABLE historico_atividade ADD CONSTRAINT fk_historico_atividade_aluno FOREIGN KEY (id_aluno) REFERENCES aluno(id) ON DELETE CASCADE;
+
+-- Constraint de Chave Estrangeira para Atividade
+ALTER TABLE historico_atividade DROP CONSTRAINT IF EXISTS fk_historico_atividade_atividade;
+ALTER TABLE historico_atividade ADD CONSTRAINT fk_historico_atividade_atividade FOREIGN KEY (id_atividade) REFERENCES atividade(id_atividade) ON DELETE CASCADE;
