@@ -61,20 +61,34 @@ def gerar_sql_aluno(matricula, nome, curso, creditos, horas):
 # --- FUNÇÕES DE NAVEGAÇÃO ---
 
 def abrir():
-    print("LOG: Abrindo navegador...", flush=True)
+    print("LOG: Abrindo navegador otimizado...", flush=True)
     try:
         options = Options()
-        options.add_argument("--headless=new")
+        
+        # --- Camada 1: Argumentos (Processo) ---
+        options.add_argument("--headless=new") # Sem interface
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.page_load_strategy = 'eager'
-        options.add_argument("--blink-settings=imagesEnabled=false")
         options.add_argument("--disable-extensions")
         options.add_argument("--no-first-run")
+        options.page_load_strategy = 'eager' # Não espera carregar o que não é essencial
+
+        # --- Camada 2: Preferências (Conteúdo) ---
+        # Aqui bloqueamos o carregamento de CSS e Imagens direto no motor de renderização
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,      # Bloqueia Imagens
+            "profile.managed_default_content_settings.stylesheets": 2, # Bloqueia CSS (MUITO MAIS RÁPIDO)
+            "profile.managed_default_content_settings.fonts": 2,       # Bloqueia Fontes externas
+            "profile.managed_default_content_settings.popups": 2,      # Bloqueia Popups
+        }
+        options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        
+        # Reduzimos o tempo de espera implícita já que a página carregará mais rápido
+        driver.implicitly_wait(1) 
+        
         driver.get("https://www.alunoonline.uerj.br/")
-        driver.implicitly_wait(2)
         return driver
     except:
         raise Exception("Falha na conexão para scrapping")
