@@ -288,6 +288,7 @@ def coletaMateriasRealizadas(driver, login):
         # Inicializa variáveis
         tbody_disciplinas = None
         tbody_atividades = None
+        mapa_limites = {} # DICIONARIO PARA GUARDAR OS MAX_HORAS CORRETOS
 
         # Procura tabela de Disciplinas Realizadas
         # Tem que ser a escrita errada mesmo, no aluno online ta errado
@@ -298,8 +299,22 @@ def coletaMateriasRealizadas(driver, login):
         elif titulo2:
             tbodies1 = titulo1_elem.find_elements(By.XPATH, "following-sibling::div/table/tbody")
             tbodies2 = titulo2_elems[0].find_elements(By.XPATH, "following-sibling::div/table/tbody")
+            
+            # Se tbodies1 existe, ele é a tabela de ATIVIDADES
             if tbodies1:
                 tbody_atividades = tbodies1[0]
+                # CAPTURA A TABELA DE LIMITES (Geralmente o div[3] dentro do div[1])
+                try:
+                    tabela_limites = driver.find_elements(By.XPATH, '/html/body/table/tbody/tr[3]/td/form/div/div[1]/div[3]/table/tbody/tr[position() >= 2]')
+                    for tr_limite in tabela_limites:
+                        cols = tr_limite.find_elements(By.TAG_NAME, "td")
+                        if len(cols) >= 2:
+                            nome_atv = cols[0].text.strip()
+                            limite_atv = cols[1].text.strip()
+                            mapa_limites[nome_atv] = limite_atv
+                except:
+                    print("AVISO: Não foi possível mapear limites de horas das atividades.")
+
             if tbodies2:
                 tbody_disciplinas = tbodies2[0]
 
@@ -310,8 +325,11 @@ def coletaMateriasRealizadas(driver, login):
         # Chama funções de processamento
         if linhas_disciplinas:
             pegaDisciplinasRealizadas(login, linhas_disciplinas)
+            
         if linhas_atividades:
-            pegaAtividadesRealizadas(login, linhas_atividades)
+            # PASSAMOS O MAPA DE LIMITES PARA A FUNÇÃO
+            pegaAtividadesRealizadas(login, linhas_atividades, mapa_limites)
+
     except Exception as e:
         print(e)
 
@@ -376,65 +394,67 @@ def executar_batch_historico(login, batch):
     """.replace('\n', ' ').strip()
     imprimir_bloco_sql(sql)
 
-def pegaAtividadesRealizadas(login, linhas):
-    print("LOG: Limpando histórico do aluno para não existir duplicidade", flush=True)
+def pegaAtividadesRealizadas(login, linhas, mapa_limites):
+    print("LOG: Atualizando atividades e histórico", flush=True)
 
-    sql = f"""
+    # Deletar histórico antigo para evitar lixo
+    sql_del = f"""
     DELETE FROM public.historico_atividade ha
     USING public.aluno a
     WHERE ha.id_aluno = a.id
     AND a.matricula = CAST({login} AS bigint);
     """.replace('\n', ' ').strip()
-    imprimir_bloco_sql(sql)
+    imprimir_bloco_sql(sql_del)
 
     ant = ""
     batch_hist = []
+    
     for tr in linhas:
         try:
             tds = tr.find_elements(By.TAG_NAME, "td")
             if len(tds) < 3: continue
-            nome = tds[1].text
-            ch = tds[2].text
-            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
             
+            nome = tds[1].text.strip()
+            horas_feitas = tds[2].text.strip() # O que o aluno REALIZOU
+            
+            # BUSCA O LIMITE CORRETO NO MAPA, SE NÃO ACHAR, USA A PRÓPRIA HORA (fallback)
+            max_horas_real = mapa_limites.get(nome, horas_feitas)
+            
+            ar = tds[0].find_element(By.TAG_NAME, "b").text.strip()
             ano_realizado = ar if ar != "" else ant
             ant = ano_realizado
-            sql_disc = f"""
-            INSERT INTO public.atividade (
-                nome, max_horas
-            )
-            SELECT
-                {format_val(nome)},
-                {format_val(ch)}
-            ON CONFLICT (nome) DO NOTHING;
-            """.replace('\n', ' ').strip()
 
-            imprimir_bloco_sql(sql_disc)
-            batch_hist.append(f"({format_val(nome)},{format_val(ano_realizado)}, {format_val(ch)})")
+            # INSERT na definição da atividade (usando o limite máximo correto)
+            sql_atv = f"""
+            INSERT INTO public.atividade (nome, max_horas)
+            VALUES ({format_val(nome)}, CAST({max_horas_real} AS smallint))
+            ON CONFLICT (nome) DO UPDATE SET max_horas = EXCLUDED.max_horas;
+            """.replace('\n', ' ').strip()
+            imprimir_bloco_sql(sql_atv)
+
+            # Adiciona ao batch para o histórico (usando o que ele REALIZOU)
+            batch_hist.append(f"({format_val(nome)}, {format_val(ano_realizado)}, {format_val(horas_feitas)})")
 
             if len(batch_hist) == 10:
-                valores = ", ".join(batch_hist)
-                sql = f"""
-                INSERT INTO public.historico_atividade (id_aluno, id_atividade, periodo_realizado, horas_realizadas)
-                SELECT a.id, at.id_atividade, v.ano, CAST(v.ch AS smallint)
-                FROM (VALUES {valores}) AS v(nome, ano, ch)
-                JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-                JOIN public.atividade at ON at.nome = v.nome
-                """.replace('\n', ' ').strip()
-                imprimir_bloco_sql(sql)
+                executar_batch_atividades(login, batch_hist)
                 batch_hist = []
-        except: continue
+        except:
+            continue
             
     if batch_hist:
-        valores = ", ".join(batch_hist)
-        sql = f"""
-        INSERT INTO public.historico_atividade (id_aluno, id_atividade, periodo_realizado, horas_realizadas)
-        SELECT a.id, at.id_atividade, v.ano, CAST(v.ch AS smallint)
-        FROM (VALUES {valores}) AS v(nome, ano, ch)
-        JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
-        JOIN public.atividade at ON at.nome = v.nome
-        """.replace('\n', ' ').strip()
-        imprimir_bloco_sql(sql)
+        executar_batch_atividades(login, batch_hist)
+
+# Função auxiliar para não repetir código
+def executar_batch_atividades(login, batch):
+    valores = ", ".join(batch)
+    sql = f"""
+    INSERT INTO public.historico_atividade (id_aluno, id_atividade, periodo_realizado, horas_realizadas)
+    SELECT a.id, at.id_atividade, v.ano, CAST(v.ch AS smallint)
+    FROM (VALUES {valores}) AS v(nome, ano, ch)
+    JOIN public.aluno a ON a.matricula = CAST({login} AS bigint)
+    JOIN public.atividade at ON at.nome = v.nome;
+    """.replace('\n', ' ').strip()
+    imprimir_bloco_sql(sql)
 
 # --- DISCIPLINAS EM ANDAMENTO ---
 
